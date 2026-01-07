@@ -51,7 +51,7 @@ public class MetadataArrayBenchmarks
     public int ObjectArrayIterate()
     {
         var sum = 0;
-        foreach (var item in _objectArray)
+        foreach (var unused in _objectArray)
         {
             sum++;
         }
@@ -63,7 +63,7 @@ public class MetadataArrayBenchmarks
     public int MetadataArrayIterate()
     {
         var sum = 0;
-        foreach (var item in _metadataArray)
+        foreach (var unused in _metadataArray)
         {
             sum++;
         }
