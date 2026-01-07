@@ -23,4 +23,22 @@ jobs:
       - name: Build
         run: dotnet build ./Light.Results.slnx --configuration Release --no-restore /p:ContinuousIntegrationBuild=true
       - name: Test
-        run: dotnet test ./Light.Results.slnx --configuration Release --no-build --verbosity normal
+        run: >
+          dotnet test ./Light.Results.slnx
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+      - name: Publish coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: '**/coverage.cobertura.xml'
+          badge: true
+          format: 'markdown'
+          output: 'both'
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: '**/coverage.cobertura.xml'
