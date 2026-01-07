@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using FluentAssertions;
 using Light.Results.Metadata;
 
@@ -114,7 +112,7 @@ public sealed class GenericResultTests
     [Fact]
     public void TapError_OnFailure_ShouldExecuteAction()
     {
-        ImmutableArray<Error>? capturedErrors = null;
+        Errors? capturedErrors = null;
         var result = Result<int>.Fail(new Error("Error"));
 
         var tapped = result.TapError(errors => capturedErrors = errors);
@@ -179,29 +177,12 @@ public sealed class GenericResultTests
     }
 
     [Fact]
-    public void Fail_WithEmptyList_ShouldThrow()
+    public void Fail_WithSingleItemArray_ShouldCreateFailure()
     {
-        var act = () => Result<int>.Fail(new List<Error>());
-
-        act.Should().Throw<ArgumentException>()
-           .WithMessage("*At least one error*");
-    }
-
-    [Fact]
-    public void Fail_WithNull_ShouldThrow()
-    {
-        var act = () => Result<int>.Fail(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Fail_WithSingleItemList_ShouldCreateFailure()
-    {
-        var result = Result<int>.Fail(new List<Error> { new ("Error") });
+        var result = Result<int>.Fail(new[] { new Error("Error") });
 
         result.IsFailure.Should().BeTrue();
-        result.ErrorList.Should().ContainSingle();
+        result.Errors.Should().ContainSingle();
     }
 
     [Fact]
@@ -210,7 +191,7 @@ public sealed class GenericResultTests
         var result = Result<int>.Fail(new[] { new Error("Error1"), new Error("Error2") });
 
         result.IsFailure.Should().BeTrue();
-        result.ErrorList.Should().HaveCount(2);
+        result.Errors.Should().HaveCount(2);
     }
 
     [Fact]
@@ -261,10 +242,10 @@ public sealed class GenericResultTests
     }
 
     [Fact]
-    public void ErrorList_OnSuccess_ShouldReturnEmpty()
+    public void Errors_OnSuccess_ShouldReturnEmpty()
     {
         var result = Result<int>.Ok(42);
 
-        result.ErrorList.Should().BeEmpty();
+        result.Errors.Should().BeEmpty();
     }
 }

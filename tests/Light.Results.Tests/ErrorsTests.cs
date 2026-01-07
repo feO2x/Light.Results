@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Linq;
 using FluentAssertions;
@@ -38,7 +39,7 @@ public sealed class ErrorsTests
     public void MultipleErrors_Count_ShouldBeCorrect()
     {
         var errorArray = new[] { new Error("E1"), new Error("E2"), new Error("E3") };
-        var errors = Errors.FromArray(errorArray);
+        var errors = new Errors(errorArray);
 
         errors.Count.Should().Be(3);
     }
@@ -47,7 +48,7 @@ public sealed class ErrorsTests
     public void MultipleErrors_First_ShouldReturnFirstError()
     {
         var errorArray = new[] { new Error("E1"), new Error("E2") };
-        var errors = Errors.FromArray(errorArray);
+        var errors = new Errors(errorArray);
 
         errors.First.Message.Should().Be("E1");
     }
@@ -56,7 +57,7 @@ public sealed class ErrorsTests
     public void MultipleErrors_GetEnumerator_ShouldYieldAllErrors()
     {
         var errorArray = new[] { new Error("E1"), new Error("E2"), new Error("E3") };
-        var errors = Errors.FromArray(errorArray);
+        var errors = new Errors(errorArray);
 
         var list = errors.ToList();
 
@@ -82,35 +83,32 @@ public sealed class ErrorsTests
     }
 
     [Fact]
-    public void ToImmutableArray_WithZeroCount_ShouldReturnEmpty()
+    public void Indexer_WithZeroCount_ShouldThrow()
     {
         var errors = default(Errors);
 
-        var array = errors.ToImmutableArray();
+        var act = () => errors[0];
 
-        array.Should().BeEmpty();
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
-    public void ToImmutableArray_WithOneError_ShouldReturnSingleItem()
+    public void Indexer_WithOneError_ShouldReturnTheError()
     {
         var error = new Error("Error");
         var errors = new Errors(error);
 
-        var array = errors.ToImmutableArray();
-
-        array.Should().ContainSingle().Which.Should().Be(error);
+        errors[0].Should().Be(error);
     }
 
     [Fact]
-    public void ToImmutableArray_WithMultipleErrors_ShouldReturnAll()
+    public void Indexer_WithMultipleErrors_ShouldReturnCorrectError()
     {
         var errorArray = new[] { new Error("E1"), new Error("E2") };
-        var errors = Errors.FromArray(errorArray);
+        var errors = new Errors(errorArray);
 
-        var array = errors.ToImmutableArray();
-
-        array.Should().HaveCount(2);
+        errors[0].Message.Should().Be("E1");
+        errors[1].Message.Should().Be("E2");
     }
 
     [Fact]
@@ -127,7 +125,7 @@ public sealed class ErrorsTests
     public void FromArray_WithSingleError_ShouldUseSingleErrorPath()
     {
         var errorArray = new[] { new Error("Single") };
-        var errors = Errors.FromArray(errorArray);
+        var errors = new Errors(errorArray);
 
         errors.Count.Should().Be(1);
         errors.First.Message.Should().Be("Single");

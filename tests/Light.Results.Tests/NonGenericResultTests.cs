@@ -15,11 +15,11 @@ public sealed class NonGenericResultTests
     }
 
     [Fact]
-    public void ErrorList_OnFailure_ShouldContainErrors()
+    public void Errors_OnFailure_ShouldContainErrors()
     {
         var result = Result.Fail(new Error("Error"));
 
-        result.ErrorList.Should().ContainSingle();
+        result.Errors.Should().ContainSingle();
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public sealed class NonGenericResultTests
         var result = Result.Fail(new[] { new Error("E1"), new Error("E2") });
 
         result.IsFailure.Should().BeTrue();
-        result.ErrorList.Should().HaveCount(2);
+        result.Errors.Should().HaveCount(2);
     }
 
     [Fact]

@@ -52,7 +52,7 @@ public sealed class GenericResultWithMetadataTests
 
         result.IsFailure.Should().BeTrue();
         result.Metadata.Should().NotBeNull();
-        result.ErrorList.Should().ContainSingle();
+        result.Errors.Should().ContainSingle();
     }
 
     [Fact]

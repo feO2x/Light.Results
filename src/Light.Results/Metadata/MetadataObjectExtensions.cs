@@ -8,6 +8,34 @@ namespace Light.Results.Metadata;
 public static class MetadataObjectExtensions
 {
     /// <summary>
+    /// Merges metadata only if needed, returning the existing reference when incoming is empty
+    /// or references are equal.
+    /// </summary>
+    /// <param name="existing">The existing metadata (may be null).</param>
+    /// <param name="incoming">The incoming metadata (may be null).</param>
+    /// <param name="strategy">The merge strategy to use.</param>
+    /// <returns>The merged metadata, or the existing/incoming reference if no merge is needed.</returns>
+    public static MetadataObject? MergeIfNeeded(
+        MetadataObject? existing,
+        MetadataObject? incoming,
+        MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
+    )
+    {
+        if (incoming is null || incoming.Value.Count == 0)
+        {
+            return existing;
+        }
+
+        if (existing is null || existing.Value.Count == 0)
+        {
+            return incoming;
+        }
+
+        // Skip merge if references are equal
+        return existing.Value == incoming.Value ? existing : existing.Value.Merge(incoming.Value, strategy);
+    }
+
+    /// <summary>
     /// Merges two <see cref="MetadataObject" /> instances according to the specified strategy.
     /// </summary>
     public static MetadataObject Merge(
@@ -24,6 +52,12 @@ public static class MetadataObjectExtensions
         if (original.Count == 0)
         {
             return incoming;
+        }
+
+        // Skip merge if references are equal
+        if (original == incoming)
+        {
+            return original;
         }
 
         using var builder = MetadataObjectBuilder.From(original);

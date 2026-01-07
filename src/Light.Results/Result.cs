@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -14,6 +12,7 @@ namespace Light.Results;
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public readonly struct Result<T>
 {
+    // Field order optimized to reduce padding: reference types first, then value types
     private readonly Errors _errors;
     private readonly MetadataObject? _metadata;
 
@@ -27,8 +26,8 @@ public readonly struct Result<T>
     public T Value =>
         IsSuccess ? field! : throw new InvalidOperationException("Cannot access Value on a failed Result.");
 
-    /// <summary>Returns errors as an immutable array (empty on success).</summary>
-    public ImmutableArray<Error> ErrorList => IsSuccess ? ImmutableArray<Error>.Empty : _errors.ToImmutableArray();
+    /// <summary>Returns the errors collection (empty struct on success).</summary>
+    public Errors Errors => _errors;
 
     /// <summary>Returns the first error (or throws if success).</summary>
     public Error FirstError => IsFailure ?
@@ -60,31 +59,14 @@ public readonly struct Result<T>
 
     public static Result<T> Fail(Error error) => new (new Errors(error));
 
-    public static Result<T> Fail(IEnumerable<Error> errors)
+    public static Result<T> Fail(ReadOnlyMemory<Error> errors)
     {
-        if (errors is null)
-        {
-            throw new ArgumentNullException(nameof(errors));
-        }
-
-        // Avoid multiple enumeration and keep it compact.
-        if (errors is Error[] arr)
-        {
-            if (arr.Length == 0)
-            {
-                throw new ArgumentException("At least one error is required.", nameof(errors));
-            }
-
-            return new Result<T>(Errors.FromArray(arr));
-        }
-
-        var list = errors as IList<Error> ?? errors.ToList();
-        if (list.Count == 0)
+        if (errors.IsEmpty)
         {
             throw new ArgumentException("At least one error is required.", nameof(errors));
         }
 
-        return list.Count == 1 ? Fail(list[0]) : new Result<T>(Errors.FromArray(list.ToArray()));
+        return new Result<T>(new Errors(errors));
     }
 
     /// <summary>Transforms the successful value.</summary>
@@ -100,12 +82,20 @@ public readonly struct Result<T>
         }
 
         var inner = bind(Value);
-        // Merge metadata from this result into the bound result
-        return _metadata is null ?
-            inner :
-            inner._metadata is null ?
-                inner.WithMetadata(_metadata.Value) :
-                inner.MergeMetadata(_metadata.Value);
+        // Merge metadata from this result into the bound result using MergeIfNeeded
+        var merged = MetadataObjectExtensions.MergeIfNeeded(inner._metadata, _metadata);
+        // Skip creating new result if metadata didn't change
+        if (merged is null && inner._metadata is null)
+        {
+            return inner;
+        }
+
+        if (merged is not null && inner._metadata is not null && merged.Value == inner._metadata.Value)
+        {
+            return inner;
+        }
+
+        return inner.WithMetadata(merged);
     }
 
     /// <summary>Executes an action on success and returns the same result.</summary>
@@ -120,20 +110,38 @@ public readonly struct Result<T>
     }
 
     /// <summary>Executes an action on failure and returns the same result.</summary>
-    public Result<T> TapError(Action<ImmutableArray<Error>> action)
+    public Result<T> TapError(Action<Errors> action)
     {
         if (IsFailure)
         {
-            action(ErrorList);
+            action(_errors);
         }
 
         return this;
     }
 
-    public override string ToString()
-        => IsSuccess ? $"Ok({Value})" : $"Fail({string.Join(", ", ErrorList.Select(e => e.Code))})";
+    /// <summary>
+    /// Attempts to get the value if this is a success result.
+    /// </summary>
+    /// <param name="value">The value if successful; otherwise, default.</param>
+    /// <returns>True if successful; false if this is a failure result.</returns>
+    [MemberNotNullWhen(true, nameof(Value))]
+    public bool TryGetValue([MaybeNullWhen(false)] out T value)
+    {
+        if (IsSuccess)
+        {
+            value = Value;
+            return true;
+        }
 
-    private string DebuggerDisplay => IsSuccess ? $"Ok({Value})" : $"Fail({ErrorList.Length} error(s))";
+        value = default;
+        return false;
+    }
+
+    public override string ToString()
+        => IsSuccess ? $"Ok({Value})" : $"Fail({string.Join(", ", _errors.Select(e => e.Code))})";
+
+    private string DebuggerDisplay => IsSuccess ? $"Ok({Value})" : $"Fail({_errors.Count} error(s))";
 
     // Convenience implicit conversions
     public static implicit operator Result<T>(T value) => Ok(value);
@@ -151,6 +159,10 @@ public readonly struct Result<T>
         return new Result<T>(_errors, metadata);
     }
 
+    /// <summary>Creates a new result with the specified metadata (or clears metadata if null).</summary>
+    private Result<T> WithMetadata(MetadataObject? metadata) =>
+        IsSuccess ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
+
     /// <summary>Creates a new result with additional metadata properties.</summary>
     public Result<T> WithMetadata(params (string Key, MetadataValue Value)[] properties)
     {
@@ -164,19 +176,25 @@ public readonly struct Result<T>
         MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
     )
     {
-        if (_metadata is null)
+        var merged = MetadataObjectExtensions.MergeIfNeeded(_metadata, other, strategy);
+        // Skip creating new result if metadata didn't change
+        if (merged is null && _metadata is null)
         {
-            return WithMetadata(other);
+            return this;
         }
 
-        var merged = _metadata.Value.Merge(other, strategy);
+        if (merged is not null && _metadata is not null && merged.Value == _metadata.Value)
+        {
+            return this;
+        }
+
         return WithMetadata(merged);
     }
 
     // Allow Result<T>.Fail(_errors) reuse without re-allocating arrays.
     private static Result<T> Fail(Errors errors, MetadataObject? metadata = null) => new (errors, metadata);
 
-    internal static Result<T> Ok(T value, MetadataObject? metadata) => new (value, metadata);
+    private static Result<T> Ok(T value, MetadataObject? metadata) => new (value, metadata);
 }
 
 /// <summary>
@@ -189,7 +207,7 @@ public readonly struct Result
 
     public bool IsSuccess => _inner.IsSuccess;
     public bool IsFailure => _inner.IsFailure;
-    public ImmutableArray<Error> ErrorList => _inner.ErrorList;
+    public Errors Errors => _inner.Errors;
 
     /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
     public MetadataObject? Metadata => _inner.Metadata;
@@ -197,7 +215,7 @@ public readonly struct Result
     public static Result Ok() => new (Result<Unit>.Ok(Unit.Value));
     public static Result Ok(MetadataObject metadata) => new (Result<Unit>.Ok(Unit.Value, metadata));
     public static Result Fail(Error error) => new (Result<Unit>.Fail(error));
-    public static Result Fail(IEnumerable<Error> errors) => new (Result<Unit>.Fail(errors));
+    public static Result Fail(ReadOnlyMemory<Error> errors) => new (Result<Unit>.Fail(errors));
 
     /// <summary>Creates a new result with the specified metadata.</summary>
     public Result WithMetadata(MetadataObject metadata) => new (_inner.WithMetadata(metadata));
