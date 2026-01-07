@@ -63,7 +63,7 @@ public class MetadataIterationBenchmarks
     public int DictionaryIterate_Small()
     {
         var count = 0;
-        foreach (var kvp in _dictionary)
+        foreach (var unused in _dictionary)
         {
             count++;
         }
@@ -75,7 +75,7 @@ public class MetadataIterationBenchmarks
     public int MetadataObjectIterate_Small()
     {
         var count = 0;
-        foreach (var kvp in _metadataObject)
+        foreach (var unused in _metadataObject)
         {
             count++;
         }
@@ -87,7 +87,7 @@ public class MetadataIterationBenchmarks
     public int DictionaryIterate_Large()
     {
         var count = 0;
-        foreach (var kvp in _largeDictionary)
+        foreach (var unused in _largeDictionary)
         {
             count++;
         }
@@ -99,7 +99,7 @@ public class MetadataIterationBenchmarks
     public int MetadataObjectIterate_Large()
     {
         var count = 0;
-        foreach (var kvp in _largeMetadataObject)
+        foreach (var unused in _largeMetadataObject)
         {
             count++;
         }

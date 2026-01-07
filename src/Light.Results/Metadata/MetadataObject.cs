@@ -209,29 +209,38 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public struct Enumerator : IEnumerator<KeyValuePair<string, MetadataValue>>
     {
-        private readonly MetadataObjectData? _data;
+        private readonly string[]? _keys;
+        private readonly MetadataValue[]? _values;
+        private readonly int _count;
         private int _index;
 
         internal Enumerator(MetadataObject obj)
         {
-            _data = obj.Data;
+            if (obj.Data is null)
+            {
+                _keys = null;
+                _values = null;
+                _count = 0;
+            }
+            else
+            {
+                _keys = obj.Data.GetKeys();
+                _values = obj.Data.GetValues();
+                _count = obj.Data.Count;
+            }
+
             _index = -1;
         }
 
         public KeyValuePair<string, MetadataValue> Current =>
-            new (_data!.GetKey(_index), _data.GetValue(_index));
+            new (_keys![_index], _values![_index]);
 
         object IEnumerator.Current => Current;
 
         public bool MoveNext()
         {
-            if (_data is null)
-            {
-                return false;
-            }
-
             _index++;
-            return _index < _data.Count;
+            return _index < _count;
         }
 
         public void Reset() => _index = -1;
