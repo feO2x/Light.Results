@@ -163,4 +163,98 @@ public sealed class MetadataObjectTests
 
         count.Should().Be(3);
     }
+
+    [Fact]
+    public void Equals_WithIdenticalObjects_ShouldReturnTrue()
+    {
+        var left = MetadataObject.Create(("name", "Alice"), ("age", 30));
+        var right = MetadataObject.Create(("name", "Alice"), ("age", 30));
+
+        (left == right).Should().BeTrue();
+        (left != right).Should().BeFalse();
+        left.Equals(right).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_WithDifferentValues_ShouldReturnFalse()
+    {
+        var left = MetadataObject.Create(("name", "Alice"), ("age", 30));
+        var right = MetadataObject.Create(("name", "Bob"), ("age", 30));
+
+        (left == right).Should().BeFalse();
+        (left != right).Should().BeTrue();
+        left.Equals(right).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_WithDifferentKeys_ShouldReturnFalse()
+    {
+        var left = MetadataObject.Create(("name", "Alice"));
+        var right = MetadataObject.Create(("username", "Alice"));
+
+        (left == right).Should().BeFalse();
+        (left != right).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_WithDifferentCounts_ShouldReturnFalse()
+    {
+        var left = MetadataObject.Create(("name", "Alice"));
+        var right = MetadataObject.Create(("name", "Alice"), ("age", 30));
+
+        (left == right).Should().BeFalse();
+        (left != right).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_BothEmpty_ShouldReturnTrue()
+    {
+        var left = MetadataObject.Empty;
+        var right = MetadataObject.Empty;
+
+        (left == right).Should().BeTrue();
+        (left != right).Should().BeFalse();
+        left.Equals(right).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_EmptyVsNonEmpty_ShouldReturnFalse()
+    {
+        var empty = MetadataObject.Empty;
+        var nonEmpty = MetadataObject.Create(("key", "value"));
+
+        (empty == nonEmpty).Should().BeFalse();
+        (empty != nonEmpty).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_WithNestedObjects_ShouldCompareByValue()
+    {
+        var nested1 = MetadataObject.Create(("inner", "value"));
+        var nested2 = MetadataObject.Create(("inner", "value"));
+
+        var left = MetadataObject.Create(("nested", nested1));
+        var right = MetadataObject.Create(("nested", nested2));
+
+        (left == right).Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetHashCode_WithIdenticalObjects_ShouldReturnSameHash()
+    {
+        var left = MetadataObject.Create(("name", "Alice"), ("age", 30));
+        var right = MetadataObject.Create(("name", "Alice"), ("age", 30));
+
+        left.GetHashCode().Should().Be(right.GetHashCode());
+    }
+
+    [Fact]
+    public void Equals_WithObject_ShouldUseOverride()
+    {
+        var obj1 = MetadataObject.Create(("key", "value"));
+        var obj2 = MetadataObject.Create(("key", "value"));
+        object boxedObj2 = obj2;
+
+        obj1.Equals(boxedObj2).Should().BeTrue();
+    }
 }

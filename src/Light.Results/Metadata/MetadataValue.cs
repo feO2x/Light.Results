@@ -192,7 +192,14 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 (string?) other._payload.Reference,
                 StringComparison.Ordinal
             ),
-            MetadataKind.Array or MetadataKind.Object => ReferenceEquals(_payload.Reference, other._payload.Reference),
+            MetadataKind.Array => ((MetadataArrayData?) _payload.Reference)?.Equals(
+                                      (MetadataArrayData?) other._payload.Reference
+                                  ) ??
+                                  false,
+            MetadataKind.Object => ((MetadataObjectData?) _payload.Reference)?.Equals(
+                                       (MetadataObjectData?) other._payload.Reference
+                                   ) ??
+                                   false,
             _ => false
         };
     }

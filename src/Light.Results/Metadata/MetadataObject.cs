@@ -197,7 +197,20 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public bool Equals(MetadataObject other) => ReferenceEquals(Data, other.Data);
+    public bool Equals(MetadataObject other)
+    {
+        if (Data is null && other.Data is null)
+        {
+            return true;
+        }
+
+        if (Data is null || other.Data is null)
+        {
+            return false;
+        }
+
+        return Data.Equals(other.Data);
+    }
 
     public override bool Equals(object? obj) => obj is MetadataObject other && Equals(other);
 

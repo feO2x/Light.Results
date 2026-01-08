@@ -43,7 +43,20 @@ public readonly struct MetadataArray : IReadOnlyList<MetadataValue>, IEquatable<
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public bool Equals(MetadataArray other) => ReferenceEquals(Data, other.Data);
+    public bool Equals(MetadataArray other)
+    {
+        if (Data is null && other.Data is null)
+        {
+            return true;
+        }
+
+        if (Data is null || other.Data is null)
+        {
+            return false;
+        }
+
+        return Data.Equals(other.Data);
+    }
 
     public override bool Equals(object? obj) => obj is MetadataArray other && Equals(other);
 
