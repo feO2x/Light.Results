@@ -124,4 +124,88 @@ public sealed class ErrorsAdditionalTests
 
         list.Should().ContainSingle();
     }
+
+    [Fact]
+    public void GetHashCode_DefaultErrors_ShouldReturnZero()
+    {
+        var errors = default(Errors);
+
+        errors.GetHashCode().Should().Be(0);
+    }
+
+    [Fact]
+    public void GetHashCode_SingleError_ShouldReturnConsistentValue()
+    {
+        var error = new Error { Message = "Test" };
+        var errors = new Errors(error);
+
+        var hash1 = errors.GetHashCode();
+        var hash2 = errors.GetHashCode();
+
+        hash1.Should().Be(hash2);
+    }
+
+    [Fact]
+    public void GetHashCode_MultipleErrors_ShouldReturnConsistentValue()
+    {
+        var errors = new Errors(new[] { new Error { Message = "E1" }, new Error { Message = "E2" } });
+
+        var hash1 = errors.GetHashCode();
+        var hash2 = errors.GetHashCode();
+
+        hash1.Should().Be(hash2);
+    }
+
+    [Fact]
+    public void GetHashCode_DifferentErrors_ShouldReturnDifferentValues()
+    {
+        var errors1 = new Errors(new Error { Message = "E1" });
+        var errors2 = new Errors(new Error { Message = "E2" });
+
+        var hash1 = errors1.GetHashCode();
+        var hash2 = errors2.GetHashCode();
+
+        hash1.Should().NotBe(hash2);
+    }
+
+    [Fact]
+    public void Constructor_SingleError_WithDefaultInstance_ShouldThrow()
+    {
+        var act = () => new Errors(default(Error));
+
+        act.Should().Throw<ArgumentException>()
+           .WithMessage("*must not be default instance*")
+           .WithParameterName("singleError");
+    }
+
+    [Fact]
+    public void Constructor_ReadOnlyMemory_WithSingleDefaultError_ShouldThrow()
+    {
+        var act = () => new Errors(new[] { default(Error) }.AsMemory());
+
+        act.Should().Throw<ArgumentException>()
+           .WithMessage("*single error*must not be the default instance*")
+           .WithParameterName("manyErrors");
+    }
+
+    [Fact]
+    public void Constructor_ReadOnlyMemory_WithDefaultErrorInMiddle_ShouldThrow()
+    {
+        var act = () => new Errors(
+            new[] { new Error { Message = "E1" }, default(Error), new Error { Message = "E3" } }.AsMemory()
+        );
+
+        act.Should().Throw<ArgumentException>()
+           .WithMessage("*error at index 1*must not be the default instance*")
+           .WithParameterName("manyErrors");
+    }
+
+    [Fact]
+    public void Equals_Object_WithNonErrors_ShouldReturnFalse()
+    {
+        var errors = new Errors(new Error { Message = "Test" });
+
+        // ReSharper disable once SuspiciousTypeConversion.Global -- OK in test scenario
+        errors.Equals("not errors").Should().BeFalse();
+    }
 }

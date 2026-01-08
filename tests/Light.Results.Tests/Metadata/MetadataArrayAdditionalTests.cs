@@ -195,4 +195,53 @@ public sealed class MetadataArrayAdditionalTests
         span[1].Should().Be(MetadataValue.FromInt64(2));
         span[2].Should().Be(MetadataValue.FromInt64(3));
     }
+
+    [Fact]
+    public void GetHashCode_WithMultipleValues_ShouldReturnConsistentValue()
+    {
+        var array = MetadataArray.Create(1, 2, 3, 4, 5);
+
+        var hash1 = array.GetHashCode();
+        var hash2 = array.GetHashCode();
+
+        hash1.Should().Be(hash2);
+    }
+
+    [Fact]
+    public void GetHashCode_EqualArrays_ShouldReturnSameHash()
+    {
+        var array1 = MetadataArray.Create(1, 2, 3);
+        var array2 = MetadataArray.Create(1, 2, 3);
+
+        array1.GetHashCode().Should().Be(array2.GetHashCode());
+    }
+
+    [Fact]
+    public void Indexer_WithNegativeIndex_ShouldThrow()
+    {
+        var array = MetadataArray.Create(1, 2, 3);
+
+        var act = () => array[-1];
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+           .WithParameterName("index");
+    }
+
+    [Fact]
+    public void Equals_WithDifferentLengths_ShouldReturnFalse()
+    {
+        var array1 = MetadataArray.Create(1, 2);
+        var array2 = MetadataArray.Create(1, 2, 3);
+
+        array1.Equals(array2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_WithDifferentValues_ShouldReturnFalse()
+    {
+        var array1 = MetadataArray.Create(1, 2, 3);
+        var array2 = MetadataArray.Create(1, 2, 99);
+
+        array1.Equals(array2).Should().BeFalse();
+    }
 }

@@ -374,4 +374,106 @@ public sealed class MetadataObjectAdditionalTests
         act.Should().Throw<ArgumentException>()
            .WithMessage("*Duplicate key*");
     }
+
+    [Fact]
+    public void GetHashCode_WithMultipleEntries_ShouldReturnConsistentValue()
+    {
+        var obj = MetadataObject.Create(("key1", 1), ("key2", 2), ("key3", 3));
+
+        var hash1 = obj.GetHashCode();
+        var hash2 = obj.GetHashCode();
+
+        hash1.Should().Be(hash2);
+    }
+
+    [Fact]
+    public void GetHashCode_EqualObjects_ShouldReturnSameHash()
+    {
+        var obj1 = MetadataObject.Create(("a", 1), ("b", 2));
+        var obj2 = MetadataObject.Create(("a", 1), ("b", 2));
+
+        obj1.GetHashCode().Should().Be(obj2.GetHashCode());
+    }
+
+    [Fact]
+    public void TryGetValue_WithLargeObject_ShouldUseDictionaryLookup()
+    {
+        var obj = MetadataObject.Create(
+            ("key0", 0),
+            ("key1", 1),
+            ("key2", 2),
+            ("key3", 3),
+            ("key4", 4),
+            ("key5", 5),
+            ("key6", 6),
+            ("key7", 7),
+            ("key8", 8),
+            ("key9", 9)
+        );
+
+        var result = obj.TryGetValue("key5", out var value);
+
+        result.Should().BeTrue();
+        value.Should().Be(MetadataValue.FromInt64(5));
+    }
+
+    [Fact]
+    public void TryGetValue_WithLargeObject_MissingKey_ShouldReturnFalse()
+    {
+        var obj = MetadataObject.Create(
+            ("key0", 0),
+            ("key1", 1),
+            ("key2", 2),
+            ("key3", 3),
+            ("key4", 4),
+            ("key5", 5),
+            ("key6", 6),
+            ("key7", 7),
+            ("key8", 8),
+            ("key9", 9)
+        );
+
+        var result = obj.TryGetValue("missing", out var value);
+
+        result.Should().BeFalse();
+        value.Should().Be(default(MetadataValue));
+    }
+
+    [Fact]
+    public void ContainsKey_WithLargeObject_ShouldUseDictionaryLookup()
+    {
+        var obj = MetadataObject.Create(
+            ("key0", 0),
+            ("key1", 1),
+            ("key2", 2),
+            ("key3", 3),
+            ("key4", 4),
+            ("key5", 5),
+            ("key6", 6),
+            ("key7", 7),
+            ("key8", 8),
+            ("key9", 9)
+        );
+
+        obj.ContainsKey("key7").Should().BeTrue();
+        obj.ContainsKey("missing").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_WithDifferentKeysSameCount_ShouldReturnFalse()
+    {
+        var obj1 = MetadataObject.Create(("a", 1), ("b", 2));
+        var obj2 = MetadataObject.Create(("c", 1), ("d", 2));
+
+        obj1.Equals(obj2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_WithDifferentValuesSameKeys_ShouldReturnFalse()
+    {
+        var obj1 = MetadataObject.Create(("a", 1), ("b", 2));
+        var obj2 = MetadataObject.Create(("a", 1), ("b", 99));
+
+        obj1.Equals(obj2).Should().BeFalse();
+    }
 }
