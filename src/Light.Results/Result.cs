@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -10,9 +11,8 @@ namespace Light.Results;
 /// Represents either a successful value of <typeparamref name="T" /> or one or more errors.
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result<T>
+public readonly struct Result<T> : IEquatable<Result<T>>
 {
-    // Field order optimized to reduce padding: reference types first, then value types
     private readonly Errors _errors;
     private readonly MetadataObject? _metadata;
     private readonly T? _value;
@@ -52,6 +52,8 @@ public readonly struct Result<T>
     /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
     public MetadataObject? Metadata => _metadata;
 
+    public string DebuggerDisplay => IsSuccess ? $"Ok({Value})" : $"Fail({_errors.Count} error(s))";
+
     public static Result<T> Ok(T value) => new (value);
 
     public static Result<T> Ok(T value, MetadataObject metadata) => new (value, metadata);
@@ -72,21 +74,25 @@ public readonly struct Result<T>
             return Result<TOut>.Fail(_errors, _metadata);
         }
 
-        var inner = bind(Value);
+        var newResult = bind(Value);
+
         // Merge metadata from this result into the bound result using MergeIfNeeded
-        var merged = MetadataObjectExtensions.MergeIfNeeded(inner._metadata, _metadata);
+        var mergedMetadata = MetadataObjectExtensions.MergeIfNeeded(newResult._metadata, _metadata);
+
         // Skip creating new result if metadata didn't change
-        if (merged is null && inner._metadata is null)
+        if (mergedMetadata is null && newResult._metadata is null)
         {
-            return inner;
+            return newResult;
         }
 
-        if (merged is not null && inner._metadata is not null && merged.Value == inner._metadata.Value)
+        if (mergedMetadata is not null &&
+            newResult._metadata is not null &&
+            mergedMetadata.Value == newResult._metadata.Value)
         {
-            return inner;
+            return newResult;
         }
 
-        return inner.WithMetadata(merged);
+        return newResult.WithMetadata(mergedMetadata);
     }
 
     /// <summary>Executes an action on success and returns the same result.</summary>
@@ -132,11 +138,57 @@ public readonly struct Result<T>
     public override string ToString() =>
         IsSuccess ? $"Ok({Value})" : $"Fail({string.Join(", ", _errors.Select(e => e.Message))})";
 
-    private string DebuggerDisplay => IsSuccess ? $"Ok({Value})" : $"Fail({_errors.Count} error(s))";
+    public bool Equals(Result<T> other) => Equals(other, compareMetadata: true, valueComparer: null);
+
+    public bool Equals(Result<T> other, bool compareMetadata, IEqualityComparer<T?>? valueComparer = null)
+    {
+        valueComparer ??= EqualityComparer<T?>.Default;
+
+        if (!_errors.Equals(other._errors))
+        {
+            return false;
+        }
+
+        if (!valueComparer.Equals(_value, other._value))
+        {
+            return false;
+        }
+
+        if (compareMetadata)
+        {
+            return _metadata is null ?
+                other._metadata is null :
+                other._metadata is not null && _metadata.Equals(other._metadata);
+        }
+
+        return true;
+    }
+
+    public override bool Equals(object? obj) => obj is Result<T> other && Equals(other);
+
+    public override int GetHashCode() => GetHashCode(includeMetadata: true);
+
+    public int GetHashCode(bool includeMetadata, IEqualityComparer<T?>? equalityComparer = null)
+    {
+        equalityComparer ??= EqualityComparer<T?>.Default;
+        var hash = new HashCode();
+        hash.Add(_errors);
+        hash.Add(_value, equalityComparer);
+        if (_metadata is not null && includeMetadata)
+        {
+            hash.Add(_metadata);
+        }
+
+        return hash.ToHashCode();
+    }
 
     // Convenience implicit conversions
-    public static implicit operator Result<T>(T value) => Ok(value);
+    public static implicit operator Result<T>(T value) => new (value);
     public static implicit operator Result<T>(Error error) => Fail(error);
+    public static implicit operator Result<T>(Errors errors) => new (errors);
+
+    public static bool operator ==(Result<T> x, Result<T> y) => x.Equals(y);
+    public static bool operator !=(Result<T> x, Result<T> y) => !(x == y);
 
 
     /// <summary>Creates a new result with the specified metadata.</summary>
@@ -184,14 +236,19 @@ public readonly struct Result<T>
 /// <summary>
 /// Non-generic convenience result (success/failure only).
 /// </summary>
-public readonly struct Result
+[DebuggerDisplay("{DebuggerDisplay,nq}")]
+public readonly struct Result : IEquatable<Result>
 {
     private readonly Result<Unit> _inner;
+
+    public Result() : this(Result<Unit>.Ok(Unit.Value)) { }
     private Result(Result<Unit> inner) => _inner = inner;
 
     public bool IsSuccess => _inner.IsSuccess;
     public bool IsFailure => _inner.IsFailure;
     public Errors Errors => _inner.Errors;
+    public Error FirstError => _inner.FirstError;
+    public string DebuggerDisplay => _inner.DebuggerDisplay;
 
     /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
     public MetadataObject? Metadata => _inner.Metadata;
@@ -214,4 +271,17 @@ public readonly struct Result
         MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
     ) =>
         new (_inner.MergeMetadata(other, strategy));
+
+    public bool Equals(Result other) => _inner.Equals(other._inner);
+
+    public bool Equals(Result other, bool compareMetadata) => _inner.Equals(other._inner, compareMetadata);
+
+    public override bool Equals(object? obj) => obj is Result other && _inner.Equals(other._inner);
+
+    public override int GetHashCode() => _inner.GetHashCode();
+
+    public int GetHashCode(bool includeMetadata) => _inner.GetHashCode(includeMetadata);
+
+    public static bool operator ==(Result x, Result y) => x.Equals(y);
+    public static bool operator !=(Result x, Result y) => !(x == y);
 }
