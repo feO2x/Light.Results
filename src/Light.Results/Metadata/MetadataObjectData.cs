@@ -11,10 +11,10 @@ internal sealed class MetadataObjectData : IEquatable<MetadataObjectData>
 {
     private const int DictionaryThreshold = 8;
 
-    private readonly MetadataEntry[] _entries;
+    private readonly KeyValuePair<string, MetadataValue>[] _entries;
     private Dictionary<string, int>? _indexLookup;
 
-    internal MetadataObjectData(MetadataEntry[] entries)
+    internal MetadataObjectData(KeyValuePair<string, MetadataValue>[] entries)
     {
         _entries = entries ?? throw new ArgumentNullException(nameof(entries));
     }
@@ -50,7 +50,7 @@ internal sealed class MetadataObjectData : IEquatable<MetadataObjectData>
         return true;
     }
 
-    public ref readonly MetadataEntry GetEntry(int index)
+    public ref readonly KeyValuePair<string, MetadataValue> GetEntry(int index)
     {
         return ref _entries[index];
     }
@@ -112,7 +112,7 @@ internal sealed class MetadataObjectData : IEquatable<MetadataObjectData>
         return _indexLookup.TryGetValue(key, out var index) ? index : -1;
     }
 
-    public MetadataEntry[] GetEntries() => _entries;
+    public KeyValuePair<string, MetadataValue>[] GetEntries() => _entries;
 
     public override bool Equals(object? obj) => Equals(obj as MetadataObjectData);
 

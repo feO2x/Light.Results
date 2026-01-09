@@ -167,12 +167,12 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
             return Empty;
         }
 
-        var entries = new MetadataEntry[properties.Length];
+        var entries = new KeyValuePair<string, MetadataValue>[properties.Length];
 
         for (var i = 0; i < properties.Length; i++)
         {
             var key = properties[i].Key ?? throw new ArgumentNullException(nameof(properties), "Key cannot be null.");
-            entries[i] = new MetadataEntry(key, properties[i].Value);
+            entries[i] = new KeyValuePair<string, MetadataValue>(key, properties[i].Value);
         }
 
         // Sort by key for deterministic ordering
@@ -221,7 +221,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public struct Enumerator : IEnumerator<KeyValuePair<string, MetadataValue>>
     {
-        private readonly MetadataEntry[]? _entries;
+        private readonly KeyValuePair<string, MetadataValue>[]? _entries;
         private readonly int _count;
         private int _index;
 
@@ -245,8 +245,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
         {
             get
             {
-                ref readonly var entry = ref _entries![_index];
-                return new KeyValuePair<string, MetadataValue>(entry.Key, entry.Value);
+                return _entries![_index];
             }
         }
 

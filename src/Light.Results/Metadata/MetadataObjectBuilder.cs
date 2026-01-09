@@ -11,7 +11,7 @@ public struct MetadataObjectBuilder : IDisposable
 {
     private const int DefaultCapacity = 4;
 
-    private MetadataEntry[]? _entries;
+    private KeyValuePair<string, MetadataValue>[]? _entries;
     private bool _built;
 
     public int Count { get; private set; }
@@ -21,7 +21,7 @@ public struct MetadataObjectBuilder : IDisposable
         var actualCapacity = Math.Max(capacity, DefaultCapacity);
         var builder = new MetadataObjectBuilder
         {
-            _entries = ArrayPool<MetadataEntry>.Shared.Rent(actualCapacity),
+            _entries = ArrayPool<KeyValuePair<string, MetadataValue>>.Shared.Rent(actualCapacity),
             Count = 0,
             _built = false
         };
@@ -68,7 +68,7 @@ public struct MetadataObjectBuilder : IDisposable
             Array.Copy(_entries!, insertIndex, _entries!, insertIndex + 1, Count - insertIndex);
         }
 
-        _entries![insertIndex] = new MetadataEntry(key, value);
+        _entries![insertIndex] = new KeyValuePair<string, MetadataValue>(key, value);
         Count++;
     }
 
@@ -115,7 +115,7 @@ public struct MetadataObjectBuilder : IDisposable
             throw new KeyNotFoundException($"Key '{key}' not found.");
         }
 
-        _entries![index] = new MetadataEntry(key, value);
+        _entries![index] = new KeyValuePair<string, MetadataValue>(key, value);
     }
 
     public void AddOrReplace(string key, MetadataValue value)
@@ -132,7 +132,7 @@ public struct MetadataObjectBuilder : IDisposable
         {
             // Key exists, replace value
             var existingIndex = ~insertIndex;
-            _entries![existingIndex] = new MetadataEntry(key, value);
+            _entries![existingIndex] = new KeyValuePair<string, MetadataValue>(key, value);
             return;
         }
 
@@ -144,7 +144,7 @@ public struct MetadataObjectBuilder : IDisposable
             Array.Copy(_entries!, insertIndex, _entries!, insertIndex + 1, Count - insertIndex);
         }
 
-        _entries![insertIndex] = new MetadataEntry(key, value);
+        _entries![insertIndex] = new KeyValuePair<string, MetadataValue>(key, value);
         Count++;
     }
 
@@ -159,7 +159,7 @@ public struct MetadataObjectBuilder : IDisposable
             return MetadataObject.Empty;
         }
 
-        var entries = new MetadataEntry[Count];
+        var entries = new KeyValuePair<string, MetadataValue>[Count];
         Array.Copy(_entries!, entries, Count);
 
         // Entries are already sorted due to sorted insertion in Add/AddOrReplace
@@ -184,18 +184,18 @@ public struct MetadataObjectBuilder : IDisposable
             if (_entries is null)
             {
                 var capacity = Math.Max(required, DefaultCapacity);
-                _entries = ArrayPool<MetadataEntry>.Shared.Rent(capacity);
+                _entries = ArrayPool<KeyValuePair<string, MetadataValue>>.Shared.Rent(capacity);
             }
 
             return;
         }
 
         var newCapacity = Math.Max(_entries.Length * 2, required);
-        var newEntries = ArrayPool<MetadataEntry>.Shared.Rent(newCapacity);
+        var newEntries = ArrayPool<KeyValuePair<string, MetadataValue>>.Shared.Rent(newCapacity);
 
         Array.Copy(_entries, newEntries, Count);
 
-        ArrayPool<MetadataEntry>.Shared.Return(_entries, clearArray: true);
+        ArrayPool<KeyValuePair<string, MetadataValue>>.Shared.Return(_entries, clearArray: true);
 
         _entries = newEntries;
     }
@@ -204,7 +204,7 @@ public struct MetadataObjectBuilder : IDisposable
     {
         if (_entries is not null)
         {
-            ArrayPool<MetadataEntry>.Shared.Return(_entries, clearArray: true);
+            ArrayPool<KeyValuePair<string, MetadataValue>>.Shared.Return(_entries, clearArray: true);
             _entries = null;
         }
     }
