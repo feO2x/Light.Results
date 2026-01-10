@@ -10,7 +10,7 @@ public sealed class GenericResultTests
     public void Map_OnFailure_ShouldPreserveErrorsAndMetadata()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(metadata);
+        var result = Result<int>.Fail(new Error { Message = "Error" }).ReplaceMetadata(metadata);
 
         var mapped = result.Map(x => x.ToString());
 
@@ -37,7 +37,7 @@ public sealed class GenericResultTests
     public void Bind_OnFailure_ShouldPreserveErrorsAndMetadata()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(metadata);
+        var result = Result<int>.Fail(new Error { Message = "Error" }).ReplaceMetadata(metadata);
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
@@ -62,7 +62,7 @@ public sealed class GenericResultTests
     public void Bind_OnSuccess_WithMetadataOnOuter_ShouldSetMetadataOnInner()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Ok(42).WithMetadata(metadata);
+        var result = Result<int>.Ok(42).ReplaceMetadata(metadata);
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
@@ -76,9 +76,9 @@ public sealed class GenericResultTests
     {
         var outerMeta = MetadataObject.Create(("outer", "value"));
         var innerMeta = MetadataObject.Create(("inner", "value"));
-        var result = Result<int>.Ok(42).WithMetadata(outerMeta);
+        var result = Result<int>.Ok(42).ReplaceMetadata(outerMeta);
 
-        var bound = result.Bind(x => Result<string>.Ok(x.ToString()).WithMetadata(innerMeta));
+        var bound = result.Bind(x => Result<string>.Ok(x.ToString()).ReplaceMetadata(innerMeta));
 
         bound.IsValid.Should().BeTrue();
         bound.Metadata.Should().NotBeNull();
@@ -153,7 +153,7 @@ public sealed class GenericResultTests
     [Fact]
     public void ImplicitConversion_FromValue_ShouldCreateSuccess()
     {
-        Result<int> result = 42;
+        var result = new Result<int>(42);
 
         result.IsValid.Should().BeTrue();
         result.Value.Should().Be(42);
@@ -162,7 +162,7 @@ public sealed class GenericResultTests
     [Fact]
     public void ImplicitConversion_FromError_ShouldCreateFailure()
     {
-        Result<int> result = new Error { Message = "Error" };
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         result.IsValid.Should().BeFalse();
     }
@@ -199,7 +199,7 @@ public sealed class GenericResultTests
         var metadata = MetadataObject.Create(("key", "value"));
         var result = Result<int>.Fail(new Error { Message = "Error" });
 
-        var withMeta = result.WithMetadata(metadata);
+        var withMeta = result.ReplaceMetadata(metadata);
 
         withMeta.IsValid.Should().BeFalse();
         withMeta.Metadata.Should().NotBeNull();

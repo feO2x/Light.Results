@@ -26,4 +26,35 @@ public sealed class ResultAdditionalTests
         act.Should().Throw<InvalidOperationException>()
            .WithMessage("*Cannot access errors on a successful Result*");
     }
+
+    [Fact]
+    public void DebuggerDisplay_OnFailureWith3Errors_ShouldReturnNumberOfErrors()
+    {
+        var errors = new Error[]
+        {
+            new () { Message = "Error 1" },
+            new () { Message = "Error 2" },
+            new () { Message = "Error 3" }
+        };
+        var result = Result<string>.Fail(errors);
+
+        result.DebuggerDisplay.Should().Be("Fail(3 errors)");
+    }
+
+    [Fact]
+    public void DebuggerDisplay_OnFailureWithSingleError_ShouldReturnSingleErrorMessage()
+    {
+        var error = new Error { Message = "Failed" };
+        var result = Result<string>.Fail(error);
+
+        result.DebuggerDisplay.Should().Be($"Fail(single error: '{error.Message}')");
+    }
+
+    [Fact]
+    public void DebuggerDisplay_OnSuccess_ShouldReturnValue()
+    {
+        var result = Result<string>.Ok("Success");
+
+        result.DebuggerDisplay.Should().Be("OK('Success')");
+    }
 }

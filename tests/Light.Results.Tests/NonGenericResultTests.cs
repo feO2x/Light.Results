@@ -48,7 +48,7 @@ public sealed class NonGenericResultTests
         var metadata = MetadataObject.Create(("key", "value"));
         var result = Result.Ok();
 
-        var withMeta = result.WithMetadata(metadata);
+        var withMeta = result.ReplaceMetadata(metadata);
 
         withMeta.Metadata.Should().NotBeNull();
         withMeta.Metadata!.Value.Should().Equal(metadata);
@@ -57,7 +57,7 @@ public sealed class NonGenericResultTests
     [Fact]
     public void MergeMetadata_ShouldMergeCorrectly()
     {
-        var result = Result.Ok().WithMetadata(("a", 1));
+        var result = Result.Ok().MergeMetadata(("a", 1));
         var additional = MetadataObject.Create(("b", 2));
 
         var merged = result.MergeMetadata(additional);
@@ -69,7 +69,7 @@ public sealed class NonGenericResultTests
     [Fact]
     public void MergeMetadata_WithStrategy_ShouldUseStrategy()
     {
-        var result = Result.Ok().WithMetadata(("a", 1));
+        var result = Result.Ok().MergeMetadata(("a", 1));
         var additional = MetadataObject.Create(("a", 2));
 
         var merged = result.MergeMetadata(additional, MetadataMergeStrategy.PreserveExisting);

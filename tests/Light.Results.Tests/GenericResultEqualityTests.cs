@@ -240,7 +240,7 @@ public sealed class GenericResultEqualityTests
     public void ImplicitConversion_FromErrors_ShouldCreateFailure()
     {
         var errors = new Errors(new Error { Message = "Error" });
-        Result<int> result = errors;
+        var result = new Result<int>(errors);
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Equal(errors);

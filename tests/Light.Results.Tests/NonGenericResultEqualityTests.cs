@@ -220,15 +220,29 @@ public sealed class NonGenericResultEqualityTests
     {
         var result = Result.Ok();
 
-        result.DebuggerDisplay.Should().Contain("Ok");
+        result.DebuggerDisplay.Should().Be("OK");
     }
 
     [Fact]
-    public void DebuggerDisplay_OnFailure_ShouldShowFailWithCount()
+    public void DebuggerDisplay_OnFailureWith1Error_ShouldShowSingleErrorMessage()
     {
-        var result = Result.Fail(new Error { Message = "Error" });
+        var result = Result.Fail(new Error { Message = "Something bad happened" });
 
-        result.DebuggerDisplay.Should().Contain("Fail");
-        result.DebuggerDisplay.Should().Contain("1");
+        result.DebuggerDisplay.Should().Be("Fail(single error: 'Something bad happened')");
+    }
+
+    [Fact]
+    public void DebuggerDisplay_OnFailureWithSeveralErrors_ShouldShowErrorCount()
+    {
+        var errors = new Error[]
+        {
+            new () { Message = "Error 1" },
+            new () { Message = "Error 2" },
+            new () { Message = "Error 3" }
+        };
+
+        var result = Result.Fail(errors);
+
+        result.DebuggerDisplay.Should().Be("Fail(3 errors)");
     }
 }

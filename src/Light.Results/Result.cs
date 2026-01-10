@@ -14,7 +14,6 @@ namespace Light.Results;
 public readonly struct Result<T> : IEquatable<Result<T>>
 {
     private readonly Errors _errors;
-    private readonly MetadataObject? _metadata;
     private readonly T? _value;
 
     /// <summary>
@@ -28,7 +27,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     {
         _value = value ?? throw new ArgumentNullException(nameof(value));
         _errors = default;
-        _metadata = metadata;
+        Metadata = metadata;
     }
 
     /// <summary>
@@ -49,7 +48,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
 
         _value = default;
         _errors = errors;
-        _metadata = metadata;
+        Metadata = metadata;
     }
 
     /// <summary>
@@ -61,64 +60,106 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     /// <summary>
     /// Gets the successful value. Throws if this is a failure.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when this result contains errors.</exception>
     public T Value =>
         IsValid ? _value : throw new InvalidOperationException("Cannot access Value on a failed Result.");
 
     /// <summary>Returns the errors collection (empty struct on success).</summary>
     public Errors Errors => _errors;
 
-    /// <summary>Returns the first error (or throws if success).</summary>
+    /// <summary>Returns the first error (or throws if result contains no errors).</summary>
+    /// <exception cref="InvalidOperationException">Thrown when this result contains no errors.</exception>
     public Error FirstError => !IsValid ?
         _errors.First :
         throw new InvalidOperationException("Cannot access errors on a successful Result.");
 
-    /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
-    public MetadataObject? Metadata => _metadata;
+    /// <summary>Gets the result-level metadata.</summary>
+    public MetadataObject? Metadata { get; }
 
-    public string DebuggerDisplay => IsValid ? $"Ok({Value})" : $"Fail({_errors.Count} error(s))";
+    /// <summary>
+    /// Provides a string representation for the debugger.
+    /// </summary>
+    public string DebuggerDisplay =>
+        IsValid ? $"OK('{Value}')" :
+            _errors.Count is 1 ?
+                $"Fail(single error: '{FirstError.Message}')" :
+                $"Fail({_errors.Count.ToString()} errors)";
 
-    public static Result<T> Ok(T value) => new (value);
+    /// <summary>
+    /// Creates a successful result with the specified value and optional metadata.
+    /// </summary>
+    /// <param name="value">The value of the successful result.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The successful result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value" /> is null.</exception>
+    public static Result<T> Ok(T value, MetadataObject? metadata = null) => new (value, metadata);
 
-    public static Result<T> Ok(T value, MetadataObject metadata) => new (value, metadata);
+    /// <summary>
+    /// Creates a failed result with a single error and optional metadata.
+    /// </summary>
+    /// <param name="singleError">The error of the failed result.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The failed result.</returns>
+    public static Result<T> Fail(Error singleError, MetadataObject? metadata = null) =>
+        new (new Errors(singleError), metadata);
 
-    public static Result<T> Fail(Error singleError) => new (new Errors(singleError));
+    /// <summary>
+    /// Creates a failed result with multiple errors and optional metadata.
+    /// </summary>
+    /// <param name="manyErrors">The errors of the failed result.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The failed result.</returns>
+    public static Result<T> Fail(ReadOnlyMemory<Error> manyErrors, MetadataObject? metadata = null) =>
+        new (new Errors(manyErrors), metadata);
 
-    public static Result<T> Fail(ReadOnlyMemory<Error> manyErrors) => new (new Errors(manyErrors));
+    /// <summary>
+    /// Creates a failed result with the specified errors and optional metadata.
+    /// </summary>
+    /// <param name="errors">The errors of the failed result.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The failed result.</returns>
+    public static Result<T> Fail(Errors errors, MetadataObject? metadata = null) => new (errors, metadata);
 
-    /// <summary>Transforms the successful value.</summary>
+    /// <summary>
+    /// Maps the value of this result to a new result using the specified function.
+    /// </summary>
+    /// <typeparam name="TOut">The type of the output value.</typeparam>
+    /// <param name="map">The function to map the value.</param>
+    /// <returns>A new result with the mapped value if this result is valid; otherwise, a failed result with the same errors.</returns>
     public Result<TOut> Map<TOut>(Func<T, TOut> map) =>
-        IsValid ? Result<TOut>.Ok(map(Value), _metadata) : Result<TOut>.Fail(_errors, _metadata);
+        IsValid ? Result<TOut>.Ok(map(Value), Metadata) : Result<TOut>.Fail(_errors, Metadata);
 
-    /// <summary>Chains another result-returning function.</summary>
-    public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> bind)
+    /// <summary>
+    /// Binds the value of this result to a new result using the specified function. The metadata from the new result
+    /// and this instance will be merged.
+    /// </summary>
+    /// <typeparam name="TOut">The type of the output value.</typeparam>
+    /// <param name="bind">The function to bind the value to a new result.</param>
+    /// <param name="metadataMergeStrategy">The strategy to use when merging metadata.</param>
+    /// <returns>The result returned by the bind function if this result is valid; otherwise, a failed result with the same errors.</returns>
+    public Result<TOut> Bind<TOut>(
+        Func<T, Result<TOut>> bind,
+        MetadataMergeStrategy metadataMergeStrategy = MetadataMergeStrategy.AddOrReplace
+    )
     {
         if (!IsValid)
         {
-            return Result<TOut>.Fail(_errors, _metadata);
+            return Result<TOut>.Fail(_errors, Metadata);
         }
 
         var newResult = bind(Value);
 
         // Merge metadata from this result into the bound result using MergeIfNeeded
-        var mergedMetadata = MetadataObjectExtensions.MergeIfNeeded(newResult._metadata, _metadata);
-
-        // Skip creating new result if metadata didn't change
-        if (mergedMetadata is null && newResult._metadata is null)
-        {
-            return newResult;
-        }
-
-        if (mergedMetadata is not null &&
-            newResult._metadata is not null &&
-            mergedMetadata.Value == newResult._metadata.Value)
-        {
-            return newResult;
-        }
-
-        return newResult.WithMetadata(mergedMetadata);
+        var mergedMetadata =
+            MetadataObjectExtensions.MergeIfNeeded(Metadata, newResult.Metadata, metadataMergeStrategy);
+        return mergedMetadata is null ? newResult : newResult.ReplaceMetadata(mergedMetadata.Value);
     }
 
-    /// <summary>Executes an action on success and returns the same result.</summary>
+    /// <summary>
+    /// Executes the specified action on the value if this result is valid.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <returns>This result instance.</returns>
     public Result<T> Tap(Action<T> action)
     {
         if (IsValid)
@@ -129,7 +170,11 @@ public readonly struct Result<T> : IEquatable<Result<T>>
         return this;
     }
 
-    /// <summary>Executes an action on failure and returns the same result.</summary>
+    /// <summary>
+    /// Executes the specified action on the errors if this result is invalid.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <returns>This result instance.</returns>
     public Result<T> TapError(Action<Errors> action)
     {
         if (!IsValid)
@@ -141,16 +186,16 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     }
 
     /// <summary>
-    /// Attempts to get the value if this is a success result.
+    /// Attempts to get the value if this is a valid result.
     /// </summary>
     /// <param name="value">The value if successful; otherwise, default.</param>
-    /// <returns>True if successful; false if this is a failure result.</returns>
+    /// <returns>True if result is valid; false if this is an erroneous result.</returns>
     [MemberNotNullWhen(true, nameof(Value))]
     public bool TryGetValue([MaybeNullWhen(false)] out T value)
     {
         if (IsValid)
         {
-            value = Value;
+            value = _value;
             return true;
         }
 
@@ -158,11 +203,27 @@ public readonly struct Result<T> : IEquatable<Result<T>>
         return false;
     }
 
+    /// <summary>
+    /// Returns a string representation of this result.
+    /// </summary>
     public override string ToString() =>
         IsValid ? $"Ok({Value})" : $"Fail({string.Join(", ", _errors.Select(e => e.Message))})";
 
+    /// <summary>
+    /// Determines whether this result is equal to another result. This method compares metadata and uses the
+    /// default Equality Comparer for values.
+    /// </summary>
+    /// <param name="other">The other result to compare.</param>
+    /// <returns>True if the results are equal; otherwise, false.</returns>
     public bool Equals(Result<T> other) => Equals(other, compareMetadata: true, valueComparer: null);
 
+    /// <summary>
+    /// Determines whether this result is equal to another result with options to compare metadata and specify a value comparer.
+    /// </summary>
+    /// <param name="other">The other result to compare.</param>
+    /// <param name="compareMetadata">Whether to compare metadata.</param>
+    /// <param name="valueComparer">The optional equality comparer for values.</param>
+    /// <returns>True if the results are equal; otherwise, false.</returns>
     public bool Equals(Result<T> other, bool compareMetadata, IEqualityComparer<T?>? valueComparer = null)
     {
         valueComparer ??= EqualityComparer<T?>.Default;
@@ -179,131 +240,248 @@ public readonly struct Result<T> : IEquatable<Result<T>>
 
         if (compareMetadata)
         {
-            return _metadata is null ?
-                other._metadata is null :
-                other._metadata is not null && _metadata.Equals(other._metadata);
+            return Metadata is null ?
+                other.Metadata is null :
+                other.Metadata is not null && Metadata.Equals(other.Metadata);
         }
 
         return true;
     }
 
+    /// <summary>
+    /// Determines whether this result is equal to the specified object.
+    /// </summary>
+    /// <param name="obj">The object to compare.</param>
+    /// <returns>True if the object is a result and is equal to this result; otherwise, false.</returns>
     public override bool Equals(object? obj) => obj is Result<T> other && Equals(other);
 
+    /// <summary>
+    /// Returns the hash code for this result.
+    /// </summary>
     public override int GetHashCode() => GetHashCode(includeMetadata: true);
 
+    /// <summary>
+    /// Returns the hash code for this result with options to include metadata and specify an equality comparer.
+    /// </summary>
+    /// <param name="includeMetadata">Whether to include metadata in the hash code calculation.</param>
+    /// <param name="equalityComparer">The optional equality comparer for values.</param>
+    /// <returns>The hash code.</returns>
     public int GetHashCode(bool includeMetadata, IEqualityComparer<T?>? equalityComparer = null)
     {
         equalityComparer ??= EqualityComparer<T?>.Default;
         var hash = new HashCode();
         hash.Add(_errors);
         hash.Add(_value, equalityComparer);
-        if (_metadata is not null && includeMetadata)
+        if (Metadata is not null && includeMetadata)
         {
-            hash.Add(_metadata);
+            hash.Add(Metadata);
         }
 
         return hash.ToHashCode();
     }
 
-    // Convenience implicit conversions
-    public static implicit operator Result<T>(T value) => new (value);
-    public static implicit operator Result<T>(Error error) => Fail(error);
-    public static implicit operator Result<T>(Errors errors) => new (errors);
-
+    /// <summary>
+    /// Determines whether two results are equal.
+    /// </summary>
     public static bool operator ==(Result<T> x, Result<T> y) => x.Equals(y);
+
+    /// <summary>
+    /// Determines whether two results are not equal.
+    /// </summary>
     public static bool operator !=(Result<T> x, Result<T> y) => !(x == y);
 
-
-    /// <summary>Creates a new result with the specified metadata.</summary>
-    public Result<T> WithMetadata(MetadataObject metadata) =>
+    /// <summary>
+    /// Creates a new instance oft his result with the metadata being replaced by the specified one.
+    /// </summary>
+    /// <param name="metadata">The metadata to use.</param>
+    /// <returns>A new result instance with the specified metadata.</returns>
+    public Result<T> ReplaceMetadata(MetadataObject metadata) =>
         IsValid ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
 
-    /// <summary>Creates a new result with the specified metadata (or clears metadata if null).</summary>
-    private Result<T> WithMetadata(MetadataObject? metadata) =>
-        IsValid ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
+    /// <summary>
+    /// Returns a new instance of this result with no metadata.
+    /// </summary>
+    public Result<T> ClearMetadata() => IsValid ? new Result<T>(Value) : new Result<T>(_errors);
 
-    /// <summary>Creates a new result with additional metadata properties.</summary>
-    public Result<T> WithMetadata(params (string Key, MetadataValue Value)[] properties)
+    /// <summary>
+    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
+    /// </summary>
+    /// <param name="properties">The metadata to merge.</param>
+    /// <returns>A new result instance with the merged metadata.</returns>
+    public Result<T> MergeMetadata(params (string Key, MetadataValue Value)[] properties)
     {
-        var newMetadata = _metadata?.With(properties) ?? MetadataObject.Create(properties);
-        return WithMetadata(newMetadata);
+        var newMetadata = Metadata?.With(properties) ?? MetadataObject.Create(properties);
+        return ReplaceMetadata(newMetadata);
     }
 
-    /// <summary>Merges the specified metadata into this result's metadata.</summary>
+    /// <summary>
+    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
+    /// </summary>
+    /// <param name="other">The metadata to merge.</param>
+    /// <param name="strategy">The merge strategy to use.</param>
     public Result<T> MergeMetadata(
         MetadataObject other,
         MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
     )
     {
-        var merged = MetadataObjectExtensions.MergeIfNeeded(_metadata, other, strategy);
-        // Skip creating new result if metadata didn't change
-        if (merged is null && _metadata is null)
-        {
-            return this;
-        }
-
-        if (merged is not null && _metadata is not null && merged.Value == _metadata.Value)
-        {
-            return this;
-        }
-
-        return WithMetadata(merged);
+        var merged = MetadataObjectExtensions.MergeIfNeeded(Metadata, other, strategy);
+        return merged is null ? this : ReplaceMetadata(merged.Value);
     }
-
-    // Allow Result<T>.Fail(_errors) reuse without re-allocating arrays.
-    private static Result<T> Fail(Errors errors, MetadataObject? metadata = null) => new (errors, metadata);
-
-    private static Result<T> Ok(T value, MetadataObject? metadata) => new (value, metadata);
 }
 
 /// <summary>
-/// Non-generic convenience result (success/failure only).
+/// <para>
+/// Represents either a successful operation or one or more errors.
+/// </para>
+/// <para>
+/// This is a convenience type for <see cref="Result{T}" /> with <see cref="Unit" /> as the value type.
+/// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public readonly struct Result : IEquatable<Result>
 {
     private readonly Result<Unit> _inner;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="Result" /> representing a successful operation.
+    /// </summary>
     public Result() : this(Result<Unit>.Ok(Unit.Value)) { }
+
     private Result(Result<Unit> inner) => _inner = inner;
 
+    /// <summary>
+    /// Gets the value indicating whether this instance is a success.
+    /// </summary>
     public bool IsValid => _inner.IsValid;
-    public Errors Errors => _inner.Errors;
-    public Error FirstError => _inner.FirstError;
-    public string DebuggerDisplay => _inner.DebuggerDisplay;
 
-    /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
+    /// <summary>Returns the errors collection (empty struct on success).</summary>
+    public Errors Errors => _inner.Errors;
+
+    /// <summary>Returns the first error (or throws if result contains no errors).</summary>
+    /// <exception cref="InvalidOperationException">Thrown when this result contains no errors.</exception>
+    public Error FirstError => _inner.FirstError;
+
+    /// <summary>
+    /// Provides a string representation for the debugger.
+    /// </summary>
+    public string DebuggerDisplay => _inner.IsValid ? "OK" : _inner.DebuggerDisplay;
+
+    /// <summary>Gets the result-level metadata.</summary>
     public MetadataObject? Metadata => _inner.Metadata;
 
-    public static Result Ok() => new (Result<Unit>.Ok(Unit.Value));
-    public static Result Ok(MetadataObject metadata) => new (Result<Unit>.Ok(Unit.Value, metadata));
-    public static Result Fail(Error error) => new (Result<Unit>.Fail(error));
-    public static Result Fail(ReadOnlyMemory<Error> errors) => new (Result<Unit>.Fail(errors));
+    /// <summary>
+    /// Creates a successful result with optional metadata.
+    /// </summary>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The successful result.</returns>
+    public static Result Ok(MetadataObject? metadata = null) => new (Result<Unit>.Ok(Unit.Value, metadata));
 
-    /// <summary>Creates a new result with the specified metadata.</summary>
-    public Result WithMetadata(MetadataObject metadata) => new (_inner.WithMetadata(metadata));
+    /// <summary>
+    /// Creates a failed result with a single error and optional metadata.
+    /// </summary>
+    /// <param name="singleError">The error of the failed result.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The failed result.</returns>
+    public static Result Fail(Error singleError, MetadataObject? metadata = null) =>
+        new (Result<Unit>.Fail(singleError, metadata));
 
-    /// <summary>Creates a new result with additional metadata properties.</summary>
-    public Result WithMetadata(params (string Key, MetadataValue Value)[] properties) =>
-        new (_inner.WithMetadata(properties));
+    /// <summary>
+    /// Creates a failed result with multiple errors and optional metadata.
+    /// </summary>
+    /// <param name="errors">The errors of the failed result.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The failed result.</returns>
+    public static Result Fail(ReadOnlyMemory<Error> errors, MetadataObject? metadata = null) =>
+        new (Result<Unit>.Fail(errors, metadata));
 
-    /// <summary>Merges the specified metadata into this result's metadata.</summary>
+    /// <summary>
+    /// Creates a failed result with the specified errors and optional metadata.
+    /// </summary>
+    /// <param name="errors">The errors of the failed result.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <returns>The failed result.</returns>
+    public static Result Fail(Errors errors, MetadataObject? metadata = null) =>
+        new (Result<Unit>.Fail(errors, metadata));
+
+    /// <summary>
+    /// Creates a new instance of this result with the metadata being replaced by the specified one.
+    /// </summary>
+    /// <param name="metadata">The metadata to use.</param>
+    /// <returns>A new result instance with the specified metadata.</returns>
+    public Result ReplaceMetadata(MetadataObject metadata) => new (_inner.ReplaceMetadata(metadata));
+
+    /// <summary>
+    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
+    /// </summary>
+    /// <param name="properties">The metadata to merge.</param>
+    /// <returns>A new result instance with the merged metadata.</returns>
+    public Result MergeMetadata(params (string Key, MetadataValue Value)[] properties) =>
+        new (_inner.MergeMetadata(properties));
+
+    /// <summary>
+    /// Executes the specified action on the errors if this result is invalid.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <returns>This result instance.</returns>
+    public Result TapError(Action<Errors> action)
+    {
+        _inner.TapError(action);
+        return this;
+    }
+
+    /// <summary>
+    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
+    /// </summary>
+    /// <param name="other">The metadata to merge.</param>
+    /// <param name="strategy">The merge strategy to use.</param>
+    /// <returns>A new result instance with the merged metadata.</returns>
     public Result MergeMetadata(
         MetadataObject other,
         MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
     ) =>
         new (_inner.MergeMetadata(other, strategy));
 
+    /// <summary>
+    /// Determines whether this result is equal to another result.
+    /// </summary>
+    /// <param name="other">The other result to compare.</param>
+    /// <returns>True if the results are equal; otherwise, false.</returns>
     public bool Equals(Result other) => _inner.Equals(other._inner);
 
+    /// <summary>
+    /// Determines whether this result is equal to another result with an option to compare metadata.
+    /// </summary>
+    /// <param name="other">The other result to compare.</param>
+    /// <param name="compareMetadata">Whether to compare metadata.</param>
+    /// <returns>True if the results are equal; otherwise, false.</returns>
     public bool Equals(Result other, bool compareMetadata) => _inner.Equals(other._inner, compareMetadata);
 
+    /// <summary>
+    /// Determines whether this result is equal to the specified object.
+    /// </summary>
+    /// <param name="obj">The object to compare.</param>
+    /// <returns>True if the object is a result and is equal to this result; otherwise, false.</returns>
     public override bool Equals(object? obj) => obj is Result other && _inner.Equals(other._inner);
 
+    /// <summary>
+    /// Returns the hash code for this result.
+    /// </summary>
     public override int GetHashCode() => _inner.GetHashCode();
 
+    /// <summary>
+    /// Returns the hash code for this result with an option to include metadata.
+    /// </summary>
+    /// <param name="includeMetadata">Whether to include metadata in the hash code calculation.</param>
+    /// <returns>The hash code.</returns>
     public int GetHashCode(bool includeMetadata) => _inner.GetHashCode(includeMetadata);
 
+    /// <summary>
+    /// Determines whether two results are equal.
+    /// </summary>
     public static bool operator ==(Result x, Result y) => x.Equals(y);
+
+    /// <summary>
+    /// Determines whether two results are not equal.
+    /// </summary>
     public static bool operator !=(Result x, Result y) => !(x == y);
 }
