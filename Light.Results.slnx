@@ -9,6 +9,7 @@
     </Folder>
     <Folder Name="/ai-plans/">
         <File Path="ai-plans\0001-metadata.md" />
+        <File Path="ai-plans\0003-result-optimization.md" />
     </Folder>
     <Folder Name="/benchmarks/">
         <Project Path="benchmarks/Benchmarks/Benchmarks.csproj" />

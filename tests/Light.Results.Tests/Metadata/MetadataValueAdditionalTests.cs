@@ -298,7 +298,7 @@ public sealed class MetadataValueAdditionalTests
     }
 
     [Fact]
-    public void Equals_Arrays_ShouldCompareByReference()
+    public void Equals_Arrays_ShouldCompareByValue()
     {
         var array1 = MetadataArray.Create(1, 2);
         var array2 = MetadataArray.Create(1, 2);
@@ -307,11 +307,11 @@ public sealed class MetadataValueAdditionalTests
         var value3 = MetadataValue.FromArray(array2);
 
         value1.Equals(value2).Should().BeTrue();
-        value1.Equals(value3).Should().BeFalse();
+        value1.Equals(value3).Should().BeTrue();
     }
 
     [Fact]
-    public void Equals_Objects_ShouldCompareByReference()
+    public void Equals_Objects_ShouldCompareByValue()
     {
         var obj1 = MetadataObject.Create(("k", "v"));
         var obj2 = MetadataObject.Create(("k", "v"));
@@ -320,6 +320,6 @@ public sealed class MetadataValueAdditionalTests
         var value3 = MetadataValue.FromObject(obj2);
 
         value1.Equals(value2).Should().BeTrue();
-        value1.Equals(value3).Should().BeFalse();
+        value1.Equals(value3).Should().BeTrue();
     }
 }

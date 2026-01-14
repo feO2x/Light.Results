@@ -5,7 +5,9 @@
 
   <ItemGroup>
     <PackageReference Include="IsExternalInit" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" />
     <PackageReference Include="Nullable" PrivateAssets="all" />
+    <PackageReference Include="RequiredMemberAttribute" PrivateAssets="all" />
     <PackageReference Include="System.Collections.Immutable" />
   </ItemGroup>
 </Project>

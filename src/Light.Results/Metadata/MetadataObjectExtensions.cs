@@ -1,5 +1,7 @@
 using System;
 
+// ReSharper disable ConvertToExtensionBlock
+
 namespace Light.Results.Metadata;
 
 /// <summary>
@@ -7,6 +9,34 @@ namespace Light.Results.Metadata;
 /// </summary>
 public static class MetadataObjectExtensions
 {
+    /// <summary>
+    /// Merges metadata only if needed, returning the existing reference when incoming is empty
+    /// or references are equal.
+    /// </summary>
+    /// <param name="existing">The existing metadata (can be null).</param>
+    /// <param name="incoming">The incoming metadata (can be null).</param>
+    /// <param name="strategy">The merge strategy to use.</param>
+    /// <returns>The merged metadata, or the existing/incoming reference if no merge is needed.</returns>
+    public static MetadataObject? MergeIfNeeded(
+        MetadataObject? existing,
+        MetadataObject? incoming,
+        MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
+    )
+    {
+        if (incoming is null || incoming.Value.Count == 0)
+        {
+            return existing;
+        }
+
+        if (existing is null || existing.Value.Count == 0)
+        {
+            return incoming;
+        }
+
+        // Check if both dictionaries contain the same content - only merge if this is not the case
+        return existing.Value == incoming.Value ? existing : existing.Value.Merge(incoming.Value, strategy);
+    }
+
     /// <summary>
     /// Merges two <see cref="MetadataObject" /> instances according to the specified strategy.
     /// </summary>
@@ -24,6 +54,12 @@ public static class MetadataObjectExtensions
         if (original.Count == 0)
         {
             return incoming;
+        }
+
+        // Skip merge if references are equal
+        if (original == incoming)
+        {
+            return original;
         }
 
         using var builder = MetadataObjectBuilder.From(original);
@@ -81,9 +117,9 @@ public static class MetadataObjectExtensions
     /// <summary>
     /// Creates a new <see cref="MetadataObject" /> with an additional property.
     /// </summary>
-    public static MetadataObject With(this MetadataObject obj, string key, MetadataValue value)
+    public static MetadataObject With(this MetadataObject metadata, string key, MetadataValue value)
     {
-        using var builder = MetadataObjectBuilder.From(obj);
+        using var builder = MetadataObjectBuilder.From(metadata);
         builder.AddOrReplace(key, value);
         return builder.Build();
     }
@@ -91,14 +127,17 @@ public static class MetadataObjectExtensions
     /// <summary>
     /// Creates a new <see cref="MetadataObject" /> with additional properties.
     /// </summary>
-    public static MetadataObject With(this MetadataObject obj, params (string Key, MetadataValue Value)[]? properties)
+    public static MetadataObject With(
+        this MetadataObject metadata,
+        params (string Key, MetadataValue Value)[]? properties
+    )
     {
         if (properties is null || properties.Length == 0)
         {
-            return obj;
+            return metadata;
         }
 
-        using var builder = MetadataObjectBuilder.From(obj);
+        using var builder = MetadataObjectBuilder.From(metadata);
         foreach (var (key, value) in properties)
         {
             builder.AddOrReplace(key, value);

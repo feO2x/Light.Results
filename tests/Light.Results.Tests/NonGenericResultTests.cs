@@ -8,27 +8,26 @@ public sealed class NonGenericResultTests
     [Fact]
     public void IsFailure_OnFailure_ShouldBeTrue()
     {
-        var result = Result.Fail(new Error("Error"));
+        var result = Result.Fail(new Error { Message = "Error" });
 
-        result.IsFailure.Should().BeTrue();
-        result.IsSuccess.Should().BeFalse();
+        result.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public void ErrorList_OnFailure_ShouldContainErrors()
+    public void Errors_OnFailure_ShouldContainErrors()
     {
-        var result = Result.Fail(new Error("Error"));
+        var result = Result.Fail(new Error { Message = "Error" });
 
-        result.ErrorList.Should().ContainSingle();
+        result.Errors.Should().ContainSingle();
     }
 
     [Fact]
     public void Fail_WithMultipleErrors_ShouldWork()
     {
-        var result = Result.Fail(new[] { new Error("E1"), new Error("E2") });
+        var result = Result.Fail(new[] { new Error { Message = "E1" }, new Error { Message = "E2" } });
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorList.Should().HaveCount(2);
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().HaveCount(2);
     }
 
     [Fact]
@@ -38,7 +37,7 @@ public sealed class NonGenericResultTests
 
         var result = Result.Ok(metadata);
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsValid.Should().BeTrue();
         result.Metadata.Should().NotBeNull();
         result.Metadata!.Value.Should().Equal(metadata);
     }
@@ -49,7 +48,7 @@ public sealed class NonGenericResultTests
         var metadata = MetadataObject.Create(("key", "value"));
         var result = Result.Ok();
 
-        var withMeta = result.WithMetadata(metadata);
+        var withMeta = result.ReplaceMetadata(metadata);
 
         withMeta.Metadata.Should().NotBeNull();
         withMeta.Metadata!.Value.Should().Equal(metadata);
@@ -58,7 +57,7 @@ public sealed class NonGenericResultTests
     [Fact]
     public void MergeMetadata_ShouldMergeCorrectly()
     {
-        var result = Result.Ok().WithMetadata(("a", 1));
+        var result = Result.Ok().MergeMetadata(("a", 1));
         var additional = MetadataObject.Create(("b", 2));
 
         var merged = result.MergeMetadata(additional);
@@ -70,7 +69,7 @@ public sealed class NonGenericResultTests
     [Fact]
     public void MergeMetadata_WithStrategy_ShouldUseStrategy()
     {
-        var result = Result.Ok().WithMetadata(("a", 1));
+        var result = Result.Ok().MergeMetadata(("a", 1));
         var additional = MetadataObject.Create(("a", 2));
 
         var merged = result.MergeMetadata(additional, MetadataMergeStrategy.PreserveExisting);

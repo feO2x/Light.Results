@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Benchmarks.ResultBenchmarks-20260109-074023</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, macOS Tahoe 26.2 (25C56) [Darwin 25.2.0]
+Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.1, 10.0.125.57005), Arm64 RyuJIT armv8.0-a
+  DefaultJob : .NET 10.0.1 (10.0.1, 10.0.125.57005), Arm64 RyuJIT armv8.0-a
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method               </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>CreateSuccess</td><td>1.8672 ns</td><td>0.0063 ns</td><td>0.0053 ns</td><td>1.8668 ns</td><td>-</td>
+</tr><tr><td>CreateFailure</td><td>7.1729 ns</td><td>0.0218 ns</td><td>0.0203 ns</td><td>7.1668 ns</td><td>-</td>
+</tr><tr><td>TryGetValue_Success</td><td>0.0000 ns</td><td>0.0000 ns</td><td>0.0000 ns</td><td>0.0000 ns</td><td>-</td>
+</tr><tr><td>TryGetValue_Failure</td><td>0.0000 ns</td><td>0.0000 ns</td><td>0.0000 ns</td><td>0.0000 ns</td><td>-</td>
+</tr><tr><td>EnumerateErrors_Single</td><td>0.3374 ns</td><td>0.0104 ns</td><td>0.0097 ns</td><td>0.3340 ns</td><td>-</td>
+</tr><tr><td>EnumerateErrors_Multiple</td><td>2.7293 ns</td><td>0.0209 ns</td><td>0.0195 ns</td><td>2.7343 ns</td><td>-</td>
+</tr><tr><td>AccessErrorByIndex_Single</td><td>3.2230 ns</td><td>0.0153 ns</td><td>0.0136 ns</td><td>3.2186 ns</td><td>-</td>
+</tr><tr><td>AccessErrorByIndex_Multiple</td><td>3.2393 ns</td><td>0.0108 ns</td><td>0.0101 ns</td><td>3.2403 ns</td><td>-</td>
+</tr><tr><td>ErrorsCount</td><td>0.0012 ns</td><td>0.0032 ns</td><td>0.0027 ns</td><td>0.0000 ns</td><td>-</td>
+</tr><tr><td>FirstError</td><td>0.9553 ns</td><td>0.0072 ns</td><td>0.0067 ns</td><td>0.9574 ns</td><td>-</td>
+</tr><tr><td>Map_Success</td><td>11.2525 ns</td><td>0.0483 ns</td><td>0.0452 ns</td><td>11.2569 ns</td><td>-</td>
+</tr><tr><td>Map_Failure</td><td>13.3766 ns</td><td>0.0740 ns</td><td>0.0692 ns</td><td>13.3557 ns</td><td>-</td>
+</tr></tbody></table>
+</body>
+</html>

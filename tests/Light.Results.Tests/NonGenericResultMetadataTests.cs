@@ -27,7 +27,7 @@ public sealed class NonGenericResultMetadataTests
     [Fact]
     public void WithMetadata_ShouldSetMetadata()
     {
-        var result = Result.Ok().WithMetadata(("key", "value"));
+        var result = Result.Ok().MergeMetadata(("key", "value"));
 
         var expected = MetadataObject.Create(("key", "value"));
         result.Metadata.Should().NotBeNull();
@@ -37,7 +37,7 @@ public sealed class NonGenericResultMetadataTests
     [Fact]
     public void MergeMetadata_ShouldCombineMetadata()
     {
-        var result = Result.Ok().WithMetadata(("a", 1));
+        var result = Result.Ok().MergeMetadata(("a", 1));
 
         var additional = MetadataObject.Create(("b", 2));
         var merged = result.MergeMetadata(additional);
@@ -51,10 +51,10 @@ public sealed class NonGenericResultMetadataTests
     [Fact]
     public void Fail_WithMetadata_ShouldPreserveMetadata()
     {
-        var result = Result.Fail(new Error("Error")).WithMetadata(("context", "failure"));
+        var result = Result.Fail(new Error { Message = "Error" }).MergeMetadata(("context", "failure"));
 
         var expected = MetadataObject.Create(("context", "failure"));
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Metadata.Should().NotBeNull();
         result.Metadata.Value.Should().Equal(expected);
     }

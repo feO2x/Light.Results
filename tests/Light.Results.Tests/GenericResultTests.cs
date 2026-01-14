@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using FluentAssertions;
 using Light.Results.Metadata;
 
@@ -12,11 +10,11 @@ public sealed class GenericResultTests
     public void Map_OnFailure_ShouldPreserveErrorsAndMetadata()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(metadata);
+        var result = Result<int>.Fail(new Error { Message = "Error" }).ReplaceMetadata(metadata);
 
         var mapped = result.Map(x => x.ToString());
 
-        mapped.IsFailure.Should().BeTrue();
+        mapped.IsValid.Should().BeFalse();
         mapped.Metadata.Should().NotBeNull();
         mapped.Metadata!.Value.Should().Equal(metadata);
     }
@@ -29,7 +27,7 @@ public sealed class GenericResultTests
 
         var mapped = result.Map(x => x * 2);
 
-        mapped.IsSuccess.Should().BeTrue();
+        mapped.IsValid.Should().BeTrue();
         mapped.Value.Should().Be(84);
         mapped.Metadata.Should().NotBeNull();
         mapped.Metadata!.Value.Should().Equal(metadata);
@@ -39,11 +37,11 @@ public sealed class GenericResultTests
     public void Bind_OnFailure_ShouldPreserveErrorsAndMetadata()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(metadata);
+        var result = Result<int>.Fail(new Error { Message = "Error" }).ReplaceMetadata(metadata);
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
-        bound.IsFailure.Should().BeTrue();
+        bound.IsValid.Should().BeFalse();
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.Should().Equal(metadata);
     }
@@ -55,7 +53,7 @@ public sealed class GenericResultTests
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Value.Should().Be("42");
         bound.Metadata.Should().BeNull();
     }
@@ -64,11 +62,11 @@ public sealed class GenericResultTests
     public void Bind_OnSuccess_WithMetadataOnOuter_ShouldSetMetadataOnInner()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Ok(42).WithMetadata(metadata);
+        var result = Result<int>.Ok(42).ReplaceMetadata(metadata);
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.Should().Equal(metadata);
     }
@@ -78,11 +76,11 @@ public sealed class GenericResultTests
     {
         var outerMeta = MetadataObject.Create(("outer", "value"));
         var innerMeta = MetadataObject.Create(("inner", "value"));
-        var result = Result<int>.Ok(42).WithMetadata(outerMeta);
+        var result = Result<int>.Ok(42).ReplaceMetadata(outerMeta);
 
-        var bound = result.Bind(x => Result<string>.Ok(x.ToString()).WithMetadata(innerMeta));
+        var bound = result.Bind(x => Result<string>.Ok(x.ToString()).ReplaceMetadata(innerMeta));
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.Count.Should().Be(2);
     }
@@ -103,7 +101,7 @@ public sealed class GenericResultTests
     public void Tap_OnFailure_ShouldNotExecuteAction()
     {
         var executed = false;
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var tapped = result.Tap(_ => executed = true);
 
@@ -114,8 +112,8 @@ public sealed class GenericResultTests
     [Fact]
     public void TapError_OnFailure_ShouldExecuteAction()
     {
-        ImmutableArray<Error>? capturedErrors = null;
-        var result = Result<int>.Fail(new Error("Error"));
+        Errors? capturedErrors = null;
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var tapped = result.TapError(errors => capturedErrors = errors);
 
@@ -147,26 +145,26 @@ public sealed class GenericResultTests
     [Fact]
     public void ToString_OnFailure_ShouldShowErrorCodes()
     {
-        var result = Result<int>.Fail(new Error("Message", Code: "ERR001"));
+        var result = Result<int>.Fail(new Error { Message = "Message", Code = "ERR001" });
 
-        result.ToString().Should().Contain("ERR001");
+        result.ToString().Should().Contain("Message");
     }
 
     [Fact]
     public void ImplicitConversion_FromValue_ShouldCreateSuccess()
     {
-        Result<int> result = 42;
+        var result = new Result<int>(42);
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsValid.Should().BeTrue();
         result.Value.Should().Be(42);
     }
 
     [Fact]
     public void ImplicitConversion_FromError_ShouldCreateFailure()
     {
-        Result<int> result = new Error("Error");
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -174,54 +172,36 @@ public sealed class GenericResultTests
     {
         var act = () => Result<int>.Fail(Array.Empty<Error>());
 
-        act.Should().Throw<ArgumentException>()
-           .WithMessage("*At least one error*");
+        act.Should().Throw<ArgumentException>().Where(x => x.ParamName == "manyErrors");
     }
 
     [Fact]
-    public void Fail_WithEmptyList_ShouldThrow()
+    public void Fail_WithSingleItemArray_ShouldCreateFailure()
     {
-        var act = () => Result<int>.Fail(new List<Error>());
+        var result = Result<int>.Fail(new[] { new Error { Message = "Error" } });
 
-        act.Should().Throw<ArgumentException>()
-           .WithMessage("*At least one error*");
-    }
-
-    [Fact]
-    public void Fail_WithNull_ShouldThrow()
-    {
-        var act = () => Result<int>.Fail(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Fail_WithSingleItemList_ShouldCreateFailure()
-    {
-        var result = Result<int>.Fail(new List<Error> { new ("Error") });
-
-        result.IsFailure.Should().BeTrue();
-        result.ErrorList.Should().ContainSingle();
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle();
     }
 
     [Fact]
     public void Fail_WithMultipleErrors_ShouldCreateFailure()
     {
-        var result = Result<int>.Fail(new[] { new Error("Error1"), new Error("Error2") });
+        var result = Result<int>.Fail(new[] { new Error { Message = "Error1" }, new Error { Message = "Error2" } });
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorList.Should().HaveCount(2);
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().HaveCount(2);
     }
 
     [Fact]
     public void WithMetadata_OnFailure_ShouldSetMetadata()
     {
         var metadata = MetadataObject.Create(("key", "value"));
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
-        var withMeta = result.WithMetadata(metadata);
+        var withMeta = result.ReplaceMetadata(metadata);
 
-        withMeta.IsFailure.Should().BeTrue();
+        withMeta.IsValid.Should().BeFalse();
         withMeta.Metadata.Should().NotBeNull();
         withMeta.Metadata!.Value.Should().Equal(metadata);
     }
@@ -241,7 +221,7 @@ public sealed class GenericResultTests
     [Fact]
     public void Value_OnFailure_ShouldThrow()
     {
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var act = () => result.Value;
 
@@ -261,10 +241,10 @@ public sealed class GenericResultTests
     }
 
     [Fact]
-    public void ErrorList_OnSuccess_ShouldReturnEmpty()
+    public void Errors_OnSuccess_ShouldReturnEmpty()
     {
         var result = Result<int>.Ok(42);
 
-        result.ErrorList.Should().BeEmpty();
+        result.Errors.Should().BeEmpty();
     }
 }

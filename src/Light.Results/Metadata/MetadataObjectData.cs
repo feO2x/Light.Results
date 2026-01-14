@@ -7,14 +7,14 @@ namespace Light.Results.Metadata;
 /// Internal backing storage for <see cref="MetadataObject" />. Owns a single array of entries,
 /// sorted by key for deterministic ordering and better cache locality during iteration.
 /// </summary>
-internal sealed class MetadataObjectData
+internal sealed class MetadataObjectData : IEquatable<MetadataObjectData>
 {
     private const int DictionaryThreshold = 8;
 
-    private readonly MetadataEntry[] _entries;
+    private readonly KeyValuePair<string, MetadataValue>[] _entries;
     private Dictionary<string, int>? _indexLookup;
 
-    internal MetadataObjectData(MetadataEntry[] entries)
+    internal MetadataObjectData(KeyValuePair<string, MetadataValue>[] entries)
     {
         _entries = entries ?? throw new ArgumentNullException(nameof(entries));
     }
@@ -23,7 +23,34 @@ internal sealed class MetadataObjectData
 
     public int Count => _entries.Length;
 
-    public ref readonly MetadataEntry GetEntry(int index)
+    public bool Equals(MetadataObjectData? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (Count != other.Count)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < _entries.Length; i++)
+        {
+            var thisEntry = _entries[i];
+            var otherEntry = other._entries[i];
+
+            if (!string.Equals(thisEntry.Key, otherEntry.Key, StringComparison.Ordinal) ||
+                !thisEntry.Value.Equals(otherEntry.Value))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public ref readonly KeyValuePair<string, MetadataValue> GetEntry(int index)
     {
         return ref _entries[index];
     }
@@ -85,5 +112,19 @@ internal sealed class MetadataObjectData
         return _indexLookup.TryGetValue(key, out var index) ? index : -1;
     }
 
-    public MetadataEntry[] GetEntries() => _entries;
+    public KeyValuePair<string, MetadataValue>[] GetEntries() => _entries;
+
+    public override bool Equals(object? obj) => Equals(obj as MetadataObjectData);
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        for (var i = 0; i < _entries.Length; i++)
+        {
+            hash.Add(_entries[i].Key);
+            hash.Add(_entries[i].Value);
+        }
+
+        return hash.ToHashCode();
+    }
 }

@@ -30,7 +30,7 @@ public sealed class GenericResultWithMetadataTests
         var result = Result<int>.Ok(42);
         var metadata = MetadataObject.Create(("key", "value"));
 
-        var withMeta = result.WithMetadata(metadata);
+        var withMeta = result.ReplaceMetadata(metadata);
 
         withMeta.Metadata.Should().NotBeNull();
         withMeta.Metadata!.Value.Should().ContainSingle();
@@ -39,7 +39,7 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void WithMetadata_Properties_ShouldAddMetadata()
     {
-        var result = Result<int>.Ok(42).WithMetadata(("a", 1), ("b", 2));
+        var result = Result<int>.Ok(42).MergeMetadata(("a", 1), ("b", 2));
 
         result.Metadata.Should().NotBeNull();
         result.Metadata!.Value.Should().HaveCount(2);
@@ -48,17 +48,17 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void WithMetadata_OnFailure_ShouldPreserveErrors()
     {
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(("key", "value"));
+        var result = Result<int>.Fail(new Error { Message = "Error" }).MergeMetadata(("key", "value"));
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Metadata.Should().NotBeNull();
-        result.ErrorList.Should().ContainSingle();
+        result.Errors.Should().ContainSingle();
     }
 
     [Fact]
     public void MergeMetadata_ShouldCombineMetadata()
     {
-        var result = Result<int>.Ok(42).WithMetadata(("a", 1));
+        var result = Result<int>.Ok(42).MergeMetadata(("a", 1));
 
         var additional = MetadataObject.Create(("b", 2));
         var merged = result.MergeMetadata(additional);
@@ -84,11 +84,11 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void Map_ShouldPreserveMetadata()
     {
-        var result = Result<int>.Ok(10).WithMetadata(("source", "test"));
+        var result = Result<int>.Ok(10).MergeMetadata(("source", "test"));
 
         var mapped = result.Map(x => x * 2);
 
-        mapped.IsSuccess.Should().BeTrue();
+        mapped.IsValid.Should().BeTrue();
         mapped.Value.Should().Be(20);
         mapped.Metadata.Should().NotBeNull();
         mapped.Metadata!.Value.TryGetString("source", out var source).Should().BeTrue();
@@ -98,24 +98,24 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void Map_OnFailure_ShouldPreserveMetadata()
     {
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(("context", "test"));
+        var result = Result<int>.Fail(new Error { Message = "Error" }).MergeMetadata(("context", "test"));
 
         var mapped = result.Map(x => x * 2);
 
-        mapped.IsFailure.Should().BeTrue();
+        mapped.IsValid.Should().BeFalse();
         mapped.Metadata.Should().NotBeNull();
     }
 
     [Fact]
     public void Bind_ShouldMergeMetadata()
     {
-        var result = Result<int>.Ok(10).WithMetadata(("outer", "a"));
+        var result = Result<int>.Ok(10).MergeMetadata(("outer", "a"));
 
         var bound = result.Bind(
-            x => Result<int>.Ok(x * 2).WithMetadata(("inner", "b"))
+            x => Result<int>.Ok(x * 2).MergeMetadata(("inner", "b"))
         );
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Value.Should().Be(20);
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.TryGetString("outer", out var outer).Should().BeTrue();
@@ -127,11 +127,11 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void Bind_OnFailure_ShouldPreserveMetadata()
     {
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(("context", "test"));
+        var result = Result<int>.Fail(new Error { Message = "Error" }).MergeMetadata(("context", "test"));
 
         var bound = result.Bind(x => Result<int>.Ok(x * 2));
 
-        bound.IsFailure.Should().BeTrue();
+        bound.IsValid.Should().BeFalse();
         bound.Metadata.Should().NotBeNull();
     }
 }
