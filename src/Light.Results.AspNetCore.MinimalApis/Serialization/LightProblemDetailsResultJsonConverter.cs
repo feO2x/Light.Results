@@ -103,10 +103,22 @@ public sealed class LightProblemDetailsResultJsonConverter : JsonConverter<Light
         Errors errors
     )
     {
+        var (groupedErrors, errorDetails) = ProcessErrors(errors);
+
+        WriteGroupedErrors(writer, groupedErrors);
+
+        if (errorDetails.Count > 0)
+        {
+            WriteErrorDetails(writer, errorDetails);
+        }
+    }
+
+    private static (Dictionary<string, List<string>> groupedErrors, List<ErrorDetail> errorDetails) ProcessErrors(
+        Errors errors
+    )
+    {
         var groupedErrors = new Dictionary<string, List<string>>();
         var errorDetails = new List<ErrorDetail>();
-        var hasDetails = false;
-
         var indexByTarget = new Dictionary<string, int>();
 
         foreach (var error in errors)
@@ -125,33 +137,46 @@ public sealed class LightProblemDetailsResultJsonConverter : JsonConverter<Light
 
             messages.Add(error.Message);
 
-            var hasCode = error.Code is not null;
-            var hasCategory = error.Category != ErrorCategory.Unclassified;
-            var hasMetadata = error.Metadata.HasValue;
-
-            if (!hasCode && !hasCategory && !hasMetadata)
+            var errorDetail = CreateErrorDetailIfNeeded(error, target, index);
+            if (errorDetail is not null)
             {
-                continue;
+                errorDetails.Add(errorDetail.Value);
             }
-
-            hasDetails = true;
-            errorDetails.Add(
-                new ErrorDetail(
-                    target,
-                    index,
-                    error.Code,
-                    hasCategory ? error.Category : null,
-                    error.Metadata
-                )
-            );
         }
 
+        return (groupedErrors, errorDetails);
+    }
+
+    private static ErrorDetail? CreateErrorDetailIfNeeded(Error error, string target, int index)
+    {
+        var hasCode = error.Code is not null;
+        var hasCategory = error.Category != ErrorCategory.Unclassified;
+        var hasMetadata = error.Metadata.HasValue;
+
+        if (!hasCode && !hasCategory && !hasMetadata)
+        {
+            return null;
+        }
+
+        return new ErrorDetail(
+            target,
+            index,
+            error.Code,
+            hasCategory ? error.Category : null,
+            error.Metadata
+        );
+    }
+
+    private static void WriteGroupedErrors(Utf8JsonWriter writer, Dictionary<string, List<string>> groupedErrors)
+    {
         writer.WritePropertyName("errors");
         writer.WriteStartObject();
+
         foreach (var kvp in groupedErrors)
         {
             writer.WritePropertyName(kvp.Key);
             writer.WriteStartArray();
+
             foreach (var message in kvp.Value)
             {
                 writer.WriteStringValue(message);
@@ -161,41 +186,45 @@ public sealed class LightProblemDetailsResultJsonConverter : JsonConverter<Light
         }
 
         writer.WriteEndObject();
+    }
 
-        if (!hasDetails)
-        {
-            return;
-        }
-
+    private static void WriteErrorDetails(Utf8JsonWriter writer, List<ErrorDetail> errorDetails)
+    {
         writer.WritePropertyName("errorDetails");
         writer.WriteStartArray();
+
         foreach (var detail in errorDetails)
         {
-            writer.WriteStartObject();
-
-            writer.WriteString("target", detail.Target);
-            writer.WriteNumber("index", detail.Index);
-
-            if (detail.Code is not null)
-            {
-                writer.WriteString("code", detail.Code);
-            }
-
-            if (detail.Category.HasValue)
-            {
-                writer.WriteString("category", detail.Category.Value.ToString());
-            }
-
-            if (detail.Metadata.HasValue)
-            {
-                writer.WritePropertyName("metadata");
-                MetadataValueJsonConverter.WriteMetadataObject(writer, detail.Metadata.Value);
-            }
-
-            writer.WriteEndObject();
+            WriteSingleErrorDetail(writer, detail);
         }
 
         writer.WriteEndArray();
+    }
+
+    private static void WriteSingleErrorDetail(Utf8JsonWriter writer, ErrorDetail detail)
+    {
+        writer.WriteStartObject();
+
+        writer.WriteString("target", detail.Target);
+        writer.WriteNumber("index", detail.Index);
+
+        if (detail.Code is not null)
+        {
+            writer.WriteString("code", detail.Code);
+        }
+
+        if (detail.Category.HasValue)
+        {
+            writer.WriteString("category", detail.Category.Value.ToString());
+        }
+
+        if (detail.Metadata.HasValue)
+        {
+            writer.WritePropertyName("metadata");
+            MetadataValueJsonConverter.WriteMetadataObject(writer, detail.Metadata.Value);
+        }
+
+        writer.WriteEndObject();
     }
 
     private static void WriteMetadataExtensions(

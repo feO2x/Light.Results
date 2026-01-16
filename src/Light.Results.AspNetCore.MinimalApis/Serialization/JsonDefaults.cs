@@ -12,7 +12,7 @@ public static class JsonDefaults
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            TypeInfoResolver = LightProblemDetailsJsonContext.Default
+            TypeInfoResolver = LightResultsMinimalApiJsonContext.Default
         };
         Options.Converters.Add(new MetadataValueJsonConverter());
         Options.Converters.Add(new MetadataObjectJsonConverter());

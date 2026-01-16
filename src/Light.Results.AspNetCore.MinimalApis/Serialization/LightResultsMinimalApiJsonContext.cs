@@ -4,13 +4,13 @@ using Light.Results.Metadata;
 namespace Light.Results.AspNetCore.MinimalApis.Serialization;
 
 /// <summary>
-/// Source-generated JSON serializer context for <see cref="AspNetCore.Serialization.LightProblemDetailsJsonContext.LightProblemDetails" />.
+/// Source-generated JSON serializer context for Light.Results for Minimal APIs.
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
 )]
-[JsonSerializable(typeof(LightProblemDetailsResult))]
 [JsonSerializable(typeof(MetadataValue))]
 [JsonSerializable(typeof(MetadataObject))]
-public partial class LightProblemDetailsJsonContext : JsonSerializerContext;
+[JsonSerializable(typeof(LightProblemDetailsResult))]
+public sealed partial class LightResultsMinimalApiJsonContext : JsonSerializerContext;
