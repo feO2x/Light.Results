@@ -21,8 +21,8 @@ public sealed class ResultEnrichmentTests
 
         var apiResult = result.ToMinimalApiResult(httpContext: httpContext);
 
-        apiResult.Should().BeOfType<LightProblemDetails>();
-        var problemDetails = (LightProblemDetails) apiResult;
+        apiResult.Should().BeOfType<LightProblemDetailsResult>();
+        var problemDetails = (LightProblemDetailsResult) apiResult;
         problemDetails.Metadata.Should().NotBeNull();
         problemDetails.Metadata!.Value.TryGetString("enriched", out var enrichedValue);
         enrichedValue.Should().Be("true");
@@ -39,8 +39,8 @@ public sealed class ResultEnrichmentTests
 
         var apiResult = result.ToMinimalApiResult(httpContext: httpContext);
 
-        apiResult.Should().BeOfType<LightProblemDetails>();
-        var problemDetails = (LightProblemDetails) apiResult;
+        apiResult.Should().BeOfType<LightProblemDetailsResult>();
+        var problemDetails = (LightProblemDetailsResult) apiResult;
         problemDetails.Metadata.Should().BeNull();
     }
 
@@ -51,7 +51,7 @@ public sealed class ResultEnrichmentTests
 
         var apiResult = result.ToMinimalApiResult(httpContext: null);
 
-        apiResult.Should().BeOfType<LightProblemDetails>();
+        apiResult.Should().BeOfType<LightProblemDetailsResult>();
     }
 
     private sealed class TestEnricher : IHttpResultEnricher

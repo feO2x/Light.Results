@@ -13,11 +13,11 @@ namespace Light.Results.AspNetCore.MinimalApis;
 /// RFC 7807/9457-compliant Problem Details response that implements IResult directly.
 /// Avoids the allocation overhead of ASP.NET Core's ProblemDetails.Extensions dictionary.
 /// </summary>
-[JsonConverter(typeof(LightProblemDetailsJsonConverter))]
-public sealed class LightProblemDetails : IResult
+[JsonConverter(typeof(LightProblemDetailsResultJsonConverter))]
+public sealed class LightProblemDetailsResult : IResult
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="LightProblemDetails" />.
+    /// Initializes a new instance of <see cref="LightProblemDetailsResult" />.
     /// </summary>
     /// <param name="errors">The errors from the failed result.</param>
     /// <param name="metadata">The result-level metadata.</param>
@@ -25,7 +25,7 @@ public sealed class LightProblemDetails : IResult
     /// <param name="instance">Optional URI identifying the specific occurrence.</param>
     /// <param name="errorFormat">Error serialization format.</param>
     /// <param name="serializerOptions">The serializer options to use for serializing the problem details.</param>
-    public LightProblemDetails(
+    public LightProblemDetailsResult(
         Errors errors,
         MetadataObject? metadata,
         bool firstCategoryIsLeadingCategory = false,
@@ -85,7 +85,8 @@ public sealed class LightProblemDetails : IResult
     {
         httpContext.Response.StatusCode = Status;
         httpContext.Response.ContentType = "application/problem+json";
-        var typeInfo = (JsonTypeInfo<LightProblemDetails>) SerializerOptions.GetTypeInfo(typeof(LightProblemDetails));
+        var typeInfo =
+            (JsonTypeInfo<LightProblemDetailsResult>) SerializerOptions.GetTypeInfo(typeof(LightProblemDetailsResult));
         return JsonSerializer.SerializeAsync(
             httpContext.Response.Body,
             this,

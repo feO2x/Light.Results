@@ -9,12 +9,12 @@ using Light.Results.Metadata;
 namespace Light.Results.AspNetCore.MinimalApis.Serialization;
 
 /// <summary>
-/// JSON converter for <see cref="LightProblemDetails" />.
+/// JSON converter for <see cref="LightProblemDetailsResult" />.
 /// Writes RFC 7807/9457-compliant Problem Details JSON.
 /// </summary>
-public sealed class LightProblemDetailsJsonConverter : JsonConverter<LightProblemDetails>
+public sealed class LightProblemDetailsResultJsonConverter : JsonConverter<LightProblemDetailsResult>
 {
-    public override LightProblemDetails Read(
+    public override LightProblemDetailsResult Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -23,7 +23,7 @@ public sealed class LightProblemDetailsJsonConverter : JsonConverter<LightProble
         throw new NotSupportedException("Deserialization of LightProblemDetails is not supported");
     }
 
-    public override void Write(Utf8JsonWriter writer, LightProblemDetails value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, LightProblemDetailsResult value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 

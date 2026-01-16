@@ -41,7 +41,7 @@ public static class MinimalApiResultExtensions
         }
 
         var enrichedResult = EnrichIfRegistered(result, httpContext);
-        return new LightProblemDetails(
+        return new LightProblemDetailsResult(
             enrichedResult.Errors,
             enrichedResult.Metadata,
             firstCategoryIsLeadingCategory,
@@ -80,7 +80,7 @@ public static class MinimalApiResultExtensions
         }
 
         var enrichedResult = EnrichIfRegistered(result, httpContext);
-        return new LightProblemDetails(
+        return new LightProblemDetailsResult(
             enrichedResult.Errors,
             enrichedResult.Metadata,
             firstCategoryIsLeadingCategory,
@@ -114,7 +114,7 @@ public static class MinimalApiResultExtensions
         }
 
         var enrichedResult = EnrichIfRegistered(result, httpContext);
-        return new LightProblemDetails(
+        return new LightProblemDetailsResult(
             enrichedResult.Errors,
             enrichedResult.Metadata,
             firstCategoryIsLeadingCategory,
@@ -152,7 +152,7 @@ public static class MinimalApiResultExtensions
         }
 
         var enrichedResult = EnrichIfRegistered(result, httpContext);
-        return new LightProblemDetails(
+        return new LightProblemDetailsResult(
             enrichedResult.Errors,
             enrichedResult.Metadata,
             firstCategoryIsLeadingCategory,

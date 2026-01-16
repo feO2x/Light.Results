@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Light.Results.AspNetCore.MinimalApis.Tests;
 
-public sealed class LightProblemDetailsTests
+public sealed class LightProblemDetailsResultTests
 {
     [Fact]
     public void Constructor_SetsPropertiesCorrectly()
@@ -18,7 +18,7 @@ public sealed class LightProblemDetailsTests
         var errors = new Errors(new Error { Message = "Not found", Category = ErrorCategory.NotFound });
         var metadata = MetadataObject.Create(("traceId", "abc123"));
 
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             metadata,
             instance: "/api/orders/123"
@@ -38,7 +38,7 @@ public sealed class LightProblemDetailsTests
     {
         var errors = new Errors(new Error { Message = "Something went wrong", Category = ErrorCategory.Unclassified });
 
-        var problemDetails = new LightProblemDetails(errors, null);
+        var problemDetails = new LightProblemDetailsResult(errors, null);
 
         problemDetails.Status.Should().Be(500);
         problemDetails.Title.Should().Be("Internal Server Error");
@@ -48,7 +48,7 @@ public sealed class LightProblemDetailsTests
     public async Task ExecuteAsync_SetsCorrectContentTypeAndStatusCode()
     {
         var errors = new Errors(new Error { Message = "Bad request", Category = ErrorCategory.Validation });
-        var problemDetails = new LightProblemDetails(errors, null);
+        var problemDetails = new LightProblemDetailsResult(errors, null);
 
         var httpContext = new DefaultHttpContext
         {
@@ -70,7 +70,7 @@ public sealed class LightProblemDetailsTests
         var errors = new Errors(
             new Error { Target = "email", Message = "Your email is invalid", Category = ErrorCategory.Validation }
         );
-        var problemDetails = new LightProblemDetails(errors, null);
+        var problemDetails = new LightProblemDetailsResult(errors, null);
 
         var httpContext = new DefaultHttpContext();
         var memoryStream = new MemoryStream();
@@ -104,7 +104,7 @@ public sealed class LightProblemDetailsTests
                 }
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.Rich
@@ -142,7 +142,7 @@ public sealed class LightProblemDetailsTests
                 new () { Message = "Invalid email", Target = "email", Category = ErrorCategory.Validation }
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.AspNetCoreCompatible
@@ -173,7 +173,7 @@ public sealed class LightProblemDetailsTests
             ("traceId", "abc123"),
             ("correlationId", "xyz789")
         );
-        var problemDetails = new LightProblemDetails(errors, metadata);
+        var problemDetails = new LightProblemDetailsResult(errors, metadata);
 
         var httpContext = new DefaultHttpContext();
         var memoryStream = new MemoryStream();
@@ -204,7 +204,7 @@ public sealed class LightProblemDetailsTests
                 Metadata = errorMetadata
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.Rich

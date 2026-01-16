@@ -25,8 +25,8 @@ public sealed class ToMinimalApiResultTests
 
         var apiResult = result.ToMinimalApiResult();
 
-        apiResult.Should().BeOfType<LightProblemDetails>();
-        var problemDetails = (LightProblemDetails) apiResult;
+        apiResult.Should().BeOfType<LightProblemDetailsResult>();
+        var problemDetails = (LightProblemDetailsResult) apiResult;
         problemDetails.Status.Should().Be(403);
     }
 
@@ -47,8 +47,8 @@ public sealed class ToMinimalApiResultTests
 
         var apiResult = result.ToMinimalApiResult(() => TypedResults.Accepted("/status"));
 
-        apiResult.Should().BeOfType<LightProblemDetails>();
-        var problemDetails = (LightProblemDetails) apiResult;
+        apiResult.Should().BeOfType<LightProblemDetailsResult>();
+        var problemDetails = (LightProblemDetailsResult) apiResult;
         problemDetails.Status.Should().Be(409);
     }
 

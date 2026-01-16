@@ -23,7 +23,7 @@ public sealed class ErrorSerializationFormatTests
                 new () { Message = "Invalid email", Target = "email", Category = ErrorCategory.Validation }
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.AspNetCoreCompatible
@@ -51,7 +51,7 @@ public sealed class ErrorSerializationFormatTests
                 new () { Message = "Another general error", Category = ErrorCategory.Validation }
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.AspNetCoreCompatible
@@ -77,7 +77,7 @@ public sealed class ErrorSerializationFormatTests
                 }
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.AspNetCoreCompatible
@@ -103,7 +103,7 @@ public sealed class ErrorSerializationFormatTests
                 new () { Message = "Name is required", Target = "name" }
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.AspNetCoreCompatible
@@ -128,7 +128,7 @@ public sealed class ErrorSerializationFormatTests
                 }
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.Rich
@@ -160,7 +160,7 @@ public sealed class ErrorSerializationFormatTests
                 Metadata = errorMetadata
             }
         );
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.Rich
@@ -179,7 +179,7 @@ public sealed class ErrorSerializationFormatTests
     public async Task Rich_OmitsNullProperties()
     {
         var errors = new Errors(new Error { Message = "Error message" });
-        var problemDetails = new LightProblemDetails(
+        var problemDetails = new LightProblemDetailsResult(
             errors,
             null,
             errorFormat: ErrorSerializationFormat.Rich
@@ -202,7 +202,7 @@ public sealed class ErrorSerializationFormatTests
 
         foreach (var format in new[] { ErrorSerializationFormat.AspNetCoreCompatible, ErrorSerializationFormat.Rich })
         {
-            var problemDetails = new LightProblemDetails(errors, null, errorFormat: format);
+            var problemDetails = new LightProblemDetailsResult(errors, null, errorFormat: format);
             var json = await SerializeToJson(problemDetails);
             var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
@@ -215,13 +215,13 @@ public sealed class ErrorSerializationFormatTests
         }
     }
 
-    private static async Task<string> SerializeToJson(LightProblemDetails problemDetails)
+    private static async Task<string> SerializeToJson(LightProblemDetailsResult problemDetailsResult)
     {
         var httpContext = new DefaultHttpContext();
         var memoryStream = new MemoryStream();
         httpContext.Response.Body = memoryStream;
 
-        await problemDetails.ExecuteAsync(httpContext);
+        await problemDetailsResult.ExecuteAsync(httpContext);
 
         memoryStream.Position = 0;
         using var reader = new StreamReader(memoryStream, Encoding.UTF8);

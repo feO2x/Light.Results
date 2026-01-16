@@ -10,7 +10,7 @@ namespace Light.Results.AspNetCore.MinimalApis.Serialization;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
 )]
-[JsonSerializable(typeof(LightProblemDetails))]
+[JsonSerializable(typeof(LightProblemDetailsResult))]
 [JsonSerializable(typeof(MetadataValue))]
 [JsonSerializable(typeof(MetadataObject))]
 public partial class LightProblemDetailsJsonContext : JsonSerializerContext;
