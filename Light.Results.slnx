@@ -1,37 +1,39 @@
 <Solution>
-    <Folder Name="/.github/" />
-    <Folder Name="/.github/actions/" />
-    <Folder Name="/.github/actions/cache-nuget/">
-        <File Path=".github\actions\cache-nuget\action.yml" />
-    </Folder>
-    <Folder Name="/.github/workflows/">
-        <File Path=".github\workflows\build-and-test.yml" />
-    </Folder>
-    <Folder Name="/ai-plans/">
-        <File Path="ai-plans\0001-metadata.md" />
-        <File Path="ai-plans\0003-result-optimization.md" />
-    </Folder>
-    <Folder Name="/benchmarks/">
-        <Project Path="benchmarks/Benchmarks/Benchmarks.csproj" />
-    </Folder>
-    <Folder Name="/solution-items/">
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/actions/" />
+  <Folder Name="/.github/actions/cache-nuget/">
+    <File Path=".github\actions\cache-nuget\action.yml" />
+  </Folder>
+  <Folder Name="/.github/workflows/">
+    <File Path=".github\workflows\build-and-test.yml" />
+  </Folder>
+  <Folder Name="/ai-plans/">
+    <File Path="ai-plans\0001-metadata.md" />
+    <File Path="ai-plans\0003-result-optimization.md" />
+    <File Path="ai-plans\0005-functional-extensions.md" />
+    <File Path="ai-plans\0007-minimal-api-serialization.md" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Benchmarks/Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/solution-items/">
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
-        <File Path="global.json" />
+    <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="Light.Results.sln.DotSettings" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Light.Results/Light.Results.csproj" />
-      <Project Path="src\Light.Results.AspNetCore.MinimalApis\Light.Results.AspNetCore.MinimalApis.csproj" />
-      <Project Path="src\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
+    <Project Path="src\Light.Results.AspNetCore.MinimalApis\Light.Results.AspNetCore.MinimalApis.csproj" />
+    <Project Path="src\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Light.Results.Tests/Light.Results.Tests.csproj" />
-      <Project
-          Path="tests\Light.Results.AspNetCore.MinimalApis.Tests\Light.Results.AspNetCore.MinimalApis.Tests.csproj" />
-      <Project Path="tests\Light.Results.AspNetCore.Shared.Tests\Light.Results.AspNetCore.Shared.Tests.csproj" />
+    <Project
+      Path="tests\Light.Results.AspNetCore.MinimalApis.Tests\Light.Results.AspNetCore.MinimalApis.Tests.csproj" />
+    <Project Path="tests\Light.Results.AspNetCore.Shared.Tests\Light.Results.AspNetCore.Shared.Tests.csproj" />
   </Folder>
 </Solution>
