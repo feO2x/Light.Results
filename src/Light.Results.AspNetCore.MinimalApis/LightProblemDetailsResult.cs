@@ -5,6 +5,7 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.Results.AspNetCore.MinimalApis.Serialization;
 using Light.Results.AspNetCore.Shared;
+using Light.Results.Http;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 

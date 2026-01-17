@@ -136,6 +136,39 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <summary>
+    /// Determines the leading error category from this instance.
+    /// </summary>
+    /// <param name="firstCategoryIsLeadingCategory">
+    /// If true, returns the category of the first error.
+    /// If false, returns the common category if all errors share it, otherwise Unclassified.
+    /// </param>
+    /// <returns>The leading error category.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when errors is empty.</exception>
+    public ErrorCategory GetLeadingCategory(bool firstCategoryIsLeadingCategory = false)
+    {
+        if (IsDefaultInstance)
+        {
+            throw new InvalidOperationException("Errors collection must contain at least one error.");
+        }
+
+        if (firstCategoryIsLeadingCategory)
+        {
+            return First.Category;
+        }
+
+        var firstCategory = First.Category;
+        foreach (var error in this)
+        {
+            if (error.Category != firstCategory)
+            {
+                return ErrorCategory.Unclassified;
+            }
+        }
+
+        return firstCategory;
+    }
+
+    /// <summary>
     /// Gets the value indicating whether this instance is equal to the specified instance.
     /// This equality check is based on the count and the content of the errors. Two <see cref="Errors" /> instances
     /// are considered equal when they contain the same errors in exact the same order.
