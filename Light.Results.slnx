@@ -12,6 +12,7 @@
     <File Path="ai-plans\0003-result-optimization.md" />
     <File Path="ai-plans\0005-functional-extensions.md" />
     <File Path="ai-plans\0007-minimal-api-serialization.md" />
+    <File Path="ai-plans\0009-minimal-api-metadata-for-success-results.md" />
   </Folder>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Benchmarks/Benchmarks.csproj" />
@@ -35,8 +36,7 @@
   <Folder Name="/tests/">
     <File Path="tests\agents.md" />
     <Project Path="tests/Light.Results.Tests/Light.Results.Tests.csproj" />
-    <Project
-      Path="tests\Light.Results.AspNetCore.MinimalApis.Tests\Light.Results.AspNetCore.MinimalApis.Tests.csproj" />
+    <Project Path="tests\Light.Results.AspNetCore.MinimalApis.Tests\Light.Results.AspNetCore.MinimalApis.Tests.csproj" />
     <Project Path="tests\Light.Results.AspNetCore.Shared.Tests\Light.Results.AspNetCore.Shared.Tests.csproj" />
   </Folder>
 </Solution>
