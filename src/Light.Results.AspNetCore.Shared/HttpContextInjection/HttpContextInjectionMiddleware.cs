@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,17 +17,10 @@ public sealed class HttpContextInjectionMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var scopedServicesWithNeedForHttpContext = context.RequestServices.GetServices<IInjectHttpContext>();
-        InjectHttpContext(context, scopedServicesWithNeedForHttpContext);
-        await _next(context);
-    }
-
-    private static void InjectHttpContext(
-        HttpContext context,
-        IEnumerable<IInjectHttpContext> scopedServicesWithNeedForHttpContext
-    )
-    {
         switch (scopedServicesWithNeedForHttpContext)
         {
+            // Microsoft.Extensions.DependencyInjection returns an array internally, thus we can avoid the
+            // Enumerator allocation if it is possible to cast.
             case IInjectHttpContext[] array:
                 foreach (var scopedService in array)
                 {
@@ -36,6 +28,10 @@ public sealed class HttpContextInjectionMiddleware
                 }
 
                 break;
+
+            // The user is likely using another DI container adapted to IServiceProvider, and it does not return
+            // an array when calling GetServices. We simply fall back to enumerate over IEnumerable<T> - but this
+            // allocates.
             default:
                 foreach (var scopedService in scopedServicesWithNeedForHttpContext)
                 {
@@ -44,5 +40,7 @@ public sealed class HttpContextInjectionMiddleware
 
                 break;
         }
+
+        await _next(context);
     }
 }
