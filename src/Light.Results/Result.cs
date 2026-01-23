@@ -13,8 +13,7 @@ namespace Light.Results;
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public readonly struct Result<T> : IEquatable<Result<T>>,
                                    IHasOptionalMetadata<Result<T>>,
-                                   IResult<Result<T>>,
-                                   IResultWithValue<Result<T>, T>
+                                   IResult<T>
 {
     private readonly Errors _errors;
     private readonly T? _value;
@@ -44,7 +43,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>,
     // ReSharper disable once MemberCanBePrivate.Global -- public API
     public Result(Errors errors, MetadataObject? metadata = null)
     {
-        if (errors.IsDefaultInstance)
+        if (errors.IsEmpty)
         {
             throw new ArgumentException($"{nameof(errors)} must contain at least one error", nameof(errors));
         }
@@ -251,7 +250,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>,
 /// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>, IResult<Result>
+public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>, IResult
 {
     private readonly Result<Unit> _inner;
 

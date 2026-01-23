@@ -109,9 +109,10 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
     };
 
     /// <summary>
-    /// Gets the value indicating whether this instance is the default instance.
+    /// Gets the value indicating whether this instance contains errors. This is also the indicator for the default
+    /// instance of this struct.
     /// </summary>
-    public bool IsDefaultInstance => Count == 0;
+    public bool IsEmpty => Count == 0;
 
     /// <summary>
     /// Gets an enumerator that iterates through the errors.
@@ -146,7 +147,7 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
     /// <exception cref="InvalidOperationException">Thrown when errors is empty.</exception>
     public ErrorCategory GetLeadingCategory(bool firstCategoryIsLeadingCategory = false)
     {
-        if (IsDefaultInstance)
+        if (IsEmpty)
         {
             throw new InvalidOperationException("Errors collection must contain at least one error.");
         }

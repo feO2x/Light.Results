@@ -13,44 +13,107 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
     public MetadataKind Kind { get; }
 
-    private MetadataValue(MetadataKind kind, MetadataPayload payload)
+    /// <summary>
+    /// Gets the annotation that specifies where this value should be serialized in HTTP responses.
+    /// </summary>
+    public MetadataValueAnnotation Annotation { get; }
+
+    private MetadataValue(
+        MetadataKind kind,
+        MetadataPayload payload,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    )
     {
         Kind = kind;
         _payload = payload;
+        Annotation = annotation;
     }
 
     public static MetadataValue Null => new (MetadataKind.Null, default);
 
-    public static MetadataValue FromBoolean(bool value) =>
-        new (MetadataKind.Boolean, new MetadataPayload(value ? 1L : 0L));
+    public static MetadataValue FromBoolean(
+        bool value,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    ) =>
+        new (MetadataKind.Boolean, new MetadataPayload(value ? 1L : 0L), annotation);
 
-    public static MetadataValue FromInt64(long value) =>
-        new (MetadataKind.Int64, new MetadataPayload(value));
+    public static MetadataValue FromInt64(
+        long value,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    ) =>
+        new (MetadataKind.Int64, new MetadataPayload(value), annotation);
 
-    public static MetadataValue FromDouble(double value)
+    public static MetadataValue FromDouble(
+        double value,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    )
     {
         if (double.IsNaN(value) || double.IsInfinity(value))
         {
             throw new ArgumentException("NaN and Infinity are not allowed in metadata values.", nameof(value));
         }
 
-        return new MetadataValue(MetadataKind.Double, new MetadataPayload(value));
+        return new MetadataValue(MetadataKind.Double, new MetadataPayload(value), annotation);
     }
 
-    public static MetadataValue FromString(string? value) =>
-        value is null ? Null : new MetadataValue(MetadataKind.String, new MetadataPayload(value));
+    public static MetadataValue FromString(
+        string? value,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    ) =>
+        value is null ? Null : new MetadataValue(MetadataKind.String, new MetadataPayload(value), annotation);
 
-    public static MetadataValue FromDecimal(decimal value)
+    public static MetadataValue FromDecimal(
+        decimal value,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    )
     {
         var str = value.ToString(CultureInfo.InvariantCulture);
-        return new MetadataValue(MetadataKind.String, new MetadataPayload(str));
+        return new MetadataValue(MetadataKind.String, new MetadataPayload(str), annotation);
     }
 
-    public static MetadataValue FromArray(MetadataArray array) =>
-        new (MetadataKind.Array, new MetadataPayload(array.Data));
+    public static MetadataValue FromArray(
+        MetadataArray array,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    )
+    {
+        ValidateArrayAnnotation(array, annotation);
+        return new MetadataValue(MetadataKind.Array, new MetadataPayload(array.Data), annotation);
+    }
 
-    public static MetadataValue FromObject(MetadataObject obj) =>
-        new (MetadataKind.Object, new MetadataPayload(obj.Data));
+    public static MetadataValue FromObject(
+        MetadataObject obj,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+    )
+    {
+        if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) != 0)
+        {
+            throw new ArgumentException(
+                "Objects cannot be serialized as HTTP headers. Use SerializeInHttpResponseBody instead.",
+                nameof(annotation)
+            );
+        }
+
+        return new MetadataValue(MetadataKind.Object, new MetadataPayload(obj.Data), annotation);
+    }
+
+    private static void ValidateArrayAnnotation(MetadataArray array, MetadataValueAnnotation annotation)
+    {
+        if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) == 0)
+        {
+            return;
+        }
+
+        foreach (var item in array)
+        {
+            if (item.Kind == MetadataKind.Array || item.Kind == MetadataKind.Object)
+            {
+                throw new ArgumentException(
+                    "Arrays containing nested arrays or objects cannot be serialized as HTTP headers.",
+                    nameof(annotation)
+                );
+            }
+        }
+    }
 
     // Implicit conversions for ergonomics
     public static implicit operator MetadataValue(bool value) => FromBoolean(value);

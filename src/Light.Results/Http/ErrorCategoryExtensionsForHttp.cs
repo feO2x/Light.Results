@@ -1,12 +1,14 @@
 using System.Net;
 
+// ReSharper disable ConvertToExtensionBlock
+
 namespace Light.Results.Http;
 
 /// <summary>
 /// Provides RFC 9110 type URIs and status titles for HTTP status codes. Also provides an extension method to convert
 /// <see cref="ErrorCategory"/> to its corresponding HTTP status code.
 /// </summary>
-public static class HttpStatusCodeInfo
+public static class ErrorCategoryExtensionsForHttp
 {
     /// <summary>
     /// Converts an ErrorCategory to its corresponding HTTP status code.
@@ -21,7 +23,7 @@ public static class HttpStatusCodeInfo
     /// </summary>
     /// <param name="category">The error category.</param>
     /// <returns>The RFC 9110 section URI for the category, or the 500 URI for unknown categories.</returns>
-    public static string GetTypeUri(ErrorCategory category) => category switch
+    public static string GetTypeUri(this ErrorCategory category) => category switch
     {
         ErrorCategory.Validation => "https://tools.ietf.org/html/rfc9110#section-15.5.1",
         ErrorCategory.Unauthorized => "https://tools.ietf.org/html/rfc9110#section-15.5.2",
@@ -63,7 +65,7 @@ public static class HttpStatusCodeInfo
     /// </summary>
     /// <param name="category">The error category.</param>
     /// <returns>The standard title for the category, or "Internal Server Error" for unknown categories.</returns>
-    public static string GetTitle(ErrorCategory category) => category switch
+    public static string GetTitle(this ErrorCategory category) => category switch
     {
         ErrorCategory.Validation => "Bad Request",
         ErrorCategory.Unauthorized => "Unauthorized",
@@ -105,7 +107,7 @@ public static class HttpStatusCodeInfo
     /// </summary>
     /// <param name="category">The error category.</param>
     /// <returns>A descriptive message suitable for the Problem Details "detail" field.</returns>
-    public static string GetDetail(ErrorCategory category) => category switch
+    public static string GetDetail(this ErrorCategory category) => category switch
     {
         ErrorCategory.Validation => "One or more validation errors occurred.",
         ErrorCategory.Unauthorized => "Authentication is required to access this resource.",

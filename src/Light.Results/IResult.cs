@@ -1,11 +1,16 @@
+using Light.Results.Metadata;
+
 namespace Light.Results;
 
 /// <summary>
+/// <para>
 /// Result interface that enables fluent extension methods returning the same type.
+/// </para>
+/// <para>
+/// This interface is implemented by structs and should primarily be used to constrain generic parameters.
+/// </para>
 /// </summary>
-/// <typeparam name="TSelf">The implementing type.</typeparam>
-public interface IResult<TSelf>
-    where TSelf : struct, IResult<TSelf>
+public interface IResult
 {
     /// <summary>
     /// Gets whether this result represents a successful operation.
@@ -18,7 +23,24 @@ public interface IResult<TSelf>
     Errors Errors { get; }
 
     /// <summary>
-    /// Gets the first error (throws if no errors).
+    /// Gets the optional metadata attached to the result.
     /// </summary>
-    Error FirstError { get; }
+    MetadataObject? Metadata { get; }
+}
+
+/// <summary>
+/// <para>
+/// Result interface for types that carry a success value.
+/// </para>
+/// </summary>
+/// <para>
+/// This interface is implemented by structs and should primarily be used to constrain generic parameters.
+/// </para>
+/// <typeparam name="TValue">The type of the success value.</typeparam>
+public interface IResult<out TValue> : IResult
+{
+    /// <summary>
+    /// Gets the success value (throws if invalid).
+    /// </summary>
+    TValue Value { get; }
 }
