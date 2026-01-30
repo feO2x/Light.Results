@@ -56,7 +56,6 @@ public static class MetadataObjectExtensions
             return incoming;
         }
 
-        // Skip merge if references are equal
         if (original == incoming)
         {
             return original;

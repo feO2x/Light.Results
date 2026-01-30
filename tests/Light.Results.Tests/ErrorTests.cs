@@ -66,4 +66,12 @@ public sealed class ErrorTests
         error.Metadata!.Value.TryGetString("correlationId", out var id).Should().BeTrue();
         id.Should().Be("abc-123");
     }
+
+    [Fact]
+    public void Error_DefaultCategory_ShouldBeUnclassified()
+    {
+        var error = new Error { Message = "Test message" };
+
+        error.Category.Should().Be(ErrorCategory.Unclassified);
+    }
 }

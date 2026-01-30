@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Light.Results.Tests;
 
-public sealed class ErrorCategoryTests
+public static class ErrorCategoryTests
 {
     [Theory]
     [InlineData(ErrorCategory.Unclassified, 0)]
@@ -39,14 +39,6 @@ public sealed class ErrorCategoryTests
     [InlineData(ErrorCategory.ServiceUnavailable, 503)]
     [InlineData(ErrorCategory.GatewayTimeout, 504)]
     [InlineData(ErrorCategory.InsufficientStorage, 507)]
-    public void ErrorCategory_Values_ShouldMatchStatusCodes(ErrorCategory category, int expectedValue) =>
+    public static void ErrorCategory_Values_ShouldMatchStatusCodes(ErrorCategory category, int expectedValue) =>
         ((int) category).Should().Be(expectedValue);
-
-    [Fact]
-    public void Error_DefaultCategory_ShouldBeUnclassified()
-    {
-        var error = new Error { Message = "Test message" };
-
-        error.Category.Should().Be(ErrorCategory.Unclassified);
-    }
 }

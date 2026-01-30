@@ -9,14 +9,12 @@ namespace Light.Results.Metadata;
 /// </summary>
 public readonly struct MetadataArray : IReadOnlyList<MetadataValue>, IEquatable<MetadataArray>
 {
+    public const string EmptyArrayStringRepresentation = "[]";
     internal readonly MetadataArrayData? Data;
 
     public static MetadataArray Empty => new (MetadataArrayData.Empty);
 
-    internal MetadataArray(MetadataArrayData data)
-    {
-        Data = data;
-    }
+    internal MetadataArray(MetadataArrayData data) => Data = data;
 
     public int Count => Data?.Count ?? 0;
 
@@ -32,10 +30,10 @@ public readonly struct MetadataArray : IReadOnlyList<MetadataValue>, IEquatable<
             return Empty;
         }
 
-        var copy = new MetadataValue[values.Length];
-        Array.Copy(values, copy, values.Length);
-        return new MetadataArray(new MetadataArrayData(copy));
+        return new MetadataArray(new MetadataArrayData(values));
     }
+
+    public bool HasOnlyPrimitiveChildren => Data?.HasOnlyPrimitiveChildren ?? true;
 
     public Enumerator GetEnumerator() => new (this);
 
@@ -59,6 +57,8 @@ public readonly struct MetadataArray : IReadOnlyList<MetadataValue>, IEquatable<
 
     public static bool operator ==(MetadataArray left, MetadataArray right) => left.Equals(right);
     public static bool operator !=(MetadataArray left, MetadataArray right) => !left.Equals(right);
+
+    public override string ToString() => Data?.ToString() ?? EmptyArrayStringRepresentation;
 
     public struct Enumerator : IEnumerator<MetadataValue>
     {

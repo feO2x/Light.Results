@@ -6,23 +6,24 @@ namespace Light.Results.Metadata;
 
 /// <summary>
 /// Represents an immutable object with string keys and <see cref="MetadataValue" /> values.
-/// Properties are stored in deterministic order (sorted by key).
+/// Properties are stored in insertion order.
 /// </summary>
 public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValue>, IEquatable<MetadataObject>
 {
+    public const string EmptyObjectStringRepresentation = "{}";
+
     internal readonly MetadataObjectData? Data;
 
     public static MetadataObject Empty => new (MetadataObjectData.Empty);
 
-    internal MetadataObject(MetadataObjectData data)
-    {
-        Data = data;
-    }
+    internal MetadataObject(MetadataObjectData data) => Data = data;
 
     public int Count => Data?.Count ?? 0;
 
     public MetadataValue this[string key] =>
-        TryGetValue(key, out var value) ? value : throw new KeyNotFoundException($"Key '{key}' not found.");
+        TryGetValue(key, out var value) ?
+            value :
+            throw new KeyNotFoundException($"Key '{key}' was not found in MetadataObject");
 
     public IEnumerable<string> Keys
     {
@@ -55,6 +56,12 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
             }
         }
     }
+
+    /// <summary>
+    /// Gets the value indicating whether this object only contains primitive values.
+    /// Uses the <see cref="MetadataKindExtensions.IsPrimitive" /> method internally.
+    /// </summary>
+    public bool HasOnlyPrimitiveChildren => Data?.HasOnlyPrimitiveChildren ?? true;
 
     public bool ContainsKey(string key)
     {
@@ -96,7 +103,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public bool TryGetInt64(string key, out long value)
     {
-        if (TryGetValue(key, out var mv) && mv.TryGetInt64(out value))
+        if (TryGetValue(key, out var metadataValue) && metadataValue.TryGetInt64(out value))
         {
             return true;
         }
@@ -107,7 +114,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public bool TryGetDouble(string key, out double value)
     {
-        if (TryGetValue(key, out var mv) && mv.TryGetDouble(out value))
+        if (TryGetValue(key, out var metadataValue) && metadataValue.TryGetDouble(out value))
         {
             return true;
         }
@@ -118,7 +125,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public bool TryGetString(string key, out string? value)
     {
-        if (TryGetValue(key, out var mv) && mv.TryGetString(out value))
+        if (TryGetValue(key, out var metadataValue) && metadataValue.TryGetString(out value))
         {
             return true;
         }
@@ -129,7 +136,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public bool TryGetDecimal(string key, out decimal value)
     {
-        if (TryGetValue(key, out var mv) && mv.TryGetDecimal(out value))
+        if (TryGetValue(key, out var metadataValue) && metadataValue.TryGetDecimal(out value))
         {
             return true;
         }
@@ -140,7 +147,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public bool TryGetArray(string key, out MetadataArray value)
     {
-        if (TryGetValue(key, out var mv) && mv.TryGetArray(out value))
+        if (TryGetValue(key, out var metadataValue) && metadataValue.TryGetArray(out value))
         {
             return true;
         }
@@ -151,7 +158,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public bool TryGetObject(string key, out MetadataObject value)
     {
-        if (TryGetValue(key, out var mv) && mv.TryGetObject(out value))
+        if (TryGetValue(key, out var metadataValue) && metadataValue.TryGetObject(out value))
         {
             return true;
         }
@@ -160,7 +167,13 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
         return false;
     }
 
-    public static MetadataObject Create(params (string Key, MetadataValue Value)[]? properties)
+    public static MetadataObject Create(params (string Key, MetadataValue Value)[]? properties) =>
+        Create(null, properties);
+
+    public static MetadataObject Create(
+        IEqualityComparer<string>? keyComparer,
+        params (string Key, MetadataValue Value)[]? properties
+    )
     {
         if (properties is null || properties.Length == 0)
         {
@@ -175,19 +188,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
             entries[i] = new KeyValuePair<string, MetadataValue>(key, properties[i].Value);
         }
 
-        // Sort by key for deterministic ordering
-        Array.Sort(entries, (a, b) => string.CompareOrdinal(a.Key, b.Key));
-
-        // Check for duplicates
-        for (var i = 1; i < entries.Length; i++)
-        {
-            if (string.Equals(entries[i].Key, entries[i - 1].Key, StringComparison.Ordinal))
-            {
-                throw new ArgumentException($"Duplicate key: '{entries[i].Key}'.", nameof(properties));
-            }
-        }
-
-        return new MetadataObject(new MetadataObjectData(entries));
+        return new MetadataObject(new MetadataObjectData(entries, keyComparer));
     }
 
     public Enumerator GetEnumerator() => new (this);
@@ -219,35 +220,31 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
     public static bool operator ==(MetadataObject left, MetadataObject right) => left.Equals(right);
     public static bool operator !=(MetadataObject left, MetadataObject right) => !left.Equals(right);
 
+    public override string ToString() => Data?.ToString() ?? EmptyObjectStringRepresentation;
+
     public struct Enumerator : IEnumerator<KeyValuePair<string, MetadataValue>>
     {
         private readonly KeyValuePair<string, MetadataValue>[]? _entries;
         private readonly int _count;
         private int _index;
 
-        internal Enumerator(MetadataObject obj)
+        internal Enumerator(MetadataObject @object)
         {
-            if (obj.Data is null)
+            if (@object.Data is null)
             {
                 _entries = null;
                 _count = 0;
             }
             else
             {
-                _entries = obj.Data.GetEntries();
-                _count = obj.Data.Count;
+                _entries = @object.Data.GetEntries();
+                _count = @object.Data.Count;
             }
 
             _index = -1;
         }
 
-        public KeyValuePair<string, MetadataValue> Current
-        {
-            get
-            {
-                return _entries![_index];
-            }
-        }
+        public KeyValuePair<string, MetadataValue> Current => _entries![_index];
 
         object IEnumerator.Current => Current;
 

@@ -11,17 +11,10 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 {
     private readonly MetadataPayload _payload;
 
-    public MetadataKind Kind { get; }
-
-    /// <summary>
-    /// Gets the annotation that specifies where this value should be serialized in HTTP responses.
-    /// </summary>
-    public MetadataValueAnnotation Annotation { get; }
-
     private MetadataValue(
         MetadataKind kind,
         MetadataPayload payload,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     )
     {
         Kind = kind;
@@ -29,23 +22,30 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         Annotation = annotation;
     }
 
+    public MetadataKind Kind { get; }
+
+    /// <summary>
+    /// Gets the annotation that specifies where this value should be serialized in HTTP responses.
+    /// </summary>
+    public MetadataValueAnnotation Annotation { get; }
+
     public static MetadataValue Null => new (MetadataKind.Null, default);
 
     public static MetadataValue FromBoolean(
         bool value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     ) =>
         new (MetadataKind.Boolean, new MetadataPayload(value ? 1L : 0L), annotation);
 
     public static MetadataValue FromInt64(
         long value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     ) =>
         new (MetadataKind.Int64, new MetadataPayload(value), annotation);
 
     public static MetadataValue FromDouble(
         double value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     )
     {
         if (double.IsNaN(value) || double.IsInfinity(value))
@@ -58,22 +58,22 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
     public static MetadataValue FromString(
         string? value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     ) =>
         value is null ? Null : new MetadataValue(MetadataKind.String, new MetadataPayload(value), annotation);
 
     public static MetadataValue FromDecimal(
         decimal value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     )
     {
-        var str = value.ToString(CultureInfo.InvariantCulture);
-        return new MetadataValue(MetadataKind.String, new MetadataPayload(str), annotation);
+        var @string = value.ToString(CultureInfo.InvariantCulture);
+        return new MetadataValue(MetadataKind.String, new MetadataPayload(@string), annotation);
     }
 
     public static MetadataValue FromArray(
         MetadataArray array,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     )
     {
         ValidateArrayAnnotation(array, annotation);
@@ -81,8 +81,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     }
 
     public static MetadataValue FromObject(
-        MetadataObject obj,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.None
+        MetadataObject @object,
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     )
     {
         if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) != 0)
@@ -93,26 +93,20 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             );
         }
 
-        return new MetadataValue(MetadataKind.Object, new MetadataPayload(obj.Data), annotation);
+        return new MetadataValue(MetadataKind.Object, new MetadataPayload(@object.Data), annotation);
     }
 
     private static void ValidateArrayAnnotation(MetadataArray array, MetadataValueAnnotation annotation)
     {
-        if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) == 0)
+        if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) == 0 || array.HasOnlyPrimitiveChildren)
         {
             return;
         }
 
-        foreach (var item in array)
-        {
-            if (item.Kind == MetadataKind.Array || item.Kind == MetadataKind.Object)
-            {
-                throw new ArgumentException(
-                    "Arrays containing nested arrays or objects cannot be serialized as HTTP headers.",
-                    nameof(annotation)
-                );
-            }
-        }
+        throw new ArgumentException(
+            "Arrays containing nested arrays or objects cannot be serialized as HTTP headers.",
+            nameof(annotation)
+        );
     }
 
     // Implicit conversions for ergonomics
@@ -179,33 +173,29 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
     public bool TryGetDecimal(out decimal value)
     {
-        if (Kind == MetadataKind.String && _payload.Reference is string str)
+        switch (Kind)
         {
-            return decimal.TryParse(str, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
-        }
+            case MetadataKind.String when _payload.Reference is string @string:
+                return decimal.TryParse(@string, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
+            case MetadataKind.Double:
+                try
+                {
+                    value = (decimal) _payload.Float64;
+                    return true;
+                }
+                catch (OverflowException)
+                {
+                    value = 0;
+                    return false;
+                }
 
-        if (Kind == MetadataKind.Double)
-        {
-            try
-            {
-                value = (decimal) _payload.Float64;
+            case MetadataKind.Int64:
+                value = _payload.Int64;
                 return true;
-            }
-            catch (OverflowException)
-            {
+            default:
                 value = 0;
                 return false;
-            }
         }
-
-        if (Kind == MetadataKind.Int64)
-        {
-            value = _payload.Int64;
-            return true;
-        }
-
-        value = 0;
-        return false;
     }
 
     public bool TryGetArray(out MetadataArray value)
@@ -271,36 +261,40 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
     public override int GetHashCode()
     {
-        unchecked
+        var hashCodeBuilder = new HashCode();
+        hashCodeBuilder.Add(Kind);
+        switch (Kind)
         {
-            var hash = (int) Kind * 397;
-            return Kind switch
-            {
-                MetadataKind.Null => hash,
-                MetadataKind.Boolean or MetadataKind.Int64 => hash ^ _payload.Int64.GetHashCode(),
-                MetadataKind.Double => hash ^ _payload.Float64.GetHashCode(),
-                MetadataKind.String => hash ^ (_payload.Reference?.GetHashCode() ?? 0),
-                MetadataKind.Array or MetadataKind.Object => hash ^ (_payload.Reference?.GetHashCode() ?? 0),
-                _ => hash
-            };
+            case MetadataKind.Null:
+                break;
+            case MetadataKind.Boolean or MetadataKind.Int64:
+                hashCodeBuilder.Add(_payload.Int64);
+                break;
+            case MetadataKind.Double:
+                hashCodeBuilder.Add(_payload.Float64);
+                break;
+            case MetadataKind.String or MetadataKind.Array or MetadataKind.Object:
+                hashCodeBuilder.Add(_payload.Reference?.GetHashCode() ?? 0);
+                break;
         }
+
+        return hashCodeBuilder.ToHashCode();
     }
 
     public static bool operator ==(MetadataValue left, MetadataValue right) => left.Equals(right);
     public static bool operator !=(MetadataValue left, MetadataValue right) => !left.Equals(right);
 
-    public override string ToString()
-    {
-        return Kind switch
+    public override string ToString() =>
+        Kind switch
         {
             MetadataKind.Null => "null",
             MetadataKind.Boolean => _payload.Int64 != 0 ? "true" : "false",
             MetadataKind.Int64 => _payload.Int64.ToString(CultureInfo.InvariantCulture),
             MetadataKind.Double => _payload.Float64.ToString(CultureInfo.InvariantCulture),
             MetadataKind.String => $"\"{_payload.Reference}\"",
-            MetadataKind.Array => "[...]",
+            MetadataKind.Array =>
+                ((MetadataArrayData?) _payload.Reference)?.ToString() ?? MetadataArray.EmptyArrayStringRepresentation,
             MetadataKind.Object => "{...}",
-            _ => "unknown"
+            _ => throw new InvalidOperationException($"Kind '{Kind}' is unknown")
         };
-    }
 }

@@ -30,13 +30,13 @@ internal readonly record struct MetadataPayload
 
     // Int64 and Float64 overlap at offset 0 - only one is valid based on MetadataKind
     [field: FieldOffset(0)]
-    public long Int64 { get; init; }
+    public long Int64 { get; }
 
     [field: FieldOffset(0)]
-    public double Float64 { get; init; }
+    public double Float64 { get; }
 
     // Ref is at offset 8 (after the 8-byte primitives) to keep it separate from Int64/Float64.
     // This prevents the GC from misinterpreting primitive values as object references.
     [field: FieldOffset(8)]
-    public object? Reference { get; init; }
+    public object? Reference { get; }
 }

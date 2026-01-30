@@ -6,12 +6,16 @@ namespace Light.Results.Metadata;
 
 /// <summary>
 /// Builder for creating <see cref="MetadataObject" /> instances efficiently using pooled buffers.
+/// Entries are stored in insertion order.
 /// </summary>
 public struct MetadataObjectBuilder : IDisposable
 {
     private const int DefaultCapacity = 4;
+    private const int DictionaryThreshold = 10;
 
     private KeyValuePair<string, MetadataValue>[]? _entries;
+    private Dictionary<string, int>? _indexLookup;
+    private IEqualityComparer<string>? _keyComparer;
     private bool _built;
 
     public int Count { get; private set; }
@@ -53,22 +57,21 @@ public struct MetadataObjectBuilder : IDisposable
             throw new ArgumentNullException(nameof(key));
         }
 
-        // Find insertion position using binary search
-        var insertIndex = FindInsertionIndex(key);
-        if (insertIndex < 0)
+        if (ContainsKey(key))
         {
             throw new ArgumentException($"Duplicate key: '{key}'.", nameof(key));
         }
 
         EnsureCapacity(Count + 1);
 
-        // Shift elements to make room for the new entry
-        if (insertIndex < Count)
+        _entries![Count] = new KeyValuePair<string, MetadataValue>(key, value);
+
+        // Update dictionary if it exists
+        if (_indexLookup is not null)
         {
-            Array.Copy(_entries!, insertIndex, _entries!, insertIndex + 1, Count - insertIndex);
+            _indexLookup[key] = Count;
         }
 
-        _entries![insertIndex] = new KeyValuePair<string, MetadataValue>(key, value);
         Count++;
     }
 
@@ -127,25 +130,32 @@ public struct MetadataObjectBuilder : IDisposable
             throw new ArgumentNullException(nameof(key));
         }
 
-        var insertIndex = FindInsertionIndex(key);
-        if (insertIndex < 0)
+        var existingIndex = FindIndex(key);
+        if (existingIndex >= 0)
         {
             // Key exists, replace value
-            var existingIndex = ~insertIndex;
             _entries![existingIndex] = new KeyValuePair<string, MetadataValue>(key, value);
             return;
         }
 
-        // Insert new entry in sorted position
+        // Append new entry
         EnsureCapacity(Count + 1);
 
-        if (insertIndex < Count)
+        _entries![Count] = new KeyValuePair<string, MetadataValue>(key, value);
+
+        // Update dictionary if it exists
+        if (_indexLookup is not null)
         {
-            Array.Copy(_entries!, insertIndex, _entries!, insertIndex + 1, Count - insertIndex);
+            _indexLookup[key] = Count;
         }
 
-        _entries![insertIndex] = new KeyValuePair<string, MetadataValue>(key, value);
         Count++;
+    }
+
+    public void SetKeyComparer(IEqualityComparer<string> keyComparer)
+    {
+        ThrowIfBuilt();
+        _keyComparer = keyComparer;
     }
 
     public MetadataObject Build()
@@ -165,16 +175,18 @@ public struct MetadataObjectBuilder : IDisposable
         // Entries are already sorted due to sorted insertion in Add/AddOrReplace
         ReturnBuffer();
 
-        return new MetadataObject(new MetadataObjectData(entries));
+        return new MetadataObject(new MetadataObjectData(entries, _keyComparer));
     }
 
     public void Dispose()
     {
-        if (!_built)
+        if (_built)
         {
-            ReturnBuffer();
-            _built = true;
+            return;
         }
+
+        ReturnBuffer();
+        _built = true;
     }
 
     private void EnsureCapacity(int required)
@@ -218,68 +230,64 @@ public struct MetadataObjectBuilder : IDisposable
     }
 
     /// <summary>
-    /// Finds the index of an existing key using binary search.
+    /// Finds the index of an existing key using linear search or dictionary lookup.
     /// Returns the index if found, or -1 if not found.
     /// </summary>
     private int FindIndex(string key)
     {
-        var lo = 0;
-        var hi = Count - 1;
-
-        while (lo <= hi)
+        if (Count == 0)
         {
-            var mid = lo + ((hi - lo) >> 1);
-            var cmp = string.CompareOrdinal(_entries![mid].Key, key);
+            return -1;
+        }
 
-            if (cmp == 0)
+        if (Count > DictionaryThreshold)
+        {
+            return FindIndexWithDictionary(key);
+        }
+
+        return FindIndexLinear(key);
+    }
+
+    private int FindIndexLinear(string key)
+    {
+        if (_keyComparer is null)
+        {
+            for (var i = 0; i < Count; i++)
             {
-                return mid;
+                if (key.Equals(_entries![i].Key, StringComparison.Ordinal))
+                {
+                    return i;
+                }
             }
 
-            if (cmp < 0)
+            return -1;
+        }
+
+        for (var i = 0; i < Count; i++)
+        {
+            if (_keyComparer.Equals(key, _entries![i].Key))
             {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid - 1;
+                return i;
             }
         }
 
         return -1;
     }
 
-    /// <summary>
-    /// Finds the insertion index for a new key using binary search.
-    /// Returns the insertion index if the key doesn't exist.
-    /// Returns a negative value (bitwise complement of existing index) if the key already exists.
-    /// </summary>
-    private int FindInsertionIndex(string key)
+    private int FindIndexWithDictionary(string key)
     {
-        var lo = 0;
-        var hi = Count - 1;
-
-        while (lo <= hi)
+        if (_indexLookup is null)
         {
-            var mid = lo + ((hi - lo) >> 1);
-            var cmp = string.CompareOrdinal(_entries![mid].Key, key);
+            _indexLookup = _keyComparer is null ?
+                new Dictionary<string, int>(Count) :
+                new Dictionary<string, int>(Count, _keyComparer);
 
-            if (cmp == 0)
+            for (var i = 0; i < Count; i++)
             {
-                // Key already exists, return negative value
-                return ~mid;
-            }
-
-            if (cmp < 0)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid - 1;
+                _indexLookup[_entries![i].Key] = i;
             }
         }
 
-        return lo;
+        return _indexLookup.TryGetValue(key, out var index) ? index : -1;
     }
 }

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Light.Results.Tests.Http;
 
-public sealed class HttpStatusCodeInfoTests
+public sealed class ErrorCategoryExtensionsForHttpTests
 {
     [Theory]
     [InlineData(ErrorCategory.Validation, "https://tools.ietf.org/html/rfc9110#section-15.5.1")]
@@ -42,7 +42,7 @@ public sealed class HttpStatusCodeInfoTests
     [InlineData(ErrorCategory.InsufficientStorage, "https://tools.ietf.org/html/rfc9110#section-15.6.6")]
     public void GetTypeUriReturnsCorrectUri(ErrorCategory category, string expectedUri)
     {
-        var result = HttpStatusCodeInfo.GetTypeUri(category);
+        var result = category.GetTypeUri();
 
         result.Should().Be(expectedUri);
     }
@@ -50,7 +50,7 @@ public sealed class HttpStatusCodeInfoTests
     [Fact]
     public void GetTypeUri_UnknownStatusCode_ReturnsFallbackUri()
     {
-        var result = HttpStatusCodeInfo.GetTypeUri((ErrorCategory) 999);
+        var result = ((ErrorCategory) 999).GetTypeUri();
 
         result.Should().Be("https://tools.ietf.org/html/rfc9110#section-15.6.1");
     }
@@ -90,7 +90,7 @@ public sealed class HttpStatusCodeInfoTests
     [InlineData(ErrorCategory.InsufficientStorage, "Insufficient Storage")]
     public void GetTitle_ReturnsCorrectTitle(ErrorCategory category, string expectedTitle)
     {
-        var result = HttpStatusCodeInfo.GetTitle(category);
+        var result = category.GetTitle();
 
         result.Should().Be(expectedTitle);
     }
@@ -98,7 +98,7 @@ public sealed class HttpStatusCodeInfoTests
     [Fact]
     public void GetTitle_UnknownStatusCode_ReturnsFallbackTitle()
     {
-        var result = HttpStatusCodeInfo.GetTitle((ErrorCategory) 999);
+        var result = ((ErrorCategory) 999).GetTitle();
 
         result.Should().Be("Internal Server Error");
     }
@@ -152,5 +152,71 @@ public sealed class HttpStatusCodeInfoTests
         var result = ErrorCategory.Unclassified.ToHttpStatusCode();
 
         result.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Theory]
+    [InlineData(ErrorCategory.Validation, "One or more validation errors occurred.")]
+    [InlineData(ErrorCategory.Unauthorized, "Authentication is required to access this resource.")]
+    [InlineData(ErrorCategory.PaymentRequired, "Payment is required before the request can be processed.")]
+    [InlineData(ErrorCategory.Forbidden, "You do not have permission to access this resource.")]
+    [InlineData(ErrorCategory.NotFound, "The requested resource was not found.")]
+    [InlineData(ErrorCategory.MethodNotAllowed, "The HTTP method used is not allowed for this resource.")]
+    [InlineData(
+        ErrorCategory.NotAcceptable,
+        "No acceptable representation of the resource could be found for the request."
+    )]
+    [InlineData(ErrorCategory.Timeout, "The request timed out.")]
+    [InlineData(ErrorCategory.Conflict, "The request conflicts with the current state of the resource.")]
+    [InlineData(ErrorCategory.Gone, "The requested resource is no longer available.")]
+    [InlineData(ErrorCategory.LengthRequired, "The request must include a Content-Length header.")]
+    [InlineData(ErrorCategory.PreconditionFailed, "A precondition for the request was not met.")]
+    [InlineData(ErrorCategory.ContentTooLarge, "The request content is too large.")]
+    [InlineData(ErrorCategory.UriTooLong, "The request URI is too long.")]
+    [InlineData(ErrorCategory.UnsupportedMediaType, "The request content type is not supported.")]
+    [InlineData(
+        ErrorCategory.RequestedRangeNotSatisfiable,
+        "The requested range cannot be satisfied for this resource."
+    )]
+    [InlineData(
+        ErrorCategory.ExpectationFailed,
+        "The server could not meet the expectation given in the request headers."
+    )]
+    [InlineData(
+        ErrorCategory.MisdirectedRequest,
+        "The request was directed to a server that cannot produce a response."
+    )]
+    [InlineData(ErrorCategory.UnprocessableContent, "The request was well-formed but could not be processed.")]
+    [InlineData(ErrorCategory.Locked, "The resource is locked and cannot be modified.")]
+    [InlineData(ErrorCategory.FailedDependency, "The request failed because a dependent request did not succeed.")]
+    [InlineData(
+        ErrorCategory.UpgradeRequired,
+        "The client must upgrade to a different protocol to complete the request."
+    )]
+    [InlineData(ErrorCategory.PreconditionRequired, "A required precondition header is missing from the request.")]
+    [InlineData(ErrorCategory.TooManyRequests, "Too many requests. Please try again later.")]
+    [InlineData(ErrorCategory.RequestHeaderFieldsTooLarge, "The request headers are too large.")]
+    [InlineData(ErrorCategory.UnavailableForLegalReasons, "This resource is unavailable for legal reasons.")]
+    [InlineData(ErrorCategory.InternalError, "An unexpected error occurred.")]
+    [InlineData(ErrorCategory.NotImplemented, "This functionality is not implemented.")]
+    [InlineData(ErrorCategory.BadGateway, "An invalid response was received from an upstream server.")]
+    [InlineData(ErrorCategory.ServiceUnavailable, "The service is currently unavailable.")]
+    [InlineData(ErrorCategory.GatewayTimeout, "The upstream server did not respond in time.")]
+    [InlineData(
+        ErrorCategory.InsufficientStorage,
+        "The server cannot store the representation needed to complete the request."
+    )]
+    public void GetDetail_ReturnsCorrectDetail(ErrorCategory category, string expectedDetail)
+    {
+        var result = category.GetDetail();
+
+        result.Should().Be(expectedDetail);
+    }
+
+    [Fact]
+    public void GetDetail_UnknownStatusCode_ReturnsFallbackDetail()
+    {
+        var result = ((ErrorCategory) 999).GetDetail();
+
+        result.Should().Be("An unexpected error occurred.");
     }
 }
