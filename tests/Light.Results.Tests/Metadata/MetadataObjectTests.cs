@@ -830,6 +830,7 @@ public sealed class MetadataObjectTests
     [Fact]
     public void TryGetValue_WithLargeObject_ShouldUseDictionaryLookup()
     {
+        // More than DictionaryThreshold (10) entries to trigger dictionary lookup
         var obj = MetadataObject.Create(
             ("key0", 0),
             ("key1", 1),
@@ -840,7 +841,8 @@ public sealed class MetadataObjectTests
             ("key6", 6),
             ("key7", 7),
             ("key8", 8),
-            ("key9", 9)
+            ("key9", 9),
+            ("key10", 10)
         );
 
         var result = obj.TryGetValue("key5", out var value);
@@ -852,6 +854,7 @@ public sealed class MetadataObjectTests
     [Fact]
     public void TryGetValue_WithLargeObject_MissingKey_ShouldReturnFalse()
     {
+        // More than DictionaryThreshold (10) entries to trigger dictionary lookup
         var obj = MetadataObject.Create(
             ("key0", 0),
             ("key1", 1),
@@ -862,7 +865,8 @@ public sealed class MetadataObjectTests
             ("key6", 6),
             ("key7", 7),
             ("key8", 8),
-            ("key9", 9)
+            ("key9", 9),
+            ("key10", 10)
         );
 
         var result = obj.TryGetValue("missing", out var value);
@@ -874,6 +878,7 @@ public sealed class MetadataObjectTests
     [Fact]
     public void ContainsKey_WithLargeObject_ShouldUseDictionaryLookup()
     {
+        // More than DictionaryThreshold (10) entries to trigger dictionary lookup
         var obj = MetadataObject.Create(
             ("key0", 0),
             ("key1", 1),
@@ -884,11 +889,61 @@ public sealed class MetadataObjectTests
             ("key6", 6),
             ("key7", 7),
             ("key8", 8),
-            ("key9", 9)
+            ("key9", 9),
+            ("key10", 10)
         );
 
         obj.ContainsKey("key7").Should().BeTrue();
         obj.ContainsKey("missing").Should().BeFalse();
+    }
+
+    [Fact]
+    public void TryGetValue_WithLargeObjectAndKeyComparer_ShouldUseDictionaryLookup()
+    {
+        // More than DictionaryThreshold (10) entries with key comparer to trigger dictionary lookup
+        var obj = MetadataObject.Create(
+            StringComparer.OrdinalIgnoreCase,
+            ("Key0", 0),
+            ("Key1", 1),
+            ("Key2", 2),
+            ("Key3", 3),
+            ("Key4", 4),
+            ("Key5", 5),
+            ("Key6", 6),
+            ("Key7", 7),
+            ("Key8", 8),
+            ("Key9", 9),
+            ("Key10", 10)
+        );
+
+        // Should find keys case-insensitively
+        obj.TryGetValue("KEY5", out var value).Should().BeTrue();
+        value.Should().Be(MetadataValue.FromInt64(5));
+        obj.TryGetValue("key10", out var value2).Should().BeTrue();
+        value2.Should().Be(MetadataValue.FromInt64(10));
+    }
+
+    [Fact]
+    public void TryGetValue_WithLargeObjectAndKeyComparer_MissingKey_ShouldReturnFalse()
+    {
+        // More than DictionaryThreshold (10) entries with key comparer
+        var obj = MetadataObject.Create(
+            StringComparer.OrdinalIgnoreCase,
+            ("Key0", 0),
+            ("Key1", 1),
+            ("Key2", 2),
+            ("Key3", 3),
+            ("Key4", 4),
+            ("Key5", 5),
+            ("Key6", 6),
+            ("Key7", 7),
+            ("Key8", 8),
+            ("Key9", 9),
+            ("Key10", 10)
+        );
+
+        obj.TryGetValue("missing", out var value).Should().BeFalse();
+        value.Should().Be(default(MetadataValue));
     }
 
     [Fact]
@@ -1016,6 +1071,7 @@ public sealed class MetadataObjectTests
     {
         using var builder = MetadataObjectBuilder.Create();
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = () => builder.Add(null!, 1);
 
         act.Should().Throw<ArgumentNullException>()
@@ -1076,6 +1132,7 @@ public sealed class MetadataObjectTests
     {
         using var builder = MetadataObjectBuilder.Create();
 
+        // ReSharper disable once AccessToDisposedClosure -- thats fine, act is called before disposal
         var act = () => builder.Replace(null!, 1);
 
         act.Should().Throw<ArgumentNullException>()
@@ -1134,6 +1191,7 @@ public sealed class MetadataObjectTests
     {
         using var builder = MetadataObjectBuilder.Create();
 
+        // ReSharper disable once AccessToDisposedClosure -- thats fine, act is called before disposal
         var act = () => builder.AddOrReplace(null!, 1);
 
         act.Should().Throw<ArgumentNullException>()
@@ -1180,6 +1238,7 @@ public sealed class MetadataObjectTests
     {
         using var builder = MetadataObjectBuilder.Create();
 
+        // ReSharper disable once AccessToDisposedClosure -- thats fine, act is called before disposal
         var act = () => builder.TryGetValue(null!, out _);
 
         act.Should().Throw<ArgumentNullException>()
@@ -1201,6 +1260,7 @@ public sealed class MetadataObjectTests
     {
         using var builder = MetadataObjectBuilder.Create();
 
+        // ReSharper disable once AccessToDisposedClosure -- thats fine, act is called before disposal
         var act = () => builder.ContainsKey(null!);
 
         act.Should().Throw<ArgumentNullException>()
