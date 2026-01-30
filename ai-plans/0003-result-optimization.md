@@ -1,5 +1,8 @@
 # Plan for Result/Errors performance & metadata enhancements
 
+*Please note: this plan was written before the AGENTS.md file in this folder was updated to its current form. Do not
+take this plan as an example for how to write plans.*
+
 ## Goals
 
 1. Tighten `Result<T>` / `Result` hot-path performance: minimize allocations, avoid unnecessary copying, and keep struct size predictable.

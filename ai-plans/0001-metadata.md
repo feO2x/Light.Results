@@ -1,5 +1,8 @@
 # Plan for metadata in Light.Results
 
+*Please note: this plan was written before the AGENTS.md file in this folder was updated to its current form. Do not
+take this plan as an example for how to write plans.*
+
 ## Goals & Constraints
 
 1. Metadata must be trivially serializable/deserializable across:

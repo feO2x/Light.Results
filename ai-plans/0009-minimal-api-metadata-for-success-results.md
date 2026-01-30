@@ -1,5 +1,8 @@
 # Metadata Serialization for Success Results in Minimal APIs
 
+*Please note: this plan was written before the AGENTS.md file in this folder was updated to its current form. Do not
+take this plan as an example for how to write plans.*
+
 ## Goals & Constraints
 
 1. **Opt-in feature**: Allow callers to include `MetadataObject` in success responses, changing the response schema.

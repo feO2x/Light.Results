@@ -1,5 +1,8 @@
 # Functional Extensions for Light.Results
 
+*Please note: this plan was written before the AGENTS.md file in this folder was updated to its current form. Do not
+take this plan as an example for how to write plans.*
+
 ## Goals & Constraints
 
 1. **Extract functional methods** from `Result<T>` and `Result` structs into extension methods in a new namespace `Light.Results.FunctionalExtensions`.
