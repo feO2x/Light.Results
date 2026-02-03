@@ -11,7 +11,7 @@ public static partial class SerializerExtensions
         Errors errors
     )
     {
-        var (groupedErrors, errorDetails) = ProcessErrors(errors);
+        var (groupedErrors, errorDetails) = ProcessErrorsForValidationResponse(errors);
 
         WriteGroupedErrors(writer, groupedErrors);
 
@@ -21,17 +21,37 @@ public static partial class SerializerExtensions
         }
     }
 
-    private static (Dictionary<string, List<string>> groupedErrors, List<ErrorDetail> errorDetails) ProcessErrors(
-        Errors errors
-    )
+    // Processes errors into two structures for ASP.NET Core compatible serialization:
+    // 1. groupedErrors: Dictionary<target, messages[]> - matches ASP.NET Core's ValidationProblemDetails.Errors
+    // 2. errorDetails: additional metadata (code, category, metadata) for errors that have it
+    //
+    // Multiple errors can share the same target (e.g., multiple validation rules failing for one field).
+    // Each error gets its own ErrorDetail entry with an index that correlates back to its message position.
+    //
+    // Example with two errors for "email":
+    //   Error 1: target="email", message="Email is required", code="Required"
+    //   Error 2: target="email", message="Email format is invalid", code="InvalidFormat"
+    //
+    // Produces:
+    //   "errors": {
+    //     "email": ["Email is required", "Email format is invalid"]
+    //   },
+    //   "errorDetails": [
+    //     { "target": "email", "index": 0, "code": "Required" },
+    //     { "target": "email", "index": 1, "code": "InvalidFormat" }
+    //   ]
+    //
+    // The index field allows consumers to correlate each ErrorDetail back to its specific message.
+    private static ErrorGrouping ProcessErrorsForValidationResponse(Errors errors)
     {
         var groupedErrors = new Dictionary<string, List<string>>();
         var errorDetails = new List<ErrorDetail>();
         var indexByTarget = new Dictionary<string, int>();
 
-        foreach (var error in errors)
+        for (var i = 0; i < errors.Count; i++)
         {
-            var target = error.Target ?? "";
+            var error = errors[i];
+            var target = GetNormalizedTargetForValidationResponse(error, i);
 
             if (!groupedErrors.TryGetValue(target, out var messages))
             {
@@ -52,7 +72,7 @@ public static partial class SerializerExtensions
             }
         }
 
-        return (groupedErrors, errorDetails);
+        return new ErrorGrouping(groupedErrors, errorDetails);
     }
 
     private static ErrorDetail? CreateErrorDetailIfNeeded(Error error, string target, int index)
@@ -134,6 +154,11 @@ public static partial class SerializerExtensions
 
         writer.WriteEndObject();
     }
+
+    private readonly record struct ErrorGrouping(
+        Dictionary<string, List<string>> GroupedErrors,
+        List<ErrorDetail> ErrorDetails
+    );
 
     private readonly struct ErrorDetail
     {

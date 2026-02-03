@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -107,27 +108,36 @@ public static partial class SerializerExtensions
     public static void WriteErrors(
         this Utf8JsonWriter writer,
         Errors errors,
-        ErrorSerializationFormat format,
+        ValidationProblemSerializationFormat format,
+        HttpStatusCode statusCode,
         JsonSerializerOptions serializerOptions
     )
     {
-        if (format == ErrorSerializationFormat.Rich)
-        {
-            WriteRichErrors(writer, errors, serializerOptions);
-        }
-        else
+        // ASP.NET Core compatible format only applies to validation responses (400 and 422)
+        var isValidationResponse = statusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity;
+        if (format == ValidationProblemSerializationFormat.AspNetCoreCompatible && isValidationResponse)
         {
             WriteAspNetCoreCompatibleErrors(writer, errors);
         }
+        else
+        {
+            WriteRichErrors(writer, errors, isValidationResponse, serializerOptions);
+        }
     }
 
-    private static void WriteRichErrors(Utf8JsonWriter writer, Errors errors, JsonSerializerOptions serializerOptions)
+    private static void WriteRichErrors(
+        Utf8JsonWriter writer,
+        Errors errors,
+        bool isValidationResponse,
+        JsonSerializerOptions serializerOptions
+    )
     {
         writer.WritePropertyName("errors");
         writer.WriteStartArray();
 
-        foreach (var error in errors)
+        for (var i = 0; i < errors.Count; i++)
         {
+            var error = errors[i];
             writer.WriteStartObject();
 
             writer.WriteString("message", error.Message);
@@ -137,7 +147,13 @@ public static partial class SerializerExtensions
                 writer.WriteString("code", error.Code);
             }
 
-            if (error.Target is not null)
+            // For validation responses, Target must be set and whitespace is normalized to empty string
+            if (isValidationResponse)
+            {
+                var target = GetNormalizedTargetForValidationResponse(error, i);
+                writer.WriteString("target", target);
+            }
+            else if (error.Target is not null)
             {
                 writer.WriteString("target", error.Target);
             }
@@ -162,6 +178,19 @@ public static partial class SerializerExtensions
         }
 
         writer.WriteEndArray();
+    }
+
+    private static string GetNormalizedTargetForValidationResponse(Error error, int errorIndex)
+    {
+        if (error.Target is null)
+        {
+            throw new InvalidOperationException(
+                $"Error at index {errorIndex} does not have a Target set. For HTTP 400 Bad Request and HTTP 422 Unprocessable Content responses, all errors must have the Target property set. Use an empty string to indicate the root object."
+            );
+        }
+
+        // Normalize whitespace-only strings to empty string
+        return string.IsNullOrWhiteSpace(error.Target) ? "" : error.Target;
     }
 
     /// <summary>
@@ -196,12 +225,17 @@ public static partial class SerializerExtensions
             writer.WriteString("detail", problemDetailsInfo.Detail);
         }
 
-        if (string.IsNullOrWhiteSpace(problemDetailsInfo.Detail))
+        if (!string.IsNullOrWhiteSpace(problemDetailsInfo.Instance))
         {
             writer.WriteString("instance", problemDetailsInfo.Instance);
         }
 
-        writer.WriteErrors(errors, options.ErrorSerializationFormat, serializerOptions);
+        writer.WriteErrors(
+            errors,
+            options.ValidationProblemSerializationFormat,
+            problemDetailsInfo.Status,
+            serializerOptions
+        );
 
         if (metadata.HasValue)
         {

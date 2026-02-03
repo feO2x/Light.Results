@@ -24,6 +24,11 @@ public sealed class RegularMinimalApiApp : IAsyncLifetime
         App.MapGet("/api/contacts", GetContacts);
         App.MapGet("/api/contacts/{id:guid}", GetContact);
         App.MapPut("/api/contacts", CreateContact);
+        App.MapGet("/api/contacts/not-found/{id:guid}", GetContactNotFound);
+        App.MapGet("/api/contacts/validation-error", GetContactValidationError);
+        App.MapDelete("/api/contacts/{id:guid}", DeleteContact);
+        App.MapPost("/api/contacts/action", PerformAction);
+        App.MapPost("/api/contacts/validate", ValidateContacts);
     }
 
     public WebApplication App { get; }
@@ -63,5 +68,61 @@ public sealed class RegularMinimalApiApp : IAsyncLifetime
     {
         var result = Result<ContactDto>.Ok(contactDto);
         return result.ToHttp201CreatedMinimalApiResult(location: $"/api/contacts/{contactDto.Id}");
+    }
+
+    private static LightResult<ContactDto> GetContactNotFound(Guid id)
+    {
+        var error = new Error
+        {
+            Message = $"Contact with id '{id}' was not found",
+            Code = "ContactNotFound",
+            Category = ErrorCategory.NotFound
+        };
+        var result = Result<ContactDto>.Fail(error);
+        return result.ToMinimalApiResult();
+    }
+
+    private static LightResult<ContactDto> GetContactValidationError()
+    {
+        Error[] errors =
+        [
+            new ()
+            {
+                Message = "Name is required", Code = "NameRequired", Target = "name",
+                Category = ErrorCategory.Validation
+            },
+            new ()
+            {
+                Message = "Email must be valid", Code = "EmailInvalid", Target = "email",
+                Category = ErrorCategory.Validation
+            }
+        ];
+        var result = Result<ContactDto>.Fail(errors);
+        return result.ToMinimalApiResult();
+    }
+
+    private static LightResult DeleteContact(Guid id)
+    {
+        var result = Result.Ok();
+        return result.ToMinimalApiResult();
+    }
+
+    private static LightResult PerformAction()
+    {
+        var result = Result.Ok();
+        return result.ToHttp201CreatedMinimalApiResult(location: "/api/contacts/action/completed");
+    }
+
+    private static LightResult ValidateContacts()
+    {
+        var error = new Error
+        {
+            Message = "Batch validation failed",
+            Code = "BatchValidationError",
+            Target = "",
+            Category = ErrorCategory.Validation
+        };
+        var result = Result.Fail(error);
+        return result.ToMinimalApiResult();
     }
 }

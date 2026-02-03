@@ -39,4 +39,73 @@ public sealed class RegularAppIntegrationTests
 
         await Verifier.Verify(response);
     }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldProduce404ProblemDetails_WhenResultHasNotFoundError()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+        var id = new Guid("A1B2C3D4-E5F6-7890-ABCD-EF1234567890");
+
+        using var response = await httpClient.GetAsync(
+            $"/api/contacts/not-found/{id}",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        await Verifier.Verify(response);
+    }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldProduce400ProblemDetails_WhenResultHasValidationErrors()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.GetAsync(
+            "/api/contacts/validation-error",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        await Verifier.Verify(response);
+    }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldProduce200_ForNonGenericResult()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+        var id = new Guid("A1B2C3D4-E5F6-7890-ABCD-EF1234567890");
+
+        using var response = await httpClient.DeleteAsync(
+            $"/api/contacts/{id}",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        await Verifier.Verify(response);
+    }
+
+    [Fact]
+    public async Task ToHttp201CreatedMinimalApiResult_ShouldProduce201_ForNonGenericResult()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.PostAsync(
+            "/api/contacts/action",
+            content: null,
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        await Verifier.Verify(response);
+    }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldProduce400ProblemDetails_ForNonGenericResultWithError()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.PostAsync(
+            "/api/contacts/validate",
+            content: null,
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        await Verifier.Verify(response);
+    }
 }
