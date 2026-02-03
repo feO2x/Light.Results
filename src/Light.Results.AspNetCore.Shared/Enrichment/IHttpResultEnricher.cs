@@ -1,3 +1,4 @@
+using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.Results.AspNetCore.Shared.Enrichment;
@@ -16,5 +17,5 @@ public interface IHttpResultEnricher
     /// <param name="httpContext">The current HTTP context.</param>
     /// <returns>A new result with enriched metadata, or the original if unchanged.</returns>
     TResult Enrich<TResult>(TResult result, HttpContext httpContext)
-        where TResult : struct, IResultObject;
+        where TResult : struct, IResultObject, ICanReplaceMetadata<TResult>;
 }

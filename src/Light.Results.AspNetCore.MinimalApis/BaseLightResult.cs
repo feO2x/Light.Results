@@ -4,13 +4,14 @@ using System.Threading.Tasks;
 using Light.Results.AspNetCore.Shared;
 using Light.Results.AspNetCore.Shared.Enrichment;
 using Light.Results.Http;
+using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Light.Results.AspNetCore.MinimalApis;
 
 public abstract class BaseLightResult<TResult> : IResult
-    where TResult : struct, IResultObject
+    where TResult : struct, IResultObject, ICanReplaceMetadata<TResult>
 {
     protected BaseLightResult(
         TResult result,
