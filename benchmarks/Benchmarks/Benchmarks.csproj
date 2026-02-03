@@ -7,5 +7,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Light.Results\Light.Results.csproj" />
+    <ProjectReference Include="..\..\src\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
   </ItemGroup>
 </Project>
