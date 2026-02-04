@@ -1,0 +1,53 @@
+using System;
+using System.Collections.Frozen;
+using System.Collections.Generic;
+using FluentAssertions;
+using Light.Results.Http;
+using Light.Results.Metadata;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
+using Xunit;
+
+namespace Light.Results.AspNetCore.MinimalApis.Tests;
+
+public sealed class ModuleTests
+{
+    [Fact]
+    public void AddLightResultsHttpHeaderConversionService_ShouldUseComparerForKeys()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("x-trace"));
+        services.AddLightResultsHttpHeaderConversionService(StringComparer.OrdinalIgnoreCase);
+
+        using var provider = services.BuildServiceProvider();
+        var converters = provider.GetRequiredService<FrozenDictionary<string, HttpHeaderConverter>>();
+
+        converters.ContainsKey("X-TRACE").Should().BeTrue();
+    }
+
+    [Fact]
+    public void AddLightResultsHttpHeaderConversionService_ShouldThrow_WhenDuplicateKeysExist()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("duplicate"));
+        services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("duplicate"));
+        services.AddLightResultsHttpHeaderConversionService();
+
+        using var provider = services.BuildServiceProvider();
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        Action act = () => provider.GetRequiredService<FrozenDictionary<string, HttpHeaderConverter>>();
+        act.Should().Throw<InvalidOperationException>().WithMessage("Cannot add '*duplicate*'*");
+    }
+
+    private sealed class TestHeaderConverter : HttpHeaderConverter
+    {
+        public TestHeaderConverter(string metadataKey) : base([metadataKey]) { }
+
+        public override KeyValuePair<string, StringValues> PrepareHttpHeader(
+            string metadataKey,
+            MetadataValue value
+        ) =>
+            new (metadataKey, value.ToString());
+    }
+}

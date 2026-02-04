@@ -80,12 +80,18 @@ public static partial class SerializerExtensions
             );
         }
 
-        ((JsonConverter<T>) valueTypeInfo.Converter).Write(writer, value, options);
+        if (valueTypeInfo.Converter is JsonConverter<T> converter)
+        {
+            converter.Write(writer, value, options);
+            return;
+        }
+
+        JsonSerializer.Serialize(writer, value, valueTypeInfo);
     }
 
     /// <summary>
     /// Writes the metadata JSON object using System.Text.Json's <see cref="Utf8JsonWriter" /> in a JSON property named
-    /// "metadata". This
+    /// "metadata". This should be called within the context of a JSON object.
     /// </summary>
     /// <param name="writer">The UTF-8 JSON writer.</param>
     /// <param name="metadata">The metadata object to be written.</param>
