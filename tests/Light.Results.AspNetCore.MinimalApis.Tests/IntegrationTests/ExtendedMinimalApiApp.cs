@@ -52,6 +52,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         App.MapGet("/api/extended/enriched-error", GetEnrichedError);
         App.MapGet("/api/extended/non-generic-header-only-metadata", GetNonGenericHeaderOnlyMetadata);
         App.MapGet("/api/extended/generic-header-only-metadata", GetGenericHeaderOnlyMetadata);
+        App.MapGet("/api/extended/non-generic-null-header", GetNonGenericNullHeaderMetadata);
     }
 
     public WebApplication App { get; }
@@ -194,9 +195,21 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
     private static LightResult<string> GetGenericHeaderOnlyMetadata()
     {
         var metadata = MetadataObject.Create(
+            ("X-Null", default),
             ("X-TraceId", MetadataValue.FromString("trace-43", MetadataValueAnnotation.SerializeInHttpHeader))
         );
         var result = Result<string>.Ok("ok", metadata);
+        return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
+    }
+
+    private static LightResult GetNonGenericNullHeaderMetadata()
+    {
+        var metadata = MetadataObject.Create(
+            ("X-Null", MetadataValue.Null),
+            ("note", MetadataValue.FromString("non-generic"))
+        );
+
+        var result = Result.Ok(metadata);
         return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
     }
 

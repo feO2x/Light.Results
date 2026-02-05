@@ -175,6 +175,24 @@ public sealed class ExtendedAppIntegrationTests
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
         response.Headers.TryGetValues("X-TraceId", out var headerValues).Should().BeTrue();
         headerValues.Should().ContainSingle("trace-43");
+        response.Headers.Contains("X-Null").Should().BeFalse();
+
+        await Verifier.Verify(response);
+    }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldNotSetHeader_WhenMetadataValueIsNull()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.GetAsync(
+            "/api/extended/non-generic-null-header",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        response.Headers.Contains("X-Null").Should().BeFalse();
 
         await Verifier.Verify(response);
     }

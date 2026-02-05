@@ -1,0 +1,14 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 35,
+      Content-Type: application/json
+    },
+    Value: {
+      metadata: {
+        note: non-generic
+      }
+    }
+  }
+}
