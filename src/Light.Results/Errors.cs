@@ -101,6 +101,10 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
         Count != 1 ? _manyErrors.Span[index] :
         index == 0 ? _singleError : throw new IndexOutOfRangeException();
 
+    /// <summary>
+    /// Gets the first error.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the collection is empty.</exception>
     public Error First => Count switch
     {
         0 => throw new InvalidOperationException("No errors present"),
@@ -109,9 +113,10 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
     };
 
     /// <summary>
-    /// Gets the value indicating whether this instance is the default instance.
+    /// Gets the value indicating whether this instance contains errors. This is also the indicator for the default
+    /// instance of this struct.
     /// </summary>
-    public bool IsDefaultInstance => Count == 0;
+    public bool IsEmpty => Count == 0;
 
     /// <summary>
     /// Gets an enumerator that iterates through the errors.
@@ -146,7 +151,7 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
     /// <exception cref="InvalidOperationException">Thrown when errors is empty.</exception>
     public ErrorCategory GetLeadingCategory(bool firstCategoryIsLeadingCategory = false)
     {
-        if (IsDefaultInstance)
+        if (IsEmpty)
         {
             throw new InvalidOperationException("Errors collection must contain at least one error.");
         }
@@ -190,6 +195,13 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
         };
     }
 
+    /// <summary>
+    /// Gets the value indicating whether this instance is equal to the specified instance.
+    /// When <paramref name="compareMetadata" /> is false, metadata content is ignored.
+    /// </summary>
+    /// <param name="other">The instance to compare to.</param>
+    /// <param name="compareMetadata">Whether to include metadata in the comparison.</param>
+    /// <returns>The value indicating whether this instance is equal to the specified instance.</returns>
     public bool Equals(Errors other, bool compareMetadata)
     {
         if (compareMetadata)
@@ -345,8 +357,20 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
         }
     }
 
+    /// <summary>
+    /// Determines whether two <see cref="Errors" /> instances are equal.
+    /// </summary>
+    /// <param name="left">The left instance.</param>
+    /// <param name="right">The right instance.</param>
+    /// <returns><see langword="true" /> when the instances are equal; otherwise, <see langword="false" />.</returns>
     public static bool operator ==(Errors left, Errors right) => left.Equals(right);
 
+    /// <summary>
+    /// Determines whether two <see cref="Errors" /> instances are not equal.
+    /// </summary>
+    /// <param name="left">The left instance.</param>
+    /// <param name="right">The right instance.</param>
+    /// <returns><see langword="true" /> when the instances are not equal; otherwise, <see langword="false" />.</returns>
     public static bool operator !=(Errors left, Errors right) => !left.Equals(right);
 
     /// <summary>

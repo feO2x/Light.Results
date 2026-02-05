@@ -20,23 +20,23 @@ namespace Light.Results.Metadata;
 /// </para>
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
-internal readonly struct MetadataPayload
+internal readonly record struct MetadataPayload
 {
-    // Int64 and Float64 overlap at offset 0 - only one is valid based on MetadataKind
-    [FieldOffset(0)]
-    public readonly long Int64;
-
-    [FieldOffset(0)]
-    public readonly double Float64;
-
-    // Ref is at offset 8 (after the 8-byte primitives) to keep it separate from Int64/Float64.
-    // This prevents the GC from misinterpreting primitive values as object references.
-    [FieldOffset(8)]
-    public readonly object? Reference;
-
     public MetadataPayload(long int64) => Int64 = int64;
 
     public MetadataPayload(double float64) => Float64 = float64;
 
     public MetadataPayload(object? reference) => Reference = reference;
+
+    // Int64 and Float64 overlap at offset 0 - only one is valid based on MetadataKind
+    [field: FieldOffset(0)]
+    public long Int64 { get; }
+
+    [field: FieldOffset(0)]
+    public double Float64 { get; }
+
+    // Ref is at offset 8 (after the 8-byte primitives) to keep it separate from Int64/Float64.
+    // This prevents the GC from misinterpreting primitive values as object references.
+    [field: FieldOffset(8)]
+    public object? Reference { get; }
 }

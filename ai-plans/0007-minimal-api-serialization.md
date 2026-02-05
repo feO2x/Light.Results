@@ -1,5 +1,8 @@
 # ASP.NET Core Minimal API Serialization for Light.Results
 
+*Please note: this plan was written before the AGENTS.md file in this folder was updated to its current form. Do not
+take this plan as an example for how to write plans.*
+
 ## Goals & Constraints
 
 1. **New project**: Create `Light.Results.AspNetCore` in `./src/` targeting .NET 10 (not .NET Standard 2.0).

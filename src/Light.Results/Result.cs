@@ -11,10 +11,7 @@ namespace Light.Results;
 /// Represents either a successful value of <typeparamref name="T" /> or one or more errors.
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result<T> : IEquatable<Result<T>>,
-                                   IHasOptionalMetadata<Result<T>>,
-                                   IResult<Result<T>>,
-                                   IResultWithValue<Result<T>, T>
+public readonly struct Result<T> : IResultObject<T>, IEquatable<Result<T>>, ICanReplaceMetadata<Result<T>>
 {
     private readonly Errors _errors;
     private readonly T? _value;
@@ -44,7 +41,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>,
     // ReSharper disable once MemberCanBePrivate.Global -- public API
     public Result(Errors errors, MetadataObject? metadata = null)
     {
-        if (errors.IsDefaultInstance)
+        if (errors.IsEmpty)
         {
             throw new ArgumentException($"{nameof(errors)} must contain at least one error", nameof(errors));
         }
@@ -67,8 +64,15 @@ public readonly struct Result<T> : IEquatable<Result<T>>,
     public T Value =>
         IsValid ? _value : throw new InvalidOperationException("Cannot access Value on a failed Result.");
 
-    /// <summary>Returns the errors collection (empty struct on success).</summary>
+    /// <summary>
+    /// Returns the errors collection (empty struct on success).
+    /// </summary>
     public Errors Errors => _errors;
+
+    /// <summary>
+    /// Gets the value indicating whether this instance has a value. Always returns true.
+    /// </summary>
+    public bool HasValue => true;
 
     /// <summary>
     /// Returns the first error (or throws if result contains no errors).
@@ -251,7 +255,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>,
 /// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>, IResult<Result>
+public readonly struct Result : IResultObject, IEquatable<Result>, ICanReplaceMetadata<Result>
 {
     private readonly Result<Unit> _inner;
 
@@ -269,6 +273,11 @@ public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>
 
     /// <summary>Returns the errors collection (empty struct on success).</summary>
     public Errors Errors => _inner.Errors;
+
+    /// <summary>
+    /// Gets the value indicating whether this instance has a value. Always returns false.
+    /// </summary>
+    public bool HasValue => false;
 
     /// <summary>Returns the first error (or throws if result contains no errors).</summary>
     /// <exception cref="InvalidOperationException">Thrown when this result contains no errors.</exception>
@@ -367,4 +376,10 @@ public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>
     /// Determines whether two results are not equal.
     /// </summary>
     public static bool operator !=(Result x, Result y) => !(x == y);
+
+    /// <summary>
+    /// Returns a string representation of this result.
+    /// </summary>
+    public override string ToString() =>
+        IsValid ? "OK" : $"Fail({string.Join(", ", _inner.Errors.Select(e => e.Message))})";
 }

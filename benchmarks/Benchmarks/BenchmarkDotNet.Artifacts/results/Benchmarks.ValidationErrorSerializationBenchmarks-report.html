@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'/>
+    <title>Benchmarks.ValidationErrorSerializationBenchmarks-20260203-080026</title>
+
+    <style type="text/css">
+        table {
+            border-collapse: collapse;
+            display: block;
+            width: 100%;
+            overflow: auto;
+        }
+
+        td, th {
+            padding: 6px 13px;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+
+        tr {
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, macOS Tahoe 26.2 (25C56) [Darwin 25.2.0]
+Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
+.NET SDK 10.0.102
+  [Host]     : .NET 10.0.2 (10.0.2, 10.0.225.61305), Arm64 RyuJIT armv8.0-a
+  Job-MEHJPP : .NET 10.0.2 (10.0.2, 10.0.225.61305), Arm64 RyuJIT armv8.0-a
+</code></pre>
+<pre><code>IterationCount=5  WarmupCount=1
+</code></pre>
+
+<table>
+    <thead>
+    <tr>
+        <th>Method</th>
+        <th>Mean</th>
+        <th>Error</th>
+        <th>StdDev</th>
+        <th>Ratio</th>
+        <th>RatioSD</th>
+        <th>Gen0</th>
+        <th>Allocated</th>
+        <th>Alloc Ratio</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Errors1</td>
+        <td>154.9 ns</td>
+        <td>1.88 ns</td>
+        <td>0.49 ns</td>
+        <td>1.00</td>
+        <td>0.00</td>
+        <td>0.0162</td>
+        <td>136 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>Errors3_UniqueTargets</td>
+        <td>366.1 ns</td>
+        <td>10.58 ns</td>
+        <td>2.75 ns</td>
+        <td>2.36</td>
+        <td>0.02</td>
+        <td>0.0162</td>
+        <td>136 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>Errors3_SharedTarget</td>
+        <td>316.9 ns</td>
+        <td>2.78 ns</td>
+        <td>0.72 ns</td>
+        <td>2.05</td>
+        <td>0.01</td>
+        <td>0.0162</td>
+        <td>136 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>Errors5_UniqueTargets</td>
+        <td>580.4 ns</td>
+        <td>5.14 ns</td>
+        <td>0.79 ns</td>
+        <td>3.75</td>
+        <td>0.01</td>
+        <td>0.0162</td>
+        <td>136 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>Errors5_SharedTargets</td>
+        <td>522.6 ns</td>
+        <td>13.76 ns</td>
+        <td>3.57 ns</td>
+        <td>3.37</td>
+        <td>0.02</td>
+        <td>0.0162</td>
+        <td>136 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>Errors10_UniqueTargets</td>
+        <td>1,258.1 ns</td>
+        <td>1.30 ns</td>
+        <td>0.20 ns</td>
+        <td>8.12</td>
+        <td>0.02</td>
+        <td>0.0153</td>
+        <td>136 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>Errors10_SharedTargets</td>
+        <td>972.4 ns</td>
+        <td>21.79 ns</td>
+        <td>5.66 ns</td>
+        <td>6.28</td>
+        <td>0.04</td>
+        <td>0.0153</td>
+        <td>136 B</td>
+        <td>1.00</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

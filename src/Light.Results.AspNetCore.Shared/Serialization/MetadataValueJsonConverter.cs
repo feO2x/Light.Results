@@ -10,16 +10,31 @@ namespace Light.Results.AspNetCore.Shared.Serialization;
 /// </summary>
 public sealed class MetadataValueJsonConverter : JsonConverter<MetadataValue>
 {
+    /// <summary>
+    /// Reading is not supported for <see cref="MetadataValue" />.
+    /// </summary>
+    /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override MetadataValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         throw new NotSupportedException("Deserialization of MetadataValue is not supported");
     }
 
+    /// <summary>
+    /// Writes the JSON representation for the specified metadata value.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="value">The metadata value.</param>
+    /// <param name="options">The serializer options.</param>
     public override void Write(Utf8JsonWriter writer, MetadataValue value, JsonSerializerOptions options)
     {
         WriteMetadataValue(writer, value);
     }
 
+    /// <summary>
+    /// Writes the JSON representation for the specified metadata value.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="value">The metadata value.</param>
     public static void WriteMetadataValue(Utf8JsonWriter writer, MetadataValue value)
     {
         switch (value.Kind)
@@ -57,24 +72,42 @@ public sealed class MetadataValueJsonConverter : JsonConverter<MetadataValue>
         }
     }
 
+    /// <summary>
+    /// Writes the JSON representation for the specified metadata array.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="array">The metadata array.</param>
     public static void WriteMetadataArray(Utf8JsonWriter writer, MetadataArray array)
     {
         writer.WriteStartArray();
-        foreach (var item in array)
+        foreach (var metadataValue in array)
         {
-            WriteMetadataValue(writer, item);
+            if (metadataValue.HasAnnotation(MetadataValueAnnotation.SerializeInHttpResponseBody))
+            {
+                WriteMetadataValue(writer, metadataValue);
+            }
         }
 
         writer.WriteEndArray();
     }
 
-    public static void WriteMetadataObject(Utf8JsonWriter writer, MetadataObject obj)
+    /// <summary>
+    /// Writes the JSON representation for the specified metadata object.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="metadataObject">The metadata object.</param>
+    public static void WriteMetadataObject(Utf8JsonWriter writer, MetadataObject metadataObject)
     {
         writer.WriteStartObject();
-        foreach (var kvp in obj)
+        foreach (var keyValuePair in metadataObject)
         {
-            writer.WritePropertyName(kvp.Key);
-            WriteMetadataValue(writer, kvp.Value);
+            if (!keyValuePair.Value.HasAnnotation(MetadataValueAnnotation.SerializeInHttpResponseBody))
+            {
+                continue;
+            }
+
+            writer.WritePropertyName(keyValuePair.Key);
+            WriteMetadataValue(writer, keyValuePair.Value);
         }
 
         writer.WriteEndObject();
