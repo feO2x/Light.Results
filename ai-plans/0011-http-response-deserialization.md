@@ -48,6 +48,7 @@
   - Non-success status code **or** `Content-Type: application/problem+json` (configurable).
 - If failure:
   - Parse problem details into `Errors` + metadata.
+  - Only deserialize the `metadata` property; other extensions are ignored.
   - If errors missing, create a single `Error` using `title`/`detail`/`status` as a fallback.
 - If success:
   - For `Result<T>`:
@@ -83,9 +84,3 @@
   - Header selection: all/allow/deny/none, multi-value headers, merge strategy behaviors.
   - Empty body handling for `Result<T>` vs `Result`.
 - **Integration tests (optional):** round-trip through Minimal API (server) + HttpClient (client) with headers/metadata.
-
-## Open Questions / Decisions
-1. **Ambiguous success payloads:** Auto detection treats payloads as wrapper only when the root object contains `value` and optional `metadata` and no other properties. Callers can override with `PreferSuccessPayload` for deterministic behavior.
-2. **Header parsing contract:** Use a dedicated `HttpHeaderParser` registry keyed by header name (case-insensitive) so multiple aliases can map to one metadata key. Default conflict handling is Throw with an optional `LastWriteWins` strategy.
-3. **Unknown problem-details extensions:** Only deserialize the `metadata` property; other extensions are ignored.
-4. **Empty body for `Result<T>`:** Throw by default.
