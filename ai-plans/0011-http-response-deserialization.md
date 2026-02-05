@@ -23,11 +23,12 @@
 - `LightResultHttpReadOptions` (new):
   - `HeaderSelectionMode` (None | All | AllowList | DenyList)
   - `HeaderAllowList` / `HeaderDenyList` (case-insensitive by default)
+  - `HeaderConflictStrategy` (Throw | LastWriteWins) when multiple header names map to the same metadata key (default: Throw)
   - `MergeStrategy` for combining body/headers metadata (default `AddOrReplace`)
   - `PreferSuccessPayload` (Auto | BareValue | WrappedValue) for disambiguating `{ "value": ... }` vs value objects. Auto rule: treat as wrapper only when the root object contains only `value` and optional `metadata`.
   - `TreatProblemDetailsAsFailure` (default: true)
   - `HeaderMetadataAnnotation` (default `SerializeInHttpHeader`)
-  - Optional `IHttpHeaderConversionService`/`IHttpHeaderParsingService` override
+  - Optional `HttpHeaderParser` registry / `IHttpHeaderParsingService` override
 
 ## JSON Converter Read Design
 - Implement a shared `ResultJsonReader` helper to parse:
@@ -50,7 +51,7 @@
   - If errors missing, create a single `Error` using `title`/`detail`/`status` as a fallback.
 - If success:
   - For `Result<T>`:
-    - If empty body and T is non-nullable => return a failure `Error` (message: "Response body was empty").
+    - If empty body => throw (caller must ensure the endpoint returns a value).
     - Otherwise parse as either wrapped or bare value (based on `PreferSuccessPayload` + heuristics). Auto heuristic: wrapper only when root has only `value` and optional `metadata` properties.
   - For `Result`:
     - Empty body => `Result.Ok()`.
@@ -58,8 +59,13 @@
 - Extract headers into metadata per `HeaderSelectionMode` and merge with body metadata.
 
 ## Header Metadata Parsing
-- New `IHttpHeaderParsingService` (or extend `HttpHeaderConverter` with `TryParseHeaderValue`):
-  - Default behavior: attempt JSON parse to `MetadataValue` (valid for numbers/booleans/quoted strings/arrays).
+- New `HttpHeaderParser` base type (parallel to `HttpHeaderConverter`) with `SupportedHeaderNames` and a target metadata key.
+- Register parsers and build a `FrozenDictionary<string, HttpHeaderParser>` keyed by header name (case-insensitive).
+  This enables multiple header names to map to the same metadata key for backwards compatibility.
+- If multiple header names resolve to the same metadata key in a single response, default to throwing; allow a configurable
+  `HeaderConflictStrategy.LastWriteWins` override.
+- Default parsing behavior:
+  - Attempt JSON parse to `MetadataValue` (valid for numbers/booleans/quoted strings/arrays).
   - Fallback: treat raw header string as `MetadataValue.FromString`.
   - Support multi-value headers by mapping to `MetadataArray` of parsed primitives.
 - Apply `HeaderSelectionMode` and use `HeaderMetadataAnnotation` on values.
@@ -80,6 +86,6 @@
 
 ## Open Questions / Decisions
 1. **Ambiguous success payloads:** Auto detection treats payloads as wrapper only when the root object contains `value` and optional `metadata` and no other properties. Callers can override with `PreferSuccessPayload` for deterministic behavior.
-2. **Header parsing contract:** Should we extend `HttpHeaderConverter` with a parse method (breaking change) or add a parallel parsing service?
-3. **Unknown problem-details extensions:** Should we capture additional top-level properties into metadata, or only `metadata`?
-4. **Empty body for `Result<T>`:** Should this be treated as an error or as `default(T)` success?
+2. **Header parsing contract:** Use a dedicated `HttpHeaderParser` registry keyed by header name (case-insensitive) so multiple aliases can map to one metadata key. Default conflict handling is Throw with an optional `LastWriteWins` strategy.
+3. **Unknown problem-details extensions:** Only deserialize the `metadata` property; other extensions are ignored.
+4. **Empty body for `Result<T>`:** Throw by default.
