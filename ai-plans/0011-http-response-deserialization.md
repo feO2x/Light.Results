@@ -47,6 +47,7 @@
 ## HttpResponseMessage Deserialization Algorithm
 - Determine failure based on:
   - Non-success status code **or** `Content-Type: application/problem+json` (configurable).
+  - `Content-Type` checks compare media type only (ignore parameters like `charset`).
 - If failure:
   - If the body is not valid problem-details JSON, throw.
   - Parse problem details into `Errors` + metadata.
@@ -61,7 +62,7 @@
     - Empty body => `Result.Ok()`.
     - Object with `metadata` only => `Result.Ok(metadata)`.
     - Non-empty body that is not `{ "metadata": ... }` => throw.
-- Extract headers into metadata per `HeaderSelectionMode` and merge with body metadata.
+- Extract headers into metadata per `HeaderSelectionMode` from both `HttpResponseMessage.Headers` and `HttpResponseMessage.Content.Headers`, then merge with body metadata.
 
 ## Header Metadata Parsing
 - New `HttpHeaderParser` base type (parallel to `HttpHeaderConverter`) with `SupportedHeaderNames` and a target metadata key.
