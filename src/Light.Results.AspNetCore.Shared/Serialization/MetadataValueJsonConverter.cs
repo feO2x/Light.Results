@@ -80,9 +80,12 @@ public sealed class MetadataValueJsonConverter : JsonConverter<MetadataValue>
     public static void WriteMetadataArray(Utf8JsonWriter writer, MetadataArray array)
     {
         writer.WriteStartArray();
-        foreach (var item in array)
+        foreach (var metadataValue in array)
         {
-            WriteMetadataValue(writer, item);
+            if (metadataValue.HasAnnotation(MetadataValueAnnotation.SerializeInHttpResponseBody))
+            {
+                WriteMetadataValue(writer, metadataValue);
+            }
         }
 
         writer.WriteEndArray();
@@ -92,14 +95,19 @@ public sealed class MetadataValueJsonConverter : JsonConverter<MetadataValue>
     /// Writes the JSON representation for the specified metadata object.
     /// </summary>
     /// <param name="writer">The JSON writer.</param>
-    /// <param name="obj">The metadata object.</param>
-    public static void WriteMetadataObject(Utf8JsonWriter writer, MetadataObject obj)
+    /// <param name="metadataObject">The metadata object.</param>
+    public static void WriteMetadataObject(Utf8JsonWriter writer, MetadataObject metadataObject)
     {
         writer.WriteStartObject();
-        foreach (var kvp in obj)
+        foreach (var keyValuePair in metadataObject)
         {
-            writer.WritePropertyName(kvp.Key);
-            WriteMetadataValue(writer, kvp.Value);
+            if (!keyValuePair.Value.HasAnnotation(MetadataValueAnnotation.SerializeInHttpResponseBody))
+            {
+                continue;
+            }
+
+            writer.WritePropertyName(keyValuePair.Key);
+            WriteMetadataValue(writer, keyValuePair.Value);
         }
 
         writer.WriteEndObject();

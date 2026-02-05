@@ -139,4 +139,43 @@ public sealed class ExtendedAppIntegrationTests
 
         await Verifier.Verify(response);
     }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldNotSetContentType_WhenNonGenericMetadataIsHeaderOnly()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.GetAsync(
+            "/api/extended/non-generic-header-only-metadata",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType.Should().BeNull();
+        response.Headers.TryGetValues("X-TraceId", out var headerValues).Should().BeTrue();
+        headerValues.Should().ContainSingle("trace-42");
+
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        content.Should().BeEmpty();
+
+        await Verifier.Verify(response);
+    }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldNotSerializeMetadata_WhenGenericMetadataIsHeaderOnly()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.GetAsync(
+            "/api/extended/generic-header-only-metadata",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        response.Headers.TryGetValues("X-TraceId", out var headerValues).Should().BeTrue();
+        headerValues.Should().ContainSingle("trace-43");
+
+        await Verifier.Verify(response);
+    }
 }

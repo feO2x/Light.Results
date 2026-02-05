@@ -50,6 +50,8 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         App.MapGet("/api/extended/custom-converter", GetCustomSerializedResult);
         App.MapGet("/api/extended/custom-converter-generic", GetCustomSerializedGenericResult);
         App.MapGet("/api/extended/enriched-error", GetEnrichedError);
+        App.MapGet("/api/extended/non-generic-header-only-metadata", GetNonGenericHeaderOnlyMetadata);
+        App.MapGet("/api/extended/generic-header-only-metadata", GetGenericHeaderOnlyMetadata);
     }
 
     public WebApplication App { get; }
@@ -178,6 +180,24 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
 
         var result = Result<ContactDto>.Fail(error);
         return result.ToMinimalApiResult();
+    }
+
+    private static LightResult GetNonGenericHeaderOnlyMetadata()
+    {
+        var metadata = MetadataObject.Create(
+            ("X-TraceId", MetadataValue.FromString("trace-42", MetadataValueAnnotation.SerializeInHttpHeader))
+        );
+        var result = Result.Ok(metadata);
+        return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
+    }
+
+    private static LightResult<string> GetGenericHeaderOnlyMetadata()
+    {
+        var metadata = MetadataObject.Create(
+            ("X-TraceId", MetadataValue.FromString("trace-43", MetadataValueAnnotation.SerializeInHttpHeader))
+        );
+        var result = Result<string>.Ok("ok", metadata);
+        return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
     }
 
     private static LightResultOptions CreateRichValidationOptions() =>

@@ -40,6 +40,10 @@ public static class MetadataObjectExtensions
     /// <summary>
     /// Merges two <see cref="MetadataObject" /> instances according to the specified strategy.
     /// </summary>
+    /// <param name="original">The original metadata object.</param>
+    /// <param name="incoming">The incoming metadata object.</param>
+    /// <param name="strategy">The merge strategy to use.</param>
+    /// <returns>The merged metadata object.</returns>
     public static MetadataObject Merge(
         this MetadataObject original,
         MetadataObject incoming,
@@ -143,5 +147,25 @@ public static class MetadataObjectExtensions
         }
 
         return builder.Build();
+    }
+
+    /// <summary>
+    /// Determines whether any metadata entries contain a value annotated with the specified
+    /// <paramref name="annotation" /> flag.
+    /// </summary>
+    /// <param name="metadata">The metadata object to inspect.</param>
+    /// <param name="annotation">The annotation flag to look for on each value.</param>
+    /// <returns><c>true</c> if at least one value has the annotation; otherwise, <c>false</c>.</returns>
+    public static bool HasAnyValuesWithAnnotation(this MetadataObject metadata, MetadataValueAnnotation annotation)
+    {
+        foreach (var keyValuePair in metadata)
+        {
+            if (keyValuePair.Value.HasAnnotation(annotation))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

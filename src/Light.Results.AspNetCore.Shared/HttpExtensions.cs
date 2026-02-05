@@ -76,7 +76,11 @@ public static class HttpExtensions
         }
 
         if (!result.HasValue &&
-            (!result.Metadata.HasValue || metadataSerializationMode != MetadataSerializationMode.Always))
+            (
+                !result.Metadata.HasValue ||
+                metadataSerializationMode != MetadataSerializationMode.Always ||
+                !result.Metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInHttpResponseBody)
+            ))
         {
             // Else, we do not set any content type at all
             return;

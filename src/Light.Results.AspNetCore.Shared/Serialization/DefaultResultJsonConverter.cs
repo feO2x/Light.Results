@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Light.Results.Metadata;
 
 namespace Light.Results.AspNetCore.Shared.Serialization;
 
@@ -61,7 +62,8 @@ public sealed class DefaultResultJsonConverter : JsonConverter<Result>
         {
             // We first check if we write metadata when the result is valid
             if (lightResultOptions.MetadataSerializationMode == MetadataSerializationMode.ErrorsOnly ||
-                result.Metadata is null)
+                result.Metadata is null ||
+                !result.Metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInHttpResponseBody))
             {
                 // If we end up here, we write nothing. Result does not have a value and no metadata should be written.
                 return;
@@ -177,9 +179,11 @@ public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
 
         writer.WritePropertyName("value");
         writer.WriteGenericValue(result.Value, serializerOptions);
-        if (metadataSerializationMode == MetadataSerializationMode.Always && result.Metadata.HasValue)
+        if (metadataSerializationMode == MetadataSerializationMode.Always &&
+            result.Metadata is { } metadata &&
+            metadata.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInHttpResponseBody))
         {
-            writer.WriteMetadataPropertyAndValue(result.Metadata.Value, serializerOptions);
+            writer.WriteMetadataPropertyAndValue(metadata, serializerOptions);
         }
 
         writer.WriteEndObject();
