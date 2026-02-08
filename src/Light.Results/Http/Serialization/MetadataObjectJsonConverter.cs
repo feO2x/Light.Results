@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.Serialization;
+namespace Light.Results.Http.Serialization;
 
 /// <summary>
 /// JSON converter for <see cref="MetadataObject" />.

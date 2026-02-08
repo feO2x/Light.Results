@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Light.Results.Metadata;
 using Microsoft.Extensions.Primitives;
 
-namespace Light.Results.Http;
+namespace Light.Results.Http.Headers;
 
 /// <summary>
 /// Converts metadata values into HTTP headers.

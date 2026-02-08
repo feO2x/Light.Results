@@ -1,4 +1,4 @@
-namespace Light.Results;
+namespace Light.Results.Http.Writing;
 
 /// <summary>
 /// Specifies when metadata should be serialized in HTTP responses.

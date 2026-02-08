@@ -1,9 +1,10 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Light.Results.Http.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.Serialization;
+namespace Light.Results.Http.Writing;
 
 /// <summary>
 /// JSON converter for <see cref="Result" /> that either writes success HTTP response bodies or Problem Details
@@ -11,14 +12,14 @@ namespace Light.Results.Serialization;
 /// </summary>
 public sealed class DefaultResultJsonConverter : JsonConverter<Result>
 {
-    private readonly LightResultOptions _options;
+    private readonly LightHttpWriteOptions _options;
 
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultResultJsonConverter" />.
     /// </summary>
     /// <param name="options">The Light.Results options.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
-    public DefaultResultJsonConverter(LightResultOptions options) =>
+    public DefaultResultJsonConverter(LightHttpWriteOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
@@ -53,7 +54,7 @@ public sealed class DefaultResultJsonConverter : JsonConverter<Result>
         Utf8JsonWriter writer,
         Result result,
         JsonSerializerOptions serializerOptions,
-        LightResultOptions? overrideOptions = null
+        LightHttpWriteOptions? overrideOptions = null
     )
     {
         var lightResultOptions = overrideOptions ?? _options;
@@ -87,18 +88,18 @@ public sealed class DefaultResultJsonConverter : JsonConverter<Result>
 }
 
 /// <summary>
-/// JSON converter for <see cref="Result{T}" /> that honors <see cref="LightResultOptions" />.
+/// JSON converter for <see cref="Result{T}" /> that honors <see cref="LightHttpWriteOptions" />.
 /// </summary>
 public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
 {
-    private readonly LightResultOptions _options;
+    private readonly LightHttpWriteOptions _options;
 
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultResultJsonConverter{T}" />.
     /// </summary>
     /// <param name="options">The Light.Results options.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
-    public DefaultResultJsonConverter(LightResultOptions options) =>
+    public DefaultResultJsonConverter(LightHttpWriteOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
@@ -137,7 +138,7 @@ public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
         Utf8JsonWriter writer,
         Result<T> result,
         JsonSerializerOptions serializerOptions,
-        LightResultOptions? overrideOptions = null
+        LightHttpWriteOptions? overrideOptions = null
     )
     {
         var lightResultOptions = overrideOptions ?? _options;

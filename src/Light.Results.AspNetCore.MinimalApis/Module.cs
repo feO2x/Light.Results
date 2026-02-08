@@ -2,8 +2,9 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Text.Json;
-using Light.Results.Http;
-using Light.Results.Serialization;
+using Light.Results.Http.Headers;
+using Light.Results.Http.Serialization;
+using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -28,14 +29,14 @@ public static class Module
            .ConfigureMinimalApiJsonOptionsForLightResults();
 
     /// <summary>
-    /// Registers <see cref="LightResultOptions" /> in the service container.
+    /// Registers <see cref="LightHttpWriteOptions" /> in the service container.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultOptions(this IServiceCollection services)
     {
-        services.AddOptions<LightResultOptions>();
-        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultOptions>>().Value);
+        services.AddOptions<LightHttpWriteOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightHttpWriteOptions>>().Value);
         return services;
     }
 
@@ -48,7 +49,7 @@ public static class Module
     {
         services
            .AddOptions<JsonOptions>()
-           .Configure<LightResultOptions>(
+           .Configure<LightHttpWriteOptions>(
                 (jsonOptions, lightResultOptions) =>
                 {
                     jsonOptions.SerializerOptions.AddDefaultLightResultsJsonConverters(lightResultOptions);
@@ -65,7 +66,7 @@ public static class Module
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
     public static void AddDefaultLightResultsJsonConverters(
         this JsonSerializerOptions serializerOptions,
-        LightResultOptions options
+        LightHttpWriteOptions options
     )
     {
         serializerOptions.Converters.Add(new MetadataObjectJsonConverter());

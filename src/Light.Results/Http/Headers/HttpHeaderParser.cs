@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http;
+namespace Light.Results.Http.Headers;
 
 /// <summary>
 /// Base type for parsing HTTP headers into metadata values.

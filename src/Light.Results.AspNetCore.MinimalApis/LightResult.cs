@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.Results.AspNetCore.MinimalApis.Serialization;
-using Light.Results.Serialization;
+using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.Results.AspNetCore.MinimalApis;
@@ -27,7 +27,7 @@ public sealed class LightResult : BaseLightResult<Result>
         Result result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) : base(result, successStatusCode, location, overrideOptions, serializerOptions) { }
 
@@ -88,7 +88,7 @@ public sealed class LightResult<T> : BaseLightResult<Result<T>>
         Result<T> result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) : base(result, successStatusCode, location, overrideOptions, serializerOptions) { }
 

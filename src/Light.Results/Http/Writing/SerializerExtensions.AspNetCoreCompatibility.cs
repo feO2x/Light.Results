@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using Light.Results.Http.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.Serialization;
+namespace Light.Results.Http.Writing;
 
 public static partial class SerializerExtensions
 {

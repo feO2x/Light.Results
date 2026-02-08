@@ -1,18 +1,19 @@
 using System.Collections.Generic;
 using System.Text.Json;
+using Light.Results.Http.Headers;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http;
+namespace Light.Results.Http.Reading;
 
 /// <summary>
 /// Options controlling how <see cref="System.Net.Http.HttpResponseMessage" /> responses are read into Light.Results.
 /// </summary>
-public sealed record LightResultHttpReadOptions
+public sealed record LightHttpReadOptions
 {
     /// <summary>
     /// Gets the default options instance for HTTP response deserialization.
     /// </summary>
-    public static LightResultHttpReadOptions Default { get; } = new ();
+    public static LightHttpReadOptions Default { get; } = new ();
 
     /// <summary>
     /// Gets or sets which headers should be read into metadata.

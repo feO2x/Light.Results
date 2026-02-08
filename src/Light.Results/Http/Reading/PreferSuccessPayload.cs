@@ -1,4 +1,4 @@
-namespace Light.Results.Http;
+namespace Light.Results.Http.Reading;
 
 /// <summary>
 /// Specifies how successful result payloads should be interpreted.

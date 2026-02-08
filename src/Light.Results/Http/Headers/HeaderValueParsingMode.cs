@@ -1,4 +1,4 @@
-namespace Light.Results.Http;
+namespace Light.Results.Http.Headers;
 
 /// <summary>
 /// Specifies how header values are parsed when no custom <see cref="HttpHeaderParser" /> is registered.

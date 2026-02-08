@@ -12,7 +12,8 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Light.Results.Http;
+using Light.Results.Http.Headers;
+using Light.Results.Http.Reading;
 using Light.Results.Metadata;
 using Xunit;
 
@@ -187,7 +188,7 @@ public sealed class HttpResponseMessageExtensionsTests
     public async Task ReadResultAsync_ShouldThrow_OnAliasConflictByDefault()
     {
         var parser = new TraceHeaderParser();
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser]))
         };
@@ -209,7 +210,7 @@ public sealed class HttpResponseMessageExtensionsTests
     public async Task ReadResultAsync_ShouldAllowLastWriteWins_ForAliasConflicts()
     {
         var parser = new TraceHeaderParser();
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser])),
             HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
@@ -231,7 +232,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldParseMultiValueHeaders()
     {
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.AllowList,
             HeaderAllowList = ["X-Ids"]
@@ -256,7 +257,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldParsePrimitiveHeaderValues_WhenPrimitiveParsingIsEnabled()
     {
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.AllowList,
             HeaderAllowList = ["X-Bool", "X-Int", "X-Double", "X-Text"]
@@ -286,7 +287,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldKeepHeaderValuesAsStrings_WhenStringOnlyParsingIsEnabled()
     {
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.AllowList,
             HeaderAllowList = ["X-Bool", "X-Int", "X-Double"],
@@ -323,7 +324,7 @@ public sealed class HttpResponseMessageExtensionsTests
         };
         serializerOptions.Converters.Add(new CustomIntResultConverter());
 
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None,
             SerializerOptions = serializerOptions
@@ -348,7 +349,7 @@ public sealed class HttpResponseMessageExtensionsTests
         };
         serializerOptions.Converters.Add(new CustomIntResultConverter());
 
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None,
             SerializerOptions = serializerOptions
@@ -372,7 +373,7 @@ public sealed class HttpResponseMessageExtensionsTests
         };
         serializerOptions.Converters.Add(new CustomResultConverter());
 
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None,
             SerializerOptions = serializerOptions
@@ -392,7 +393,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldDeserializeUnknownLengthContent_ForGenericResult()
     {
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None
         };
@@ -412,7 +413,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldApplyEmptyBodyRules_WhenContentLengthIsUnknown()
     {
-        var options = new LightResultHttpReadOptions
+        var options = new LightHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None
         };

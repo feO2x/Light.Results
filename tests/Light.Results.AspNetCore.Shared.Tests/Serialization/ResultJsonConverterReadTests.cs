@@ -1,7 +1,8 @@
 using System.Text.Json;
 using FluentAssertions;
+using Light.Results.Http.Serialization;
+using Light.Results.Http.Writing;
 using Light.Results.Metadata;
-using Light.Results.Serialization;
 using Xunit;
 
 namespace Light.Results.AspNetCore.Shared.Tests.Serialization;
@@ -50,7 +51,7 @@ public sealed class ResultJsonConverterReadTests
 
     private static JsonSerializerOptions CreateOptions()
     {
-        var lightResultOptions = new LightResultOptions();
+        var lightResultOptions = new LightHttpWriteOptions();
         var options = new JsonSerializerOptions();
         options.Converters.Add(new MetadataObjectJsonConverter());
         options.Converters.Add(new MetadataValueJsonConverter());

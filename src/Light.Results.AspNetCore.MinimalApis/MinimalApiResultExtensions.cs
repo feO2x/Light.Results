@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using Light.Results.AspNetCore.Shared;
+using Light.Results.Http.Writing;
 
 namespace Light.Results.AspNetCore.MinimalApis;
 
@@ -22,7 +22,7 @@ public static class MinimalApiResultExtensions
         this Result result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, successStatusCode, location, overrideOptions, serializerOptions);
@@ -41,7 +41,7 @@ public static class MinimalApiResultExtensions
         this Result<T> result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, successStatusCode, location, overrideOptions, serializerOptions);
@@ -57,7 +57,7 @@ public static class MinimalApiResultExtensions
     public static LightResult ToHttp201CreatedMinimalApiResult(
         this Result result,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, HttpStatusCode.Created, location, overrideOptions, serializerOptions);
@@ -74,7 +74,7 @@ public static class MinimalApiResultExtensions
     public static LightResult<T> ToHttp201CreatedMinimalApiResult<T>(
         this Result<T> result,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, HttpStatusCode.Created, location, overrideOptions, serializerOptions);

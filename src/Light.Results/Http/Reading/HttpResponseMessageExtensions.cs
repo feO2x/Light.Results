@@ -5,9 +5,10 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Light.Results.Http.Headers;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http;
+namespace Light.Results.Http.Reading;
 
 /// <summary>
 /// Provides extensions for deserializing Light.Results from <see cref="HttpResponseMessage" /> instances.
@@ -34,7 +35,7 @@ public static class HttpResponseMessageExtensions
     /// <returns>The parsed result.</returns>
     public static async Task<Result> ReadResultAsync(
         this HttpResponseMessage response,
-        LightResultHttpReadOptions? options = null,
+        LightHttpReadOptions? options = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -43,7 +44,7 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        var resolvedOptions = options ?? LightResultHttpReadOptions.Default;
+        var resolvedOptions = options ?? LightHttpReadOptions.Default;
         var serializerOptions = ResolveSerializerOptions(resolvedOptions);
 
         var isProblemDetails = CheckIfResponseContainsProblemDetails(response);
@@ -64,7 +65,7 @@ public static class HttpResponseMessageExtensions
     /// <returns>The parsed result.</returns>
     public static async Task<Result<T>> ReadResultAsync<T>(
         this HttpResponseMessage response,
-        LightResultHttpReadOptions? options = null,
+        LightHttpReadOptions? options = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -73,7 +74,7 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        var resolvedOptions = options ?? LightResultHttpReadOptions.Default;
+        var resolvedOptions = options ?? LightHttpReadOptions.Default;
         var serializerOptions = ResolveSerializerOptions(resolvedOptions);
 
         var isProblemDetails = CheckIfResponseContainsProblemDetails(response);
@@ -256,12 +257,12 @@ public static class HttpResponseMessageExtensions
         return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
     }
 
-    private static JsonSerializerOptions ResolveSerializerOptions(LightResultHttpReadOptions options) =>
+    private static JsonSerializerOptions ResolveSerializerOptions(LightHttpReadOptions options) =>
         options.SerializerOptions ?? HttpReadJsonSerializerOptionsCache.GetByPreference(options.PreferSuccessPayload);
 
     private static TResult MergeHeaderMetadataIfNeeded<TResult>(
         HttpResponseMessage response,
-        LightResultHttpReadOptions options,
+        LightHttpReadOptions options,
         TResult result
     )
         where TResult : struct, ICanReplaceMetadata<TResult>
@@ -281,7 +282,7 @@ public static class HttpResponseMessageExtensions
         return mergedMetadata == result.Metadata ? result : result.ReplaceMetadata(mergedMetadata);
     }
 
-    private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightResultHttpReadOptions options)
+    private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightHttpReadOptions options)
     {
         if (options.HeaderSelectionMode == HeaderSelectionMode.None)
         {
@@ -316,7 +317,7 @@ public static class HttpResponseMessageExtensions
 
     private static void AppendHeaders(
         HttpHeaders headers,
-        LightResultHttpReadOptions options,
+        LightHttpReadOptions options,
         IHttpHeaderParsingService parsingService,
         ref MetadataObjectBuilder builder,
         HashSet<string>? allowList,
@@ -353,7 +354,7 @@ public static class HttpResponseMessageExtensions
 
     private static bool ShouldIncludeHeader(
         string headerName,
-        LightResultHttpReadOptions options,
+        LightHttpReadOptions options,
         HashSet<string>? allowList,
         HashSet<string>? denyList
     )

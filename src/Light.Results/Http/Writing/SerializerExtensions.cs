@@ -4,12 +4,11 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Light.Results.Http;
 using Light.Results.Metadata;
 
 // ReSharper disable ConvertToExtensionBlock
 
-namespace Light.Results.Serialization;
+namespace Light.Results.Http.Writing;
 
 /// <summary>
 /// Provides extension methods to serialize and write types of Light.Results using System.Text.Json.
@@ -232,7 +231,7 @@ public static partial class SerializerExtensions
         Errors errors,
         MetadataObject? metadata,
         JsonSerializerOptions serializerOptions,
-        LightResultOptions options
+        LightHttpWriteOptions options
     )
     {
         var problemDetailsInfo =

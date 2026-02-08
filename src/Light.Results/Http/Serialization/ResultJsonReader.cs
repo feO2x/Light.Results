@@ -4,10 +4,10 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Light.Results.Http;
+using Light.Results.Http.Reading;
 using Light.Results.Metadata;
 
-namespace Light.Results.Serialization;
+namespace Light.Results.Http.Serialization;
 
 /// <summary>
 /// Provides low-level JSON parsing helpers for Light.Results payloads.

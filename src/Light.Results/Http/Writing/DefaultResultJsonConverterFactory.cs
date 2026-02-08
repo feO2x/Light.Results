@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Light.Results.Serialization;
+namespace Light.Results.Http.Writing;
 
 /// <summary>
 /// Creates <see cref="DefaultResultJsonConverter{T}" /> instances for <see cref="Result{T}" /> types.
@@ -16,7 +16,7 @@ public sealed class DefaultResultJsonConverterFactory : JsonConverterFactory
     /// </summary>
     /// <param name="options">The Light.Results options.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
-    public DefaultResultJsonConverterFactory(LightResultOptions options)
+    public DefaultResultJsonConverterFactory(LightHttpWriteOptions options)
     {
         if (options is null)
         {

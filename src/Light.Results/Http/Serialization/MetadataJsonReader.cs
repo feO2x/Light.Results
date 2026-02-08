@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Light.Results.Metadata;
 
-namespace Light.Results.Serialization;
+namespace Light.Results.Http.Serialization;
 
 /// <summary>
 /// Provides low-level JSON parsing helpers for metadata values.

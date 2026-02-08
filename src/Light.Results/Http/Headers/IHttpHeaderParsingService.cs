@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http;
+namespace Light.Results.Http.Headers;
 
 /// <summary>
 /// Parses HTTP headers into metadata values.

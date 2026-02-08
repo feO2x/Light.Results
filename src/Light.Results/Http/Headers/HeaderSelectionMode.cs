@@ -1,4 +1,4 @@
-namespace Light.Results.Http;
+namespace Light.Results.Http.Headers;
 
 /// <summary>
 /// Specifies which HTTP headers should be read into result metadata.

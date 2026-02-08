@@ -1,13 +1,12 @@
 using System;
-using Light.Results.Http;
 using Light.Results.Metadata;
 
-namespace Light.Results;
+namespace Light.Results.Http.Writing;
 
 /// <summary>
 /// Configures how Light.Results responses are serialized for ASP.NET Core.
 /// </summary>
-public sealed record LightResultOptions
+public sealed record LightHttpWriteOptions
 {
     /// <summary>
     /// <para>

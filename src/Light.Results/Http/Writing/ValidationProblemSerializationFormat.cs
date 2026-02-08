@@ -1,4 +1,4 @@
-namespace Light.Results;
+namespace Light.Results.Http.Writing;
 
 /// <summary>
 /// Specifies how validation errors are serialized in Problem Details responses
