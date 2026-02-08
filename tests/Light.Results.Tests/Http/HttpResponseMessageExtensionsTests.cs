@@ -33,11 +33,7 @@ public sealed class HttpResponseMessageExtensionsTests
 
         result.IsValid.Should().BeTrue();
         result.Value.Should().Be(42);
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!.Value.TryGetString("Content-Type", out var contentType).Should().BeTrue();
-        contentType.Should().Contain("application/json");
-        result.Metadata.Value.TryGetInt64("Content-Length", out var contentLength).Should().BeTrue();
-        contentLength.Should().Be(2);
+        result.Metadata.Should().BeNull();
     }
 
     [Fact]
@@ -136,10 +132,6 @@ public sealed class HttpResponseMessageExtensionsTests
         result.Metadata.Should().NotBeNull();
         result.Metadata!.Value.TryGetString("traceId", out var traceId).Should().BeTrue();
         traceId.Should().Be("abc");
-        result.Metadata.Value.TryGetString("Content-Type", out var contentType).Should().BeTrue();
-        contentType.Should().Contain("application/problem+json");
-        result.Metadata.Value.TryGetInt64("Content-Length", out var contentLength).Should().BeTrue();
-        contentLength.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -190,6 +182,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
+            HeaderSelectionMode = HeaderSelectionMode.All,
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser]))
         };
 
@@ -212,6 +205,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
+            HeaderSelectionMode = HeaderSelectionMode.All,
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser])),
             HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
         };

@@ -18,7 +18,7 @@ public sealed record LightResultsHttpReadOptions
     /// <summary>
     /// Gets or sets which headers should be read into metadata.
     /// </summary>
-    public HeaderSelectionMode HeaderSelectionMode { get; init; } = HeaderSelectionMode.All;
+    public HeaderSelectionMode HeaderSelectionMode { get; init; } = HeaderSelectionMode.None;
 
     /// <summary>
     /// Gets or sets the allow list of header names to read when <see cref="HeaderSelectionMode" /> is AllowList.
