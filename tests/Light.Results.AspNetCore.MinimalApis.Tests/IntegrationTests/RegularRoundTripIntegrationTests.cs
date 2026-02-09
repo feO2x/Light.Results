@@ -55,8 +55,9 @@ public sealed class RegularRoundTripIntegrationTests
         );
 
         var expectedResult = Result<List<ContactDto>>.Ok(CreateExpectedContacts());
-        result.Equals(expectedResult, compareMetadata: true, valueComparer: ContactListComparer.Instance).Should()
-           .BeTrue();
+        result
+           .Equals(expectedResult, compareMetadata: true, valueComparer: ContactListComparer.Instance)
+           .Should().BeTrue();
     }
 
     [Fact]
@@ -81,8 +82,9 @@ public sealed class RegularRoundTripIntegrationTests
 
         var expectedMetadata = MetadataObject.Create(("Count", MetadataValue.FromInt64(3)));
         var expectedResult = Result<List<ContactDto>>.Ok(CreateExpectedContacts(), expectedMetadata);
-        result.Equals(expectedResult, compareMetadata: true, valueComparer: ContactListComparer.Instance).Should()
-           .BeTrue();
+        result
+           .Equals(expectedResult, compareMetadata: true, valueComparer: ContactListComparer.Instance)
+           .Should().BeTrue();
     }
 
     [Fact]
@@ -113,17 +115,17 @@ public sealed class RegularRoundTripIntegrationTests
 
     private static List<ContactDto> CreateExpectedContacts() =>
     [
-        new()
+        new ()
         {
             Id = new Guid("D8FC9BEC-0606-4E9B-8EB4-04558B2B9D40"),
             Name = "Foo"
         },
-        new()
+        new ()
         {
             Id = new Guid("AAA41889-0BD8-4247-9C0F-049567FA63C1"),
             Name = "Bar"
         },
-        new()
+        new ()
         {
             Id = new Guid("3D43850A-69D1-4230-8BAA-75AA6C693E9D"),
             Name = "Baz"
@@ -164,74 +166,5 @@ public sealed class RegularRoundTripIntegrationTests
 
             return hashCode.ToHashCode();
         }
-    }
-}
-
-public sealed class ExtendedRoundTripIntegrationTests
-{
-    private readonly ExtendedMinimalApiApp _fixture;
-
-    public ExtendedRoundTripIntegrationTests(ExtendedMinimalApiApp fixture) => _fixture = fixture;
-
-    [Fact]
-    public async Task ReadResultAsync_ShouldRoundTrip_GenericSuccessWithMetadata()
-    {
-        using var httpClient = _fixture.CreateHttpClient();
-
-        using var response = await httpClient.GetAsync(
-            "/api/extended/value-metadata",
-            cancellationToken: TestContext.Current.CancellationToken
-        );
-        response.EnsureSuccessStatusCode();
-        var result = await response.ReadResultAsync<string>(cancellationToken: TestContext.Current.CancellationToken);
-
-        result.IsValid.Should().BeTrue();
-        result.Value.Should().Be("contact-42");
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!.Value.TryGetString("source", out var source).Should().BeTrue();
-        source.Should().Be("value-metadata");
-    }
-
-    [Fact]
-    public async Task ReadResultAsync_ShouldRoundTrip_NonGenericSuccessWithMetadata()
-    {
-        using var httpClient = _fixture.CreateHttpClient();
-
-        using var response = await httpClient.GetAsync(
-            "/api/extended/non-generic-metadata",
-            cancellationToken: TestContext.Current.CancellationToken
-        );
-        response.EnsureSuccessStatusCode();
-
-        var result = await response.ReadResultAsync(cancellationToken: TestContext.Current.CancellationToken);
-
-        result.IsValid.Should().BeTrue();
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!.Value.TryGetString("note", out var note).Should().BeTrue();
-        result.Metadata.Value.TryGetInt64("count", out var count).Should().BeTrue();
-        note.Should().Be("non-generic");
-        count.Should().Be(3);
-    }
-
-    [Fact]
-    public async Task ReadResultAsync_ShouldRoundTrip_RichValidationFailure()
-    {
-        using var httpClient = _fixture.CreateHttpClient();
-
-        using var response = await httpClient.GetAsync(
-            "/api/extended/validation-rich",
-            cancellationToken: TestContext.Current.CancellationToken
-        );
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var result =
-            await response.ReadResultAsync<ContactDto>(cancellationToken: TestContext.Current.CancellationToken);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Count.Should().Be(2);
-        result.Errors[0].Code.Should().Be("NameRequired");
-        result.Errors[0].Category.Should().Be(ErrorCategory.Validation);
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!.Value.TryGetString("source", out var source).Should().BeTrue();
-        source.Should().Be("rich");
     }
 }
