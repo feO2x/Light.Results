@@ -1,64 +1,82 @@
 # 0011 Plan Deviations
 
-This document compares the original plan in `ai-plans/0011-http-response-deserialization.md` with what was implemented on branch `11-http-response-message-integration` compared to `main`.
+This document compares `ai-plans/0011-http-response-deserialization.md` with the current implementation state on branch
+`11-http-response-message-integration`.
 
 ## Deviations From Original Plan
 
-1. `ReadResultAsync` API shape changed.
+1. `ReadResultAsync` API shape was simplified.
 - Planned:
   - `ReadResultAsync(..., LightResultHttpReadOptions? options = null, JsonSerializerOptions? serializerOptions = null, ...)`
 - Implemented:
   - `ReadResultAsync(..., LightResultsHttpReadOptions? options = null, ...)`
-  - Serializer options are configured via `LightResultsHttpReadOptions.SerializerOptions`.
+  - Serializer options are provided through `LightResultsHttpReadOptions.SerializerOptions`.
 
-2. Converter strategy changed to explicit read/write separation.
+2. Header selection moved from mode/list options to Strategy Pattern.
+
 - Planned:
-  - Implement `Read` in `DefaultResultJsonConverter`, `DefaultResultJsonConverter<T>`, `MetadataObjectJsonConverter`, `MetadataValueJsonConverter`.
+    - `HeaderSelectionMode` + `HeaderAllowList` + `HeaderDenyList`.
 - Implemented:
-  - Dedicated read converters (`HttpRead*`) and write converters (`HttpWrite*`).
-  - Write converters throw in `Read`.
-  - Read converters throw in `Write`.
+    - `IHttpHeaderSelectionStrategy` with built-ins in `HttpHeaderSelectionStrategies`.
+    - `LightResultsHttpReadOptions.HeaderSelectionStrategy` is the single selection entry point.
 
-3. Namespace and folder structure is more granular than planned.
+3. Header parsing defaults changed to match HTTP round-trip expectations.
 - Planned:
-  - Centralized/shared serializer helper area.
+    - Default parsing proposed JSON-first fallback behavior for header values.
+- Implemented:
+    - Default header parsing is primitive-first (`bool` -> `Int64` -> finite `double` -> `string`).
+    - Header parsing is opt-in by default because `HeaderSelectionStrategy` defaults to `None`.
+
+4. Converters were split into explicit read/write converter sets.
+- Planned:
+    - Add `Read` implementations to existing converter types.
+- Implemented:
+    - `HttpRead*` converters for deserialization and `HttpWrite*` converters for serialization.
+    - Read-only converters throw in `Write`; write-only converters throw in `Read`.
+    - `DefaultResultJsonConverter` naming was replaced by `HttpWriteResultJsonConverter` family.
+
+5. HTTP namespace structure became more explicit than originally planned.
+
+- Planned:
+    - Shared serializer-oriented grouping.
 - Implemented:
   - `Light.Results.Http.Reading`, `Light.Results.Http.Reading.Headers`, `Light.Results.Http.Reading.Json`
   - `Light.Results.Http.Writing`, `Light.Results.Http.Writing.Headers`, `Light.Results.Http.Writing.Json`
-  - Legacy mixed serializer/header namespaces were removed.
+  - Options and behavior enums are located in `Reading` or `Writing` according to direction.
 
-4. Header parsing default behavior changed.
-- Planned (initial draft):
-  - Header parsing behavior implied by options, with default behavior effectively oriented to parsing headers.
-  - Default primitive parsing proposed via JSON parse fallback.
-- Implemented:
-  - `HeaderSelectionMode` default is `None` (no header parsing unless opted in).
-  - Default parsing is primitive-first (`bool` -> `Int64` -> `double` -> `string`), no JSON parsing of header text.
+6. `HttpResponseMessage` read path received additional allocation-focused optimization.
 
-5. Read serializer defaults were adjusted for HTTP JSON conventions.
 - Planned:
-  - No explicit requirement for serializer defaults preset.
+    - General focus on low allocations.
 - Implemented:
-  - `HttpReadJsonSerializerOptionsCache` uses `JsonSerializerDefaults.Web` to align with Minimal API payload casing conventions in round-trip scenarios.
+    - `Content-Length` is checked first to avoid unnecessary `byte[]` allocations.
+    - Known-length non-empty payloads are deserialized from stream first.
+    - Fallback to byte-array path is used only when length is unknown.
 
-6. Option type naming differs.
+7. Read serializer defaults were explicitly aligned to web JSON behavior.
 - Planned:
-  - `LightResultHttpReadOptions`.
+    - No strict default serializer preset requirement.
 - Implemented:
-  - `LightResultsHttpReadOptions`.
+    - `HttpReadJsonSerializerOptionsCache` uses `JsonSerializerDefaults.Web` and pre-registers read converters.
 
-## Missing Parts To Tackle In This Branch
+8. Native AOT guidance was partially relaxed by design decision.
+- Planned:
+    - Avoid `Activator.CreateInstance` / `MakeGenericType` in new code paths.
+- Implemented:
+    - Converter factories still use runtime generic creation (`Activator` + `MakeGenericType`).
+    - This is an intentional tradeoff accepted for now in this branch.
 
-1. Add explicit tests for `JsonSerializerContext` usage with `ReadResultAsync`.
-- Validate that read deserialization works correctly when callers provide source-generated serializer metadata.
-- Suggested scenarios:
-  - `ReadResultAsync<T>` success payload (bare and wrapped) with `SerializerOptions` backed by a test `JsonSerializerContext`.
-  - `ReadResultAsync<T>` failure/problem-details payload with source-generated metadata for involved DTOs.
-  - `ReadResultAsync` (non-generic) success/failure payloads with context-backed options.
+## Additional Work Completed Beyond Initial Plan
 
-2. Keep the current converter factory approach unless tests disprove it.
-- `HttpWriteResultJsonConverterFactory` remains as implemented.
-- The missing action item is verification via tests, not redesign of the factory.
+1. End-to-end round-trip integration tests were added using Minimal API apps and `HttpClient`.
 
-3. Migration notes are intentionally out of scope for this branch.
-- Library is not released yet, so no migration-doc work is required now.
+- `Result` and `Result<T>` assertions use Value Object style expected-result comparisons.
+
+2. `JsonSerializerContext`-based read tests were added.
+
+- Context-backed `ReadResultAsync` scenarios are covered for generic success, generic failure, and non-generic success.
+
+3. Targeted coverage improvements were added for HTTP reading/writing internals.
+
+- Additional unit tests cover header selection strategies, parser registry behavior, parsing/conversion helpers, and
+  JSON reader edge paths.
