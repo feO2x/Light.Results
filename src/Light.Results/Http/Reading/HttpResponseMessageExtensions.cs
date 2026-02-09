@@ -285,27 +285,21 @@ public static class HttpResponseMessageExtensions
 
     private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightResultsHttpReadOptions options)
     {
-        if (options.HeaderSelectionMode == HeaderSelectionMode.None)
+        var headerSelectionStrategy = options.HeaderSelectionStrategy;
+        if (ReferenceEquals(headerSelectionStrategy, HttpHeaderSelectionStrategies.None))
         {
             return null;
         }
-
-        var allowList = options.HeaderAllowList is { Count: > 0 } ?
-            new HashSet<string>(options.HeaderAllowList, StringComparer.OrdinalIgnoreCase) :
-            null;
-        var denyList = options.HeaderDenyList is { Count: > 0 } ?
-            new HashSet<string>(options.HeaderDenyList, StringComparer.OrdinalIgnoreCase) :
-            null;
 
         var parsingService = options.HeaderParsingService;
 
         var builder = MetadataObjectBuilder.Create();
         try
         {
-            AppendHeaders(response.Headers, options, parsingService, ref builder, allowList, denyList);
+            AppendHeaders(response.Headers, options, parsingService, headerSelectionStrategy, ref builder);
             if (response.Content is not null)
             {
-                AppendHeaders(response.Content.Headers, options, parsingService, ref builder, allowList, denyList);
+                AppendHeaders(response.Content.Headers, options, parsingService, headerSelectionStrategy, ref builder);
             }
 
             return builder.Count == 0 ? null : builder.Build();
@@ -320,15 +314,14 @@ public static class HttpResponseMessageExtensions
         HttpHeaders headers,
         LightResultsHttpReadOptions options,
         IHttpHeaderParsingService parsingService,
-        ref MetadataObjectBuilder builder,
-        HashSet<string>? allowList,
-        HashSet<string>? denyList
+        IHttpHeaderSelectionStrategy headerSelectionStrategy,
+        ref MetadataObjectBuilder builder
     )
     {
         foreach (var header in headers)
         {
             var headerName = header.Key;
-            if (!ShouldIncludeHeader(headerName, options, allowList, denyList))
+            if (!headerSelectionStrategy.ShouldInclude(headerName))
             {
                 continue;
             }
@@ -351,22 +344,5 @@ public static class HttpResponseMessageExtensions
 
             builder.Add(metadataEntry.Key, metadataEntry.Value);
         }
-    }
-
-    private static bool ShouldIncludeHeader(
-        string headerName,
-        LightResultsHttpReadOptions options,
-        HashSet<string>? allowList,
-        HashSet<string>? denyList
-    )
-    {
-        return options.HeaderSelectionMode switch
-        {
-            HeaderSelectionMode.None => false,
-            HeaderSelectionMode.All => true,
-            HeaderSelectionMode.AllowList => allowList is not null && allowList.Contains(headerName),
-            HeaderSelectionMode.DenyList => denyList is null || !denyList.Contains(headerName),
-            _ => false
-        };
     }
 }

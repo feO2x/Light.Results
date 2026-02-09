@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.Http.Reading.Headers;
 using Light.Results.Metadata;
@@ -16,19 +15,9 @@ public sealed record LightResultsHttpReadOptions
     public static LightResultsHttpReadOptions Default { get; } = new ();
 
     /// <summary>
-    /// Gets or sets which headers should be read into metadata.
+    /// Gets or sets the strategy deciding which headers should be read into metadata.
     /// </summary>
-    public HeaderSelectionMode HeaderSelectionMode { get; init; } = HeaderSelectionMode.None;
-
-    /// <summary>
-    /// Gets or sets the allow list of header names to read when <see cref="HeaderSelectionMode" /> is AllowList.
-    /// </summary>
-    public IReadOnlyCollection<string>? HeaderAllowList { get; init; }
-
-    /// <summary>
-    /// Gets or sets the deny list of header names to skip when <see cref="HeaderSelectionMode" /> is DenyList.
-    /// </summary>
-    public IReadOnlyCollection<string>? HeaderDenyList { get; init; }
+    public IHttpHeaderSelectionStrategy HeaderSelectionStrategy { get; init; } = HttpHeaderSelectionStrategies.None;
 
     /// <summary>
     /// Gets or sets how conflicts are handled when multiple headers map to the same metadata key.

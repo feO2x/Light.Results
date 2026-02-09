@@ -183,7 +183,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.All,
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.All,
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser]))
         };
 
@@ -206,7 +206,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.All,
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.All,
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser])),
             HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
         };
@@ -229,8 +229,7 @@ public sealed class HttpResponseMessageExtensionsTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.AllowList,
-            HeaderAllowList = ["X-Ids"]
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.AllowList(["X-Ids"])
         };
 
         using var response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -254,8 +253,7 @@ public sealed class HttpResponseMessageExtensionsTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.AllowList,
-            HeaderAllowList = ["X-Bool", "X-Int", "X-Double", "X-Text"]
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.AllowList(["X-Bool", "X-Int", "X-Double", "X-Text"])
         };
 
         using var response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -284,8 +282,7 @@ public sealed class HttpResponseMessageExtensionsTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.AllowList,
-            HeaderAllowList = ["X-Bool", "X-Int", "X-Double"],
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.AllowList(["X-Bool", "X-Int", "X-Double"]),
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 HttpHeaderParserRegistry.Create(Array.Empty<HttpHeaderParser>()),
                 HeaderValueParsingMode.StringOnly
@@ -321,7 +318,7 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.None,
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.None,
             SerializerOptions = serializerOptions
         };
 
@@ -346,7 +343,7 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.None,
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.None,
             SerializerOptions = serializerOptions
         };
 
@@ -370,7 +367,7 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.None,
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.None,
             SerializerOptions = serializerOptions
         };
 
@@ -390,7 +387,7 @@ public sealed class HttpResponseMessageExtensionsTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.None
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.None
         };
 
         using var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -410,7 +407,7 @@ public sealed class HttpResponseMessageExtensionsTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.None
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.None
         };
 
         using var nonGenericResponse = new HttpResponseMessage(HttpStatusCode.OK)
@@ -560,7 +557,7 @@ public sealed class HttpResponseMessageExtensionsTests
 
         return new LightResultsHttpReadOptions
         {
-            HeaderSelectionMode = HeaderSelectionMode.None,
+            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.None,
             PreferSuccessPayload = preferSuccessPayload,
             SerializerOptions = serializerOptions
         };
