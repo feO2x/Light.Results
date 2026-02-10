@@ -16,15 +16,27 @@ namespace Light.Results.Http.Reading;
 /// </summary>
 public static class HttpResponseMessageExtensions
 {
-    private const string FailurePayloadRequiredMessage = "Failure responses must include a problem details payload.";
+    /// <summary>
+    /// Gets the error message for failure responses that do not contain a problem details payload.
+    /// </summary>
+    public const string FailurePayloadRequiredMessage = "Failure responses must include a problem details payload.";
 
-    private const string GenericSuccessPayloadRequiredMessage =
+    /// <summary>
+    /// Gets the error message for successful responses that do not contain a payload.
+    /// </summary>
+    public const string GenericSuccessPayloadRequiredMessage =
         "Successful responses for Result<T> must include a payload.";
 
-    private const string NonGenericFailureMustDeserializeToFailedMessage =
+    /// <summary>
+    /// Gets the error message indicating that a non-generic failure was not serialized to an invalid Result instance.
+    /// </summary>
+    public const string NonGenericFailureMustDeserializeToFailedMessage =
         "Failure responses must deserialize into failed Result payloads.";
 
-    private const string GenericFailureMustDeserializeToFailedMessage =
+    /// <summary>
+    /// Gets the error message indicating that a non-generic failure was not serialized to an invalid Result&lt;T> instance.
+    /// </summary>
+    public const string GenericFailureMustDeserializeToFailedMessage =
         "Failure responses must deserialize into failed Result<T> payloads.";
 
     /// <summary>
@@ -169,6 +181,7 @@ public static class HttpResponseMessageExtensions
     }
 
     private static TResult HandleEmptyBody<TResult>(
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local -- not true, isFailure is process relevant
         bool isFailure,
         Func<TResult>? createEmptySuccessResult,
         string? successEmptyBodyMessage
