@@ -22,7 +22,7 @@ public sealed class HttpWriteResultJsonConverter : JsonConverter<Result>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
-    /// Reads the JSON representation of a <see cref="Result" />.
+    /// Throws a <see cref="NotSupportedException" /> because this converter only supports writing.
     /// </summary>
     public override Result Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
         throw new NotSupportedException(
@@ -104,7 +104,7 @@ public sealed class HttpWriteResultJsonConverter<T> : JsonConverter<Result<T>>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
-    /// Reads the JSON representation of a <see cref="Result{T}" />.
+    /// Throws a <see cref="NotSupportedException" /> because this converter only supports writing.
     /// </summary>
     public override Result<T> Read(
         ref Utf8JsonReader reader,
@@ -112,7 +112,7 @@ public sealed class HttpWriteResultJsonConverter<T> : JsonConverter<Result<T>>
         JsonSerializerOptions serializerOptions
     ) =>
         throw new NotSupportedException(
-            $"{nameof(HttpWriteResultJsonConverter<T>)} supports serialization only. Use a deserialization converter for reading."
+            "HttpWriteResultJsonConverter supports serialization only. Use a deserialization converter for reading."
         );
 
     /// <summary>
