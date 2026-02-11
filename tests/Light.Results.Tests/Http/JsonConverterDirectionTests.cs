@@ -73,6 +73,36 @@ public sealed class JsonConverterDirectionTests
     }
 
     [Fact]
+    public void HttpReadFailurePayloadConverter_ShouldThrowOnWrite()
+    {
+        var converter = new HttpReadFailureResultPayloadJsonConverter();
+        var options = new JsonSerializerOptions();
+
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+
+        var payload = new HttpReadFailureResultPayload(new Errors(new Error { Message = "failure" }), null);
+
+        var act = () => converter.Write(writer, payload, options);
+
+        act.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void HttpReadSuccessPayloadConverter_ShouldThrowOnWrite()
+    {
+        var converter = new HttpReadSuccessResultPayloadJsonConverter();
+        var options = new JsonSerializerOptions();
+
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+
+        var act = () => converter.Write(writer, new HttpReadSuccessResultPayload(null), options);
+
+        act.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
     public void HttpWriteMetadataObjectConverter_ShouldThrowOnRead()
     {
         var converter = new HttpWriteMetadataObjectJsonConverter();
@@ -143,6 +173,23 @@ public sealed class JsonConverterDirectionTests
         factory.CanConvert(typeof(Result)).Should().BeFalse();
         factory.CreateConverter(typeof(Result<int>), new JsonSerializerOptions())
            .Should().BeOfType<HttpReadResultJsonConverter<int>>();
+    }
+
+    [Fact]
+    public void SuccessPayloadConverterFactory_ShouldMatchPayloadTypes()
+    {
+        var factory = new HttpReadSuccessResultPayloadJsonConverterFactory();
+
+        factory.CanConvert(typeof(HttpReadAutoSuccessResultPayload<int>)).Should().BeTrue();
+        factory.CanConvert(typeof(HttpReadBareSuccessResultPayload<int>)).Should().BeTrue();
+        factory.CanConvert(typeof(HttpReadWrappedSuccessResultPayload<int>)).Should().BeTrue();
+        factory.CanConvert(typeof(HttpReadSuccessResultPayload)).Should().BeFalse();
+        factory.CreateConverter(typeof(HttpReadAutoSuccessResultPayload<int>), new JsonSerializerOptions())
+           .Should().BeOfType<HttpReadAutoSuccessResultPayloadJsonConverter<int>>();
+        factory.CreateConverter(typeof(HttpReadBareSuccessResultPayload<int>), new JsonSerializerOptions())
+           .Should().BeOfType<HttpReadBareSuccessResultPayloadJsonConverter<int>>();
+        factory.CreateConverter(typeof(HttpReadWrappedSuccessResultPayload<int>), new JsonSerializerOptions())
+           .Should().BeOfType<HttpReadWrappedSuccessResultPayloadJsonConverter<int>>();
     }
 
     [Fact]

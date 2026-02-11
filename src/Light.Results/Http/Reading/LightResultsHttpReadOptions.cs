@@ -53,7 +53,7 @@ public sealed record LightResultsHttpReadOptions
 
     /// <summary>
     /// Gets or sets serializer options used to deserialize Result payloads with <see cref="JsonSerializer" />.
-    /// When <see langword="null" />, the optimized default reader pipeline is used.
+    /// When <see langword="null" />, the default HTTP-read serializer options are used.
     /// </summary>
     public JsonSerializerOptions? SerializerOptions { get; init; }
 }

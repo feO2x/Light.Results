@@ -36,27 +36,70 @@ public sealed class HttpReadJsonSerializerOptionsCacheTests
     }
 
     [Fact]
-    public void CachedOptions_ShouldDeserializeGenericResult()
+    public void GetOrCreate_ShouldReturnDefault_WhenInputIsNull()
     {
-        var genericResult = JsonSerializer.Deserialize<Result<int>>(
+        var resolved = HttpReadJsonSerializerOptionsCache.GetOrCreate(null);
+
+        resolved.Should().BeSameAs(HttpReadJsonSerializerOptionsCache.Default);
+    }
+
+    [Fact]
+    public void GetOrCreate_ShouldCacheResolvedOptions_ForSameInputInstance()
+    {
+        var input = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+        var first = HttpReadJsonSerializerOptionsCache.GetOrCreate(input);
+        var second = HttpReadJsonSerializerOptionsCache.GetOrCreate(input);
+
+        first.Should().BeSameAs(second);
+    }
+
+    [Fact]
+    public void CachedOptions_ShouldDeserializeGenericAutoPayload()
+    {
+        var payload = JsonSerializer.Deserialize<HttpReadAutoSuccessResultPayload<int>>(
             "{\"value\":42}",
             HttpReadJsonSerializerOptionsCache.Auto
         );
 
-        var expectedGenericResult = Result<int>.Ok(42);
-        genericResult.Should().Be(expectedGenericResult);
+        payload.Value.Should().Be(42);
+        payload.Metadata.Should().BeNull();
     }
 
     [Fact]
-    public void CachedOptions_ShouldDeserializeNonGenericResult()
+    public void CachedOptions_ShouldDeserializeNonGenericSuccessPayload()
     {
-        var nonGenericResult = JsonSerializer.Deserialize<Result>(
+        var payload = JsonSerializer.Deserialize<HttpReadSuccessResultPayload>(
             "{\"metadata\":{\"source\":\"cache\"}}",
             HttpReadJsonSerializerOptionsCache.Auto
         );
 
-        var expectedMetadata = MetadataObject.Create(("source", MetadataValue.FromString("cache")));
-        var expectedNonGenericResult = Result.Ok(expectedMetadata);
-        nonGenericResult.Should().Be(expectedNonGenericResult);
+        payload.Metadata.Should().Be(MetadataObject.Create(("source", MetadataValue.FromString("cache"))));
+    }
+
+    [Fact]
+    public void CachedOptions_ShouldDeserializeFailurePayload()
+    {
+        var payload = JsonSerializer.Deserialize<HttpReadFailureResultPayload>(
+            """
+            {
+                "type": "https://example.org/problems/validation",
+                "title": "Validation failed",
+                "status": 400,
+                "errors": [
+                    {
+                        "message": "Name is required",
+                        "code": "NameRequired",
+                        "target": "name",
+                        "category": "Validation"
+                    }
+                ]
+            }
+            """,
+            HttpReadJsonSerializerOptionsCache.Auto
+        );
+
+        payload.Errors.Count.Should().Be(1);
+        payload.Errors[0].Message.Should().Be("Name is required");
     }
 }
