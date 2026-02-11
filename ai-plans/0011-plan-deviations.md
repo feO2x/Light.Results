@@ -49,22 +49,17 @@ This document compares `ai-plans/0011-http-response-deserialization.md` with the
 - Planned:
     - General focus on low allocations.
 - Implemented:
-    - `Content-Length` is checked first to avoid unnecessary `byte[]` allocations.
-    - Known-length non-empty payloads are deserialized from stream first.
-    - Fallback to byte-array path is used only when length is unknown.
+    - `Content-Length` is checked first to avoid unnecessary stream allocations.
+    - HTTP responses with body are deserialized from stream.
 
-7. Read serializer defaults were explicitly aligned to web JSON behavior.
-- Planned:
-    - No strict default serializer preset requirement.
-- Implemented:
-    - `HttpReadJsonSerializerOptionsCache` uses `JsonSerializerDefaults.Web` and pre-registers read converters.
-
-8. Native AOT guidance was partially relaxed by design decision.
+7. Native AOT guidance was partially relaxed by design decision.
 - Planned:
     - Avoid `Activator.CreateInstance` / `MakeGenericType` in new code paths.
 - Implemented:
     - Converter factories still use runtime generic creation (`Activator` + `MakeGenericType`).
-    - This is an intentional tradeoff accepted for now in this branch.
+  - This is an intentional tradeoff: the corresponding generic JsonConverter types will not be removed by the trimmer as
+    they are referenced with the `typeof` keyword. Bound Reflection works perfectly fine in Native AOT. Users of the
+    library do not have to deal with registering a converter instance of every T.
 
 ## Additional Work Completed Beyond Initial Plan
 
