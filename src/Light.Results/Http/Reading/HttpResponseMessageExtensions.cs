@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -339,7 +340,7 @@ public static class HttpResponseMessageExtensions
                 continue;
             }
 
-            var values = header.Value as string[] ?? new List<string>(header.Value).ToArray();
+            var values = header.Value as IReadOnlyList<string> ?? header.Value.ToArray();
             var metadataEntry = parsingService.ParseHeader(headerName, values, options.HeaderMetadataAnnotation);
 
             if (builder.TryGetValue(metadataEntry.Key, out _))
