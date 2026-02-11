@@ -258,6 +258,19 @@ public sealed class HttpResponseMessageExtensionsTests
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
+    [Fact]
+    public async Task ReadResultAsync_ShouldThrowJsonException_WhenLengthIsUnknownAndStreamIsNonSeekableAndEmpty()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var response = new HttpResponseMessage(HttpStatusCode.OK);
+        response.Content = new UnknownLengthNonSeekableEmptyContent();
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        Func<Task> act = async () => await response.ReadResultAsync(cancellationToken: cancellationToken);
+
+        await act.Should().ThrowAsync<JsonException>();
+    }
+
     private static HttpResponseMessage CreateJsonResponse(
         HttpStatusCode statusCode,
         string json,
@@ -346,5 +359,63 @@ public sealed class HttpResponseMessageExtensionsTests
             length = 0;
             return false;
         }
+    }
+
+    private sealed class UnknownLengthNonSeekableEmptyContent : HttpContent
+    {
+        public UnknownLengthNonSeekableEmptyContent()
+        {
+            Headers.ContentType = new MediaTypeHeaderValue("application/json")
+            {
+                CharSet = "utf-8"
+            };
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) => Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+
+        protected override Task<Stream> CreateContentReadStreamAsync() =>
+            Task.FromResult<Stream>(new EmptyNonSeekableStream());
+    }
+
+    private sealed class EmptyNonSeekableStream : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => 0L;
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => 0;
+
+        public override int Read(Span<byte> buffer) => 0;
+
+        public override Task<int> ReadAsync(
+            byte[] buffer,
+            int offset,
+            int count,
+            CancellationToken cancellationToken
+        ) => Task.FromResult(0);
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            new (0);
+
+        public override void Flush() { }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }
