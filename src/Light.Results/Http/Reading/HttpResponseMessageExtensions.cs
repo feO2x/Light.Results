@@ -272,13 +272,26 @@ public static class HttpResponseMessageExtensions
         CancellationToken cancellationToken
     )
     {
-        if (response.Content?.Headers.ContentLength is null or 0L)
+        if (response.Content is null)
+        {
+            return null;
+        }
+
+        if (response.Content.Headers.ContentLength is 0L)
         {
             return null;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        return await response.Content.ReadAsStreamAsync();
+        var stream = await response.Content.ReadAsStreamAsync();
+
+        switch (stream.CanSeek)
+        {
+            case true when stream.Length == 0L:
+                stream.Dispose();
+                return null;
+            default: return stream;
+        }
     }
 
     private static TResult MergeHeaderMetadataIfNeeded<TResult>(

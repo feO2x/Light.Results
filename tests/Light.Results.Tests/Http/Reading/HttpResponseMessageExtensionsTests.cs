@@ -221,7 +221,7 @@ public sealed class HttpResponseMessageExtensionsTests
     }
 
     [Fact]
-    public async Task ReadResultAsync_ShouldTreatUnknownContentLengthAsEmptyBody_ForNonGenericResult()
+    public async Task ReadResultAsync_ShouldReadBody_WhenContentLengthIsUnknown_ForNonGenericResult()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         using var response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -229,21 +229,19 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var result = await response.ReadResultAsync(cancellationToken: cancellationToken);
 
-        result.Should().Be(Result.Ok());
+        result.Should().Be(Result.Ok(MetadataObject.Create(("note", MetadataValue.FromString("body")))));
     }
 
     [Fact]
-    public async Task ReadResultAsyncOfT_ShouldTreatUnknownContentLengthAsEmptyBody_ForGenericResult()
+    public async Task ReadResultAsyncOfT_ShouldReadBody_WhenContentLengthIsUnknown_ForGenericResult()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         using var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Content = new UnknownLengthJsonContent("42");
 
-        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
-        Func<Task> act = async () => await response.ReadResultAsync<int>(cancellationToken: cancellationToken);
+        var result = await response.ReadResultAsync<int>(cancellationToken: cancellationToken);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-           .WithMessage(HttpResponseMessageExtensions.GenericSuccessPayloadRequiredMessage);
+        result.Should().Be(Result<int>.Ok(42));
     }
 
     [Fact]
