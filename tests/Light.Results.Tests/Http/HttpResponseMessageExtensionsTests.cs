@@ -57,6 +57,36 @@ public sealed class HttpResponseMessageExtensionsTests
     }
 
     [Fact]
+    public async Task ReadResultAsync_ShouldTreatProblemDetailsShapeAsSuccess_WhenHttpResponseIndicatesSuccess()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.OK);
+        response.Content = new StringContent(
+            """
+            {
+              "type": "dto",
+              "title": "Successful DTO",
+              "status": 200,
+              "errors": []
+            }
+            """,
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var result = await response.ReadResultAsync<JsonElement>(
+            cancellationToken: TestCancellationToken
+        );
+
+        result.IsValid.Should().BeTrue();
+        result.Value.GetProperty("type").GetString().Should().Be("dto");
+        result.Value.GetProperty("title").GetString().Should().Be("Successful DTO");
+        result.Value.GetProperty("status").GetInt32().Should().Be(200);
+        var errorsProperty = result.Value.GetProperty("errors");
+        errorsProperty.ValueKind.Should().Be(JsonValueKind.Array);
+        errorsProperty.GetArrayLength().Should().Be(0);
+    }
+
+    [Fact]
     public async Task ReadResultAsync_ShouldThrow_WhenWrapperMissingValue()
     {
         using var response = new HttpResponseMessage(HttpStatusCode.OK);

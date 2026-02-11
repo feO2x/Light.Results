@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -58,13 +59,23 @@ public static class HttpResponseMessageExtensions
         }
 
         var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
-        var serializerOptions = ResolveSerializerOptions(resolvedOptions);
+        var isFailure = DetermineIfFailureResponse(response, resolvedOptions);
+        var serializerOptions = resolvedOptions.SerializerOptions;
 
-        var isProblemDetails = CheckIfResponseContainsProblemDetails(response);
-        var isFailure = !response.IsSuccessStatusCode ||
-                        (resolvedOptions.TreatProblemDetailsAsFailure && isProblemDetails);
-        var result = await ReadBodyResultAsync(response, serializerOptions, isFailure, cancellationToken)
-           .ConfigureAwait(false);
+        var result = serializerOptions is null ?
+            await ReadBodyResultDirectAsync(response, isFailure, cancellationToken).ConfigureAwait(false) :
+            await ReadBodyResultViaJsonSerializerAsync(
+                    response,
+                    serializerOptions,
+                    isFailure,
+                    createEmptySuccessResult: static () => Result.Ok(),
+                    successEmptyBodyMessage: null,
+                    resultIsValid: static result => result.IsValid,
+                    invalidFailureResultMessage: NonGenericFailureMustDeserializeToFailedMessage,
+                    cancellationToken
+                )
+               .ConfigureAwait(false);
+        ;
         return MergeHeaderMetadataIfNeeded(response, resolvedOptions, result);
     }
 
@@ -88,60 +99,44 @@ public static class HttpResponseMessageExtensions
         }
 
         var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
-        var serializerOptions = ResolveSerializerOptions(resolvedOptions);
+        var isFailure = DetermineIfFailureResponse(response, resolvedOptions);
+        var serializerOptions = resolvedOptions.SerializerOptions;
 
-        var isProblemDetails = CheckIfResponseContainsProblemDetails(response);
-        var isFailure = !response.IsSuccessStatusCode ||
-                        (resolvedOptions.TreatProblemDetailsAsFailure && isProblemDetails);
-        var result = await ReadBodyResultAsync<T>(response, serializerOptions, isFailure, cancellationToken)
-           .ConfigureAwait(false);
+        var result = serializerOptions is not null ?
+            await ReadBodyResultViaJsonSerializerAsync<Result<T>>(
+                    response,
+                    serializerOptions,
+                    isFailure,
+                    createEmptySuccessResult: null,
+                    successEmptyBodyMessage: GenericSuccessPayloadRequiredMessage,
+                    resultIsValid: static result => result.IsValid,
+                    invalidFailureResultMessage: GenericFailureMustDeserializeToFailedMessage,
+                    cancellationToken
+                )
+               .ConfigureAwait(false) :
+            await ReadBodyGenericResultDirectAsync<T>(
+                    response,
+                    HttpReadJsonSerializerOptionsCache.GetByPreference(resolvedOptions.PreferSuccessPayload),
+                    isFailure,
+                    resolvedOptions.PreferSuccessPayload,
+                    cancellationToken
+                )
+               .ConfigureAwait(false);
         return MergeHeaderMetadataIfNeeded(response, resolvedOptions, result);
     }
 
-    private static bool CheckIfResponseContainsProblemDetails(HttpResponseMessage response)
+    private static bool DetermineIfFailureResponse(HttpResponseMessage response, LightResultsHttpReadOptions options)
     {
         var mediaType = response.Content?.Headers.ContentType?.MediaType;
-        return mediaType is not null &&
-               mediaType.Equals("application/problem+json", StringComparison.OrdinalIgnoreCase);
+        var isProblemDetailsContentType = string.Equals(
+            mediaType,
+            "application/problem+json",
+            StringComparison.OrdinalIgnoreCase
+        );
+        return !response.IsSuccessStatusCode || (options.TreatProblemDetailsAsFailure && isProblemDetailsContentType);
     }
 
-    private static async Task<Result> ReadBodyResultAsync(
-        HttpResponseMessage response,
-        JsonSerializerOptions serializerOptions,
-        bool isFailure,
-        CancellationToken cancellationToken
-    ) =>
-        await ReadBodyResultAsync(
-                response,
-                serializerOptions,
-                isFailure,
-                createEmptySuccessResult: static () => Result.Ok(),
-                successEmptyBodyMessage: null,
-                resultIsValid: static result => result.IsValid,
-                invalidFailureResultMessage: NonGenericFailureMustDeserializeToFailedMessage,
-                cancellationToken
-            )
-           .ConfigureAwait(false);
-
-    private static async Task<Result<T>> ReadBodyResultAsync<T>(
-        HttpResponseMessage response,
-        JsonSerializerOptions serializerOptions,
-        bool isFailure,
-        CancellationToken cancellationToken
-    ) =>
-        await ReadBodyResultAsync<Result<T>>(
-                response,
-                serializerOptions,
-                isFailure,
-                createEmptySuccessResult: null,
-                successEmptyBodyMessage: GenericSuccessPayloadRequiredMessage,
-                resultIsValid: static result => result.IsValid,
-                invalidFailureResultMessage: GenericFailureMustDeserializeToFailedMessage,
-                cancellationToken
-            )
-           .ConfigureAwait(false);
-
-    private static async Task<TResult> ReadBodyResultAsync<TResult>(
+    private static async Task<TResult> ReadBodyResultViaJsonSerializerAsync<TResult>(
         HttpResponseMessage response,
         JsonSerializerOptions serializerOptions,
         bool isFailure,
@@ -178,6 +173,110 @@ public static class HttpResponseMessageExtensions
         var deserializedFromBytes = DeserializeResultFromBytes<TResult>(contentBytes, serializerOptions);
         EnsureFailureResultIsInvalid(isFailure, resultIsValid(deserializedFromBytes), invalidFailureResultMessage);
         return deserializedFromBytes;
+    }
+
+    private static async Task<Result> ReadBodyResultDirectAsync(
+        HttpResponseMessage response,
+        bool isFailure,
+        CancellationToken cancellationToken
+    )
+    {
+        if (TryGetContentLength(response, out var contentLength))
+        {
+            if (contentLength == 0)
+            {
+                return HandleEmptyBody(
+                    isFailure,
+                    static () => Result.Ok(),
+                    successEmptyBodyMessage: null
+                );
+            }
+
+            var rentedBuffer = ArrayPool<byte>.Shared.Rent((int) contentLength);
+            try
+            {
+                var bytesRead = await ReadStreamIntoBufferAsync(
+                    response.Content!, // Call to TryGetContentLength proves Content is not null
+                    rentedBuffer,
+                    (int) contentLength,
+                    cancellationToken
+                ).ConfigureAwait(false);
+                var reader = new Utf8JsonReader(rentedBuffer.AsSpan(0, bytesRead));
+                return isFailure ?
+                    ResultJsonReader.ReadNonGenericFailureResult(ref reader) :
+                    ResultJsonReader.ReadSuccessResult(ref reader);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rentedBuffer);
+            }
+        }
+
+        var contentBytes = await ReadContentBytesAsync(response, cancellationToken).ConfigureAwait(false);
+        if (contentBytes.Length == 0)
+        {
+            return HandleEmptyBody(isFailure, static () => Result.Ok(), successEmptyBodyMessage: null);
+        }
+
+        var fallbackReader = new Utf8JsonReader(contentBytes);
+        return isFailure ?
+            ResultJsonReader.ReadNonGenericFailureResult(ref fallbackReader) :
+            ResultJsonReader.ReadSuccessResult(ref fallbackReader);
+    }
+
+    private static async Task<Result<T>> ReadBodyGenericResultDirectAsync<T>(
+        HttpResponseMessage response,
+        JsonSerializerOptions serializerOptions,
+        bool isFailure,
+        PreferSuccessPayload preferSuccessPayload,
+        CancellationToken cancellationToken
+    )
+    {
+        if (TryGetContentLength(response, out var contentLength))
+        {
+            if (contentLength == 0)
+            {
+                return HandleEmptyBody<Result<T>>(
+                    isFailure,
+                    createEmptySuccessResult: null,
+                    GenericSuccessPayloadRequiredMessage
+                );
+            }
+
+            var rentedBuffer = ArrayPool<byte>.Shared.Rent((int) contentLength);
+            try
+            {
+                var bytesRead = await ReadStreamIntoBufferAsync(
+                    response.Content!, // Call to TryGetContentLength proves Content is not null
+                    rentedBuffer,
+                    (int) contentLength,
+                    cancellationToken
+                ).ConfigureAwait(false);
+                var reader = new Utf8JsonReader(rentedBuffer.AsSpan(0, bytesRead));
+                return isFailure ?
+                    ResultJsonReader.ReadGenericFailureResult<T>(ref reader) :
+                    ResultJsonReader.ReadSuccessResult<T>(ref reader, serializerOptions, preferSuccessPayload);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rentedBuffer);
+            }
+        }
+
+        var contentBytes = await ReadContentBytesAsync(response, cancellationToken).ConfigureAwait(false);
+        if (contentBytes.Length == 0)
+        {
+            return HandleEmptyBody<Result<T>>(
+                isFailure,
+                createEmptySuccessResult: null,
+                GenericSuccessPayloadRequiredMessage
+            );
+        }
+
+        var fallbackReader = new Utf8JsonReader(contentBytes);
+        return isFailure ?
+            ResultJsonReader.ReadGenericFailureResult<T>(ref fallbackReader) :
+            ResultJsonReader.ReadSuccessResult<T>(ref fallbackReader, serializerOptions, preferSuccessPayload);
     }
 
     private static TResult HandleEmptyBody<TResult>(
@@ -257,6 +356,31 @@ public static class HttpResponseMessageExtensions
         return deserialized;
     }
 
+    private static async Task<int> ReadStreamIntoBufferAsync(
+        HttpContent content,
+        byte[] buffer,
+        int expectedLength,
+        CancellationToken cancellationToken
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+        var totalRead = 0;
+        while (totalRead < expectedLength)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var read = await stream.ReadAsync(buffer, totalRead, expectedLength - totalRead).ConfigureAwait(false);
+            if (read == 0)
+            {
+                break;
+            }
+
+            totalRead += read;
+        }
+
+        return totalRead;
+    }
+
     private static async Task<byte[]> ReadContentBytesAsync(
         HttpResponseMessage response,
         CancellationToken cancellationToken
@@ -270,9 +394,6 @@ public static class HttpResponseMessageExtensions
         cancellationToken.ThrowIfCancellationRequested();
         return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
     }
-
-    private static JsonSerializerOptions ResolveSerializerOptions(LightResultsHttpReadOptions options) =>
-        options.SerializerOptions ?? HttpReadJsonSerializerOptionsCache.GetByPreference(options.PreferSuccessPayload);
 
     private static TResult MergeHeaderMetadataIfNeeded<TResult>(
         HttpResponseMessage response,

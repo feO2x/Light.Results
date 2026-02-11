@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Reading.Json;
@@ -780,27 +778,7 @@ public static class ResultJsonReader
 
     private static T? ReadGenericValue<T>(ref Utf8JsonReader reader, JsonSerializerOptions serializerOptions)
     {
-        var effectiveOptions = EnsureTypeInfoResolver(serializerOptions);
-        var typeInfo = effectiveOptions.GetTypeInfo(typeof(T));
-        if (typeInfo.Converter is JsonConverter<T> converter)
-        {
-            return converter.Read(ref reader, typeof(T), effectiveOptions);
-        }
-
-        return (T?) JsonSerializer.Deserialize(ref reader, typeof(T), effectiveOptions);
-    }
-
-    private static JsonSerializerOptions EnsureTypeInfoResolver(JsonSerializerOptions serializerOptions)
-    {
-        if (serializerOptions.TypeInfoResolver is not null)
-        {
-            return serializerOptions;
-        }
-
-        return new JsonSerializerOptions(serializerOptions)
-        {
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
-        };
+        return JsonSerializer.Deserialize<T>(ref reader, serializerOptions);
     }
 
     private static ObjectInspection InspectObject(ref Utf8JsonReader reader)

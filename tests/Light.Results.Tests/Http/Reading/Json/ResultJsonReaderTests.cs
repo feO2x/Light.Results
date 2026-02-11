@@ -59,6 +59,32 @@ public sealed class ResultJsonReaderTests
     }
 
     [Fact]
+    public void ReadResultOfT_ShouldDetectFailurePayload_WithAutoDetection()
+    {
+        var reader = CreateReader(
+            """
+            {
+              "type": "https://example.org/problems/validation",
+              "title": "Validation failed",
+              "status": 400,
+              "errors": [
+                { "message": "Name required", "target": "name", "category": "Validation" }
+              ]
+            }
+            """
+        );
+
+        var result = ResultJsonReader.ReadResult<int>(
+            ref reader,
+            new JsonSerializerOptions()
+        );
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Count.Should().Be(1);
+        result.Errors[0].Message.Should().Be("Name required");
+    }
+
+    [Fact]
     public void ReadSuccessResultOfT_ShouldReadBareValue_WhenBareValuePreferenceIsUsed()
     {
         var reader = CreateReader("42");

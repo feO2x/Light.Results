@@ -51,8 +51,8 @@ public sealed record LightResultsHttpReadOptions
     public IHttpHeaderParsingService HeaderParsingService { get; init; } = DefaultHttpHeaderParsingService.Default;
 
     /// <summary>
-    /// Gets or sets optional serializer options used to deserialize Result payloads.
-    /// If <see langword="null" />, default cached options are used.
+    /// Gets or sets serializer options used to deserialize Result payloads with <see cref="JsonSerializer" />.
+    /// When <see langword="null" />, the optimized default reader pipeline is used.
     /// </summary>
     public JsonSerializerOptions? SerializerOptions { get; init; }
 }

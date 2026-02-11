@@ -14,8 +14,10 @@ public sealed class HttpReadResultJsonConverterFactory : JsonConverterFactory
     /// <summary>
     /// Initializes a new instance of <see cref="HttpReadResultJsonConverterFactory" />.
     /// </summary>
-    public HttpReadResultJsonConverterFactory(PreferSuccessPayload preferSuccessPayload = PreferSuccessPayload.Auto) =>
+    public HttpReadResultJsonConverterFactory(PreferSuccessPayload preferSuccessPayload = PreferSuccessPayload.Auto)
+    {
         _preferSuccessPayload = preferSuccessPayload;
+    }
 
     /// <summary>
     /// Determines whether the factory can create a converter for the specified type.
