@@ -119,31 +119,28 @@ public static class HttpResponseMessageExtensions
         CancellationToken cancellationToken
     )
     {
-        var contentBytes = await ReadContentBytesOrNullAsync(response, cancellationToken).ConfigureAwait(false);
-        if (contentBytes is null || contentBytes.Length == 0)
+        var contentStream = await CreateContentReadStreamAsync(response, cancellationToken).ConfigureAwait(false);
+        if (contentStream is null)
         {
             return HandleEmptyBody(isFailure, static () => Result.Ok(), successEmptyBodyMessage: null);
         }
 
-        if (isFailure)
+        using (contentStream)
         {
-            var failurePayload = await DeserializeFromBytesAsync<HttpReadFailureResultPayload>(
-                    contentBytes,
-                    serializerOptions,
-                    cancellationToken
-                )
-               .ConfigureAwait(false);
-            EnsureFailurePayloadHasErrors(failurePayload.Errors, NonGenericFailureMustDeserializeToFailedMessage);
-            return Result.Fail(failurePayload.Errors, failurePayload.Metadata);
-        }
+            if (isFailure)
+            {
+                var failurePayload = await JsonSerializer
+                   .DeserializeAsync<HttpReadFailureResultPayload>(contentStream, serializerOptions, cancellationToken)
+                   .ConfigureAwait(false);
+                EnsureFailurePayloadHasErrors(failurePayload.Errors, NonGenericFailureMustDeserializeToFailedMessage);
+                return Result.Fail(failurePayload.Errors, failurePayload.Metadata);
+            }
 
-        var successPayload = await DeserializeFromBytesAsync<HttpReadSuccessResultPayload>(
-                contentBytes,
-                serializerOptions,
-                cancellationToken
-            )
-           .ConfigureAwait(false);
-        return Result.Ok(successPayload.Metadata);
+            var successPayload = await JsonSerializer
+               .DeserializeAsync<HttpReadSuccessResultPayload>(contentStream, serializerOptions, cancellationToken)
+               .ConfigureAwait(false);
+            return Result.Ok(successPayload.Metadata);
+        }
     }
 
     private static async Task<Result<T>> ReadBodyGenericResultAsync<T>(
@@ -154,8 +151,8 @@ public static class HttpResponseMessageExtensions
         CancellationToken cancellationToken
     )
     {
-        var contentBytes = await ReadContentBytesOrNullAsync(response, cancellationToken).ConfigureAwait(false);
-        if (contentBytes is null || contentBytes.Length == 0)
+        var contentStream = await CreateContentReadStreamAsync(response, cancellationToken).ConfigureAwait(false);
+        if (contentStream is null)
         {
             return HandleEmptyBody<Result<T>>(
                 isFailure,
@@ -164,25 +161,25 @@ public static class HttpResponseMessageExtensions
             );
         }
 
-        if (isFailure)
+        using (contentStream)
         {
-            var failurePayload = await DeserializeFromBytesAsync<HttpReadFailureResultPayload>(
-                    contentBytes,
+            if (isFailure)
+            {
+                var failurePayload = await JsonSerializer
+                   .DeserializeAsync<HttpReadFailureResultPayload>(contentStream, serializerOptions, cancellationToken)
+                   .ConfigureAwait(false);
+                EnsureFailurePayloadHasErrors(failurePayload.Errors, GenericFailureMustDeserializeToFailedMessage);
+                return Result<T>.Fail(failurePayload.Errors, failurePayload.Metadata);
+            }
+
+            return await DeserializeGenericSuccessPayloadAsync<T>(
+                    contentStream,
                     serializerOptions,
+                    NormalizePreference(preferSuccessPayload),
                     cancellationToken
                 )
                .ConfigureAwait(false);
-            EnsureFailurePayloadHasErrors(failurePayload.Errors, GenericFailureMustDeserializeToFailedMessage);
-            return Result<T>.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
-
-        return await DeserializeGenericSuccessPayloadAsync<T>(
-                contentBytes,
-                serializerOptions,
-                NormalizePreference(preferSuccessPayload),
-                cancellationToken
-            )
-           .ConfigureAwait(false);
     }
 
     private static PreferSuccessPayload NormalizePreference(PreferSuccessPayload preference)
@@ -193,7 +190,7 @@ public static class HttpResponseMessageExtensions
     }
 
     private static async Task<Result<T>> DeserializeGenericSuccessPayloadAsync<T>(
-        byte[] contentBytes,
+        Stream contentStream,
         JsonSerializerOptions serializerOptions,
         PreferSuccessPayload preferSuccessPayload,
         CancellationToken cancellationToken
@@ -201,8 +198,9 @@ public static class HttpResponseMessageExtensions
     {
         if (preferSuccessPayload == PreferSuccessPayload.BareValue)
         {
-            var barePayload = await DeserializeFromBytesAsync<HttpReadBareSuccessResultPayload<T>>(
-                    contentBytes,
+            var barePayload = await JsonSerializer
+               .DeserializeAsync<HttpReadBareSuccessResultPayload<T>>(
+                    contentStream,
                     serializerOptions,
                     cancellationToken
                 )
@@ -212,8 +210,9 @@ public static class HttpResponseMessageExtensions
 
         if (preferSuccessPayload == PreferSuccessPayload.WrappedValue)
         {
-            var wrappedPayload = await DeserializeFromBytesAsync<HttpReadWrappedSuccessResultPayload<T>>(
-                    contentBytes,
+            var wrappedPayload = await JsonSerializer
+               .DeserializeAsync<HttpReadWrappedSuccessResultPayload<T>>(
+                    contentStream,
                     serializerOptions,
                     cancellationToken
                 )
@@ -221,11 +220,8 @@ public static class HttpResponseMessageExtensions
             return CreateSuccessfulGenericResult(wrappedPayload.Value, wrappedPayload.Metadata);
         }
 
-        var autoPayload = await DeserializeFromBytesAsync<HttpReadAutoSuccessResultPayload<T>>(
-                contentBytes,
-                serializerOptions,
-                cancellationToken
-            )
+        var autoPayload = await JsonSerializer
+           .DeserializeAsync<HttpReadAutoSuccessResultPayload<T>>(contentStream, serializerOptions, cancellationToken)
            .ConfigureAwait(false);
         return CreateSuccessfulGenericResult(autoPayload.Value, autoPayload.Metadata);
     }
@@ -270,56 +266,18 @@ public static class HttpResponseMessageExtensions
         }
     }
 
-    private static async Task<byte[]?> ReadContentBytesOrNullAsync(
+    private static async Task<Stream?> CreateContentReadStreamAsync(
         HttpResponseMessage response,
         CancellationToken cancellationToken
     )
     {
-        if (TryGetContentLength(response, out var contentLength) && contentLength == 0)
-        {
-            return [];
-        }
-
-        if (response.Content is null)
+        if (response.Content?.Headers.ContentLength is null or 0L)
         {
             return null;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-    }
-
-    private static bool TryGetContentLength(HttpResponseMessage response, out long contentLength)
-    {
-        var content = response.Content;
-        if (content?.Headers.ContentLength is { } knownLength)
-        {
-            contentLength = knownLength;
-            return true;
-        }
-
-        contentLength = 0;
-        return false;
-    }
-
-    private static async Task<TPayload> DeserializeFromBytesAsync<TPayload>(
-        byte[] contentBytes,
-        JsonSerializerOptions serializerOptions,
-        CancellationToken cancellationToken
-    )
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        using var stream = new MemoryStream(contentBytes, writable: false);
-        var deserialized = await JsonSerializer
-           .DeserializeAsync<TPayload>(stream, serializerOptions, cancellationToken)
-           .ConfigureAwait(false);
-
-        if (deserialized is null)
-        {
-            throw new JsonException("Response body could not be deserialized to the expected payload type.");
-        }
-
-        return deserialized;
+        return await response.Content.ReadAsStreamAsync();
     }
 
     private static TResult MergeHeaderMetadataIfNeeded<TResult>(
@@ -330,18 +288,12 @@ public static class HttpResponseMessageExtensions
         where TResult : struct, ICanReplaceMetadata<TResult>
     {
         var headerMetadata = ReadHeaderMetadata(response, options);
-        if (headerMetadata is null)
-        {
-            return result;
-        }
-
         var mergedMetadata = MetadataObjectExtensions.MergeIfNeeded(
-            result.Metadata,
             headerMetadata,
+            result.Metadata,
             options.MergeStrategy
         );
-
-        return mergedMetadata == result.Metadata ? result : result.ReplaceMetadata(mergedMetadata);
+        return mergedMetadata is null ? result : result.ReplaceMetadata(mergedMetadata);
     }
 
     private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightResultsHttpReadOptions options)
