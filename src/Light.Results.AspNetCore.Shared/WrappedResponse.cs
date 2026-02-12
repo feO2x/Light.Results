@@ -1,4 +1,4 @@
-namespace Light.Results.AspNetCore.MinimalApis;
+namespace Light.Results.AspNetCore.Shared;
 
 /// <summary>
 /// Schema-only type for OpenAPI documentation. Not used at runtime.
