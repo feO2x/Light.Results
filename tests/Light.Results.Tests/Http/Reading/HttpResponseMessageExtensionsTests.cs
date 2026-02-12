@@ -185,7 +185,7 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.AllowList(["X-TraceId", "X-Correlation-Id"]),
+            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),
             HeaderParsingService =
                 new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([new TraceParser()])),
             HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
@@ -208,7 +208,7 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.AllowList(["X-TraceId", "X-Correlation-Id"]),
+            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),
             HeaderParsingService =
                 new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([new TraceParser()])),
             HeaderConflictStrategy = HeaderConflictStrategy.Throw

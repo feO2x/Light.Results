@@ -78,6 +78,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
             cancellationToken: TestContext.Current.CancellationToken
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () =>
             await response.ReadResultAsync<string>(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -108,6 +109,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
             cancellationToken: TestContext.Current.CancellationToken
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () => await response.ReadResultAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<JsonException>();
@@ -166,7 +168,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.All,
+            HeaderSelectionStrategy = AllHeadersSelectionStrategy.Instance,
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser]))
         };
 
@@ -176,6 +178,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
             cancellationToken: TestContext.Current.CancellationToken
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () => await response.ReadResultAsync(
             options: options,
             cancellationToken: TestContext.Current.CancellationToken
@@ -190,7 +193,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.All,
+            HeaderSelectionStrategy = AllHeadersSelectionStrategy.Instance,
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser])),
             HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
         };
@@ -217,7 +220,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
         var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionStrategy =
-                HttpHeaderSelectionStrategies.AllowList(["X-Bool", "X-Int", "X-Double", "X-Text", "X-Ids"])
+                new AllowListHeaderSelectionStrategy(["X-Bool", "X-Int", "X-Double", "X-Text", "X-Ids"])
         };
 
         using var httpClient = _fixture.CreateHttpClient();
@@ -254,7 +257,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.AllowList(["X-Bool", "X-Int", "X-Double"]),
+            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["X-Bool", "X-Int", "X-Double"]),
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 HttpHeaderParserRegistry.Create(Array.Empty<HttpHeaderParser>()),
                 HeaderValueParsingMode.StringOnly
@@ -297,6 +300,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
 
         var genericAct = async () =>
         {
+            // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
             using var genericSuccessResponse = await httpClient.GetAsync(
                 "/api/read/empty-success",
                 cancellationToken: TestContext.Current.CancellationToken
@@ -309,6 +313,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
 
         var failureAct = async () =>
         {
+            // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
             using var failureResponse = await httpClient.GetAsync(
                 "/api/read/empty-failure",
                 cancellationToken: TestContext.Current.CancellationToken
@@ -408,7 +413,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
 
         return new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.None,
+            HeaderSelectionStrategy = NoHeadersSelectionStrategy.Instance,
             SerializerOptions = serializerOptions
         };
     }

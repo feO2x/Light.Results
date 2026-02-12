@@ -1,4 +1,4 @@
-namespace Light.Results.Http.Reading;
+namespace Light.Results.Http.Reading.Headers;
 
 /// <summary>
 /// Strategy for deciding whether a header should be included in metadata deserialization.

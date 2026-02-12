@@ -313,7 +313,7 @@ public static class HttpResponseMessageExtensions
     private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightResultsHttpReadOptions options)
     {
         var headerSelectionStrategy = options.HeaderSelectionStrategy;
-        if (ReferenceEquals(headerSelectionStrategy, HttpHeaderSelectionStrategies.None))
+        if (headerSelectionStrategy is NoHeadersSelectionStrategy)
         {
             return null;
         }

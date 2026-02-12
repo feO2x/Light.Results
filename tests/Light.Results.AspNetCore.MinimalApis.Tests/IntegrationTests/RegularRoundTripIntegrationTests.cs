@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Light.Results.Http.Reading;
+using Light.Results.Http.Reading.Headers;
 using Light.Results.Metadata;
 using Xunit;
 
@@ -65,7 +66,7 @@ public sealed class RegularRoundTripIntegrationTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = HttpHeaderSelectionStrategies.AllowList(["Count"])
+            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["Count"])
         };
         using var httpClient = _fixture.CreateHttpClient();
 

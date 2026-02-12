@@ -1,4 +1,4 @@
-namespace Light.Results.Http.Reading;
+namespace Light.Results.Http.Reading.Headers;
 
 /// <summary>
 /// Specifies how header values are parsed when no custom

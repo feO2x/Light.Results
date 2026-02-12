@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Light.Results.Http.Reading.Headers;
+using Light.Results.Http.Reading.Json;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Reading;
@@ -17,7 +18,7 @@ public sealed record LightResultsHttpReadOptions
     /// <summary>
     /// Gets or sets the strategy deciding which headers should be read into metadata.
     /// </summary>
-    public IHttpHeaderSelectionStrategy HeaderSelectionStrategy { get; init; } = HttpHeaderSelectionStrategies.None;
+    public IHttpHeaderSelectionStrategy HeaderSelectionStrategy { get; init; } = NoHeadersSelectionStrategy.Instance;
 
     /// <summary>
     /// Gets or sets how conflicts are handled when multiple headers map to the same metadata key.
