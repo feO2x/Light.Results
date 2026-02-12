@@ -444,12 +444,10 @@ public static class ResultJsonReader
             else if (reader.ValueTextEquals("category"))
             {
                 var categoryString = ReadOptionalStringValue(ref reader);
-                if (!string.IsNullOrWhiteSpace(categoryString))
+                if (!string.IsNullOrWhiteSpace(categoryString) &&
+                    !Enum.TryParse(categoryString, ignoreCase: true, out category))
                 {
-                    if (!Enum.TryParse(categoryString, ignoreCase: true, out category))
-                    {
-                        throw new JsonException($"Unknown error category '{categoryString}'.");
-                    }
+                    throw new JsonException($"Unknown error category '{categoryString}'.");
                 }
             }
             else if (reader.ValueTextEquals("metadata"))
