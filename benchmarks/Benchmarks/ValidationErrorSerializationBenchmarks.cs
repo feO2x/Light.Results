@@ -3,8 +3,8 @@ using System.Net;
 using System.Text.Json;
 using BenchmarkDotNet.Attributes;
 using Light.Results;
-using Light.Results.AspNetCore.Shared;
-using Light.Results.AspNetCore.Shared.Serialization;
+using Light.Results.Http.Writing;
+using Light.Results.Http.Writing.Json;
 
 namespace Benchmarks;
 

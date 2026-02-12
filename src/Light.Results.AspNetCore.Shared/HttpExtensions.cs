@@ -1,6 +1,8 @@
 using System;
 using System.Net;
 using Light.Results.Http;
+using Light.Results.Http.Writing;
+using Light.Results.Http.Writing.Headers;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -106,7 +108,7 @@ public static class HttpExtensions
     public static void SetMetadataValuesAsHeadersIfNecessary<TResult>(
         this HttpResponse httpResponse,
         TResult result,
-        LightResultOptions options,
+        LightResultsHttpWriteOptions options,
         IHttpHeaderConversionService conversionService
     )
         where TResult : struct, IResultObject
@@ -137,17 +139,17 @@ public static class HttpExtensions
     /// </summary>
     /// <param name="httpContext">The active HTTP context.</param>
     /// <param name="overrideOptions">Optional options instance to use instead of the registered one.</param>
-    /// <returns>The resolved <see cref="LightResultOptions" /> instance.</returns>
+    /// <returns>The resolved <see cref="LightResultsHttpWriteOptions" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no options can be resolved.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpContext" /> is <c>null</c>.</exception>
-    public static LightResultOptions ResolveLightResultOptions(
+    public static LightResultsHttpWriteOptions ResolveLightResultOptions(
         this HttpContext httpContext,
-        LightResultOptions? overrideOptions = null
+        LightResultsHttpWriteOptions? overrideOptions = null
     )
     {
         ArgumentNullException.ThrowIfNull(httpContext);
         return overrideOptions ??
-               httpContext.RequestServices.GetService<IOptions<LightResultOptions>>()?.Value ??
-               throw new InvalidOperationException("No LightResultOptions are configured in the DI container");
+               httpContext.RequestServices.GetService<IOptions<LightResultsHttpWriteOptions>>()?.Value ??
+               throw new InvalidOperationException("No LightHttpWriteOptions are configured in the DI container");
     }
 }

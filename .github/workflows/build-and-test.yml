@@ -27,19 +27,42 @@ jobs:
           dotnet test ./Light.Results.slnx
           --configuration Release
           --no-build
-          --verbosity normal
-          --collect:"XPlat Code Coverage"
-          -- 
-          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          --settings ./coverage.runsettings
+      - name: Merge coverage reports
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator -reports:'**/coverage.cobertura.xml' -targetdir:./coverage-merged -reporttypes:Cobertura
       - name: Publish coverage summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: '**/coverage.cobertura.xml'
+          filename: 'coverage-merged/Cobertura.xml'
           badge: true
           format: 'markdown'
           output: 'both'
-      - name: Upload coverage artifact
+          fail_below_min: true
+          thresholds: '60 85'
+      - name: Upload coverage results
+        if: always() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports
-          path: '**/coverage.cobertura.xml'
+          name: coverage-results
+          path: code-coverage-results.md
+
+  coverage-comment:
+    if: always() && github.event_name == 'pull_request'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download coverage results
+        uses: actions/download-artifact@v7
+        with:
+          name: coverage-results
+      # Add Coverage PR Comment runs always to ensure the comment is updated
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: code-coverage-results.md

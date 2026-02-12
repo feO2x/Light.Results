@@ -4,8 +4,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.Results.AspNetCore.MinimalApis.Serialization;
-using Light.Results.AspNetCore.Shared;
-using Light.Results.AspNetCore.Shared.Serialization;
+using Light.Results.Http.Writing;
+using Light.Results.Http.Writing.Json;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.Results.AspNetCore.MinimalApis;
@@ -28,7 +28,7 @@ public sealed class LightResult : BaseLightResult<Result>
         Result result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) : base(result, successStatusCode, location, overrideOptions, serializerOptions) { }
 
@@ -54,7 +54,7 @@ public sealed class LightResult : BaseLightResult<Result>
         await using var writer = new Utf8JsonWriter(httpContext.Response.BodyWriter);
 
         // Prefer the strongly typed JsonTypeInfo<T> when available (source-gen / reflection).
-        if (foundTypeInfo.Converter is DefaultResultJsonConverter defaultResultJsonConverter)
+        if (foundTypeInfo.Converter is HttpWriteResultJsonConverter defaultResultJsonConverter)
         {
             defaultResultJsonConverter.Serialize(writer, enrichedResult, serializerOptions, OverrideOptions);
             return;
@@ -89,7 +89,7 @@ public sealed class LightResult<T> : BaseLightResult<Result<T>>
         Result<T> result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) : base(result, successStatusCode, location, overrideOptions, serializerOptions) { }
 
@@ -115,7 +115,7 @@ public sealed class LightResult<T> : BaseLightResult<Result<T>>
         await using var writer = new Utf8JsonWriter(httpContext.Response.BodyWriter);
 
         // Prefer the strongly typed JsonTypeInfo<T> when available (source-gen / reflection).
-        if (foundTypeInfo.Converter is DefaultResultJsonConverter<T> defaultConverter)
+        if (foundTypeInfo.Converter is HttpWriteResultJsonConverter<T> defaultConverter)
         {
             defaultConverter.Serialize(writer, enrichedResult, serializerOptions, OverrideOptions);
             return;

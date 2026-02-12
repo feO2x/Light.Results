@@ -8,4 +8,5 @@ namespace Light.Results.AspNetCore.MinimalApis.Tests;
 )]
 [JsonSerializable(typeof(Result<string>))]
 [JsonSerializable(typeof(Result<ContactDto>))]
+[JsonSerializable(typeof(ContactDto))]
 public sealed partial class ExtendedMinimalApiJsonContext : JsonSerializerContext;

@@ -4,7 +4,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Light.Results.AspNetCore.Shared;
 using Light.Results.AspNetCore.Shared.Enrichment;
-using Light.Results.Http;
+using Light.Results.Http.Writing;
+using Light.Results.Http.Writing.Headers;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +31,7 @@ public abstract class BaseLightResult<TResult> : IResult
         TResult result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultOptions? overrideOptions = null,
+        LightResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     )
     {
@@ -64,7 +65,7 @@ public abstract class BaseLightResult<TResult> : IResult
     /// <summary>
     /// Gets the optional Light.Results options override.
     /// </summary>
-    public LightResultOptions? OverrideOptions { get; }
+    public LightResultsHttpWriteOptions? OverrideOptions { get; }
 
     /// <summary>
     /// Executes the result against the supplied HTTP context.
