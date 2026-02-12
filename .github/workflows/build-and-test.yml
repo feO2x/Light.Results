@@ -9,8 +9,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,10 +41,28 @@ jobs:
           output: 'both'
           fail_below_min: true
           thresholds: '60 85'
+      - name: Upload coverage results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-results
+          path: code-coverage-results.md
+
+  coverage-comment:
+    if: always() && github.event_name == 'pull_request'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download coverage results
+        uses: actions/download-artifact@v7
+        with:
+          name: coverage-results
       # Add Coverage PR Comment runs always to ensure the comment is updated
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
-        if: always() && github.event_name == 'pull_request'
         with:
           recreate: true
           path: code-coverage-results.md
