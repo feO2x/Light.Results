@@ -185,10 +185,11 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),
-            HeaderParsingService =
-                new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([new TraceParser()])),
-            HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
+            HeaderParsingService = new DefaultHttpHeaderParsingService(
+                new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),
+                HttpHeaderParserRegistry.Create([new TraceParser()]),
+                HeaderConflictStrategy.LastWriteWins
+            )
         };
 
         var result = await response.ReadResultAsync(options, cancellationToken);
@@ -208,10 +209,10 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),
-            HeaderParsingService =
-                new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([new TraceParser()])),
-            HeaderConflictStrategy = HeaderConflictStrategy.Throw
+            HeaderParsingService = new DefaultHttpHeaderParsingService(
+                new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),
+                HttpHeaderParserRegistry.Create([new TraceParser()])
+            )
         };
 
         // ReSharper disable once AccessToDisposedClosure -- act is called before disposal

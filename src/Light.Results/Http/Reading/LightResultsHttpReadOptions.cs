@@ -16,14 +16,10 @@ public sealed record LightResultsHttpReadOptions
     public static LightResultsHttpReadOptions Default { get; } = new ();
 
     /// <summary>
-    /// Gets or sets the strategy deciding which headers should be read into metadata.
+    /// Gets or sets the header parsing service used to transform headers into metadata entries.
+    /// The default value is <see cref="ParseNoHttpHeadersService.Instance" />, which skips all headers.
     /// </summary>
-    public IHttpHeaderSelectionStrategy HeaderSelectionStrategy { get; init; } = NoHeadersSelectionStrategy.Instance;
-
-    /// <summary>
-    /// Gets or sets how conflicts are handled when multiple headers map to the same metadata key.
-    /// </summary>
-    public HeaderConflictStrategy HeaderConflictStrategy { get; init; } = HeaderConflictStrategy.Throw;
+    public IHttpHeaderParsingService HeaderParsingService { get; init; } = ParseNoHttpHeadersService.Instance;
 
     /// <summary>
     /// Gets or sets the merge strategy for combining header and body metadata. Headers will always be read first,
@@ -41,17 +37,6 @@ public sealed record LightResultsHttpReadOptions
     /// of the HTTP response indicates success.
     /// </summary>
     public bool TreatProblemDetailsAsFailure { get; init; } = true;
-
-    /// <summary>
-    /// Gets or sets the annotation applied to metadata values originating from headers.
-    /// </summary>
-    public MetadataValueAnnotation HeaderMetadataAnnotation { get; init; } =
-        MetadataValueAnnotation.SerializeInHttpHeader;
-
-    /// <summary>
-    /// Gets or sets the header parsing service used to transform headers into metadata entries.
-    /// </summary>
-    public IHttpHeaderParsingService HeaderParsingService { get; init; } = DefaultHttpHeaderParsingService.Default;
 
     /// <summary>
     /// Gets or sets serializer options used to deserialize Result payloads with <see cref="JsonSerializer" />.

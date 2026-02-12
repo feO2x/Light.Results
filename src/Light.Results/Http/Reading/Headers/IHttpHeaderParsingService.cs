@@ -1,23 +1,19 @@
-using System.Collections.Generic;
+using System.Net.Http.Headers;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Reading.Headers;
 
 /// <summary>
-/// Parses HTTP headers into metadata values.
+/// Reads HTTP headers into a <see cref="MetadataObject" />.
 /// </summary>
 public interface IHttpHeaderParsingService
 {
     /// <summary>
-    /// Parses the specified header into a metadata entry.
+    /// Reads the headers from the specified response and content headers into a <see cref="MetadataObject" />.
+    /// Returns <see langword="null" /> when no headers are selected or no metadata entries are produced.
     /// </summary>
-    /// <param name="headerName">The header name.</param>
-    /// <param name="values">The header values.</param>
-    /// <param name="annotation">The annotation to apply to the parsed value.</param>
-    /// <returns>The metadata key and value pair.</returns>
-    KeyValuePair<string, MetadataValue> ParseHeader(
-        string headerName,
-        IReadOnlyList<string> values,
-        MetadataValueAnnotation annotation
-    );
+    /// <param name="responseHeaders">The response-level headers.</param>
+    /// <param name="contentHeaders">The content-level headers, or <see langword="null" /> when no content is present.</param>
+    /// <returns>The metadata object containing the parsed headers, or <see langword="null" />.</returns>
+    MetadataObject? ReadHeaderMetadata(HttpResponseHeaders responseHeaders, HttpContentHeaders? contentHeaders);
 }

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Net.Http.Headers;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Reading.Headers;
@@ -16,15 +18,26 @@ public sealed class DefaultHttpHeaderParsingService : IHttpHeaderParsingService
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultHttpHeaderParsingService" />.
     /// </summary>
+    /// <param name="selectionStrategy">The strategy deciding which headers to include.</param>
     /// <param name="parsers">The parsers keyed by header name.</param>
+    /// <param name="conflictStrategy">How conflicts are handled when multiple headers map to the same metadata key.</param>
+    /// <param name="metadataAnnotation">The annotation applied to metadata values originating from headers.</param>
     /// <param name="headerValueParsingMode">The parsing mode for header values without a registered parser.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="parsers" /> is <see langword="null" />.</exception>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="selectionStrategy" /> or <paramref name="parsers" /> is <see langword="null" />.
+    /// </exception>
     public DefaultHttpHeaderParsingService(
-        FrozenDictionary<string, HttpHeaderParser> parsers,
+        IHttpHeaderSelectionStrategy selectionStrategy,
+        FrozenDictionary<string, HttpHeaderParser>? parsers = null,
+        HeaderConflictStrategy conflictStrategy = HeaderConflictStrategy.Throw,
+        MetadataValueAnnotation metadataAnnotation = MetadataValueAnnotation.SerializeInHttpHeader,
         HeaderValueParsingMode headerValueParsingMode = HeaderValueParsingMode.Primitive
     )
     {
-        Parsers = parsers ?? throw new ArgumentNullException(nameof(parsers));
+        SelectionStrategy = selectionStrategy ?? throw new ArgumentNullException(nameof(selectionStrategy));
+        Parsers = parsers ?? EmptyParsers;
+        ConflictStrategy = conflictStrategy;
+        MetadataAnnotation = metadataAnnotation;
         _headerValueParsingMode = headerValueParsingMode;
     }
 
@@ -36,14 +49,50 @@ public sealed class DefaultHttpHeaderParsingService : IHttpHeaderParsingService
            .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Gets the default parsing service instance, containing no parsers.
+    /// Gets the header selection strategy.
     /// </summary>
-    public static DefaultHttpHeaderParsingService Default { get; } = new (EmptyParsers);
+    public IHttpHeaderSelectionStrategy SelectionStrategy { get; }
 
     /// <summary>
     /// Gets the parsers keyed by header name.
     /// </summary>
     public FrozenDictionary<string, HttpHeaderParser> Parsers { get; }
+
+    /// <summary>
+    /// Gets how conflicts are handled when multiple headers map to the same metadata key.
+    /// </summary>
+    public HeaderConflictStrategy ConflictStrategy { get; }
+
+    /// <summary>
+    /// Gets the annotation applied to metadata values originating from headers.
+    /// </summary>
+    public MetadataValueAnnotation MetadataAnnotation { get; }
+
+    /// <summary>
+    /// Reads the headers from the specified response and content headers into a <see cref="MetadataObject" />.
+    /// Returns <see langword="null" /> when no headers are selected or no metadata entries are produced.
+    /// </summary>
+    public MetadataObject? ReadHeaderMetadata(
+        HttpResponseHeaders responseHeaders,
+        HttpContentHeaders? contentHeaders
+    )
+    {
+        var builder = MetadataObjectBuilder.Create();
+        try
+        {
+            AppendHeaders(responseHeaders, ref builder);
+            if (contentHeaders is not null)
+            {
+                AppendHeaders(contentHeaders, ref builder);
+            }
+
+            return builder.Count == 0 ? null : builder.Build();
+        }
+        finally
+        {
+            builder.Dispose();
+        }
+    }
 
     /// <summary>
     /// Parses the specified header into a metadata entry.
@@ -66,6 +115,36 @@ public sealed class DefaultHttpHeaderParsingService : IHttpHeaderParsingService
 
         var defaultValue = ParseValues(values, annotation);
         return new KeyValuePair<string, MetadataValue>(headerName, defaultValue);
+    }
+
+    private void AppendHeaders(HttpHeaders headers, ref MetadataObjectBuilder builder)
+    {
+        foreach (var header in headers)
+        {
+            var headerName = header.Key;
+            if (!SelectionStrategy.ShouldInclude(headerName))
+            {
+                continue;
+            }
+
+            var values = header.Value as IReadOnlyList<string> ?? header.Value.ToArray();
+            var metadataEntry = ParseHeader(headerName, values, MetadataAnnotation);
+
+            if (builder.TryGetValue(metadataEntry.Key, out _))
+            {
+                if (ConflictStrategy == HeaderConflictStrategy.Throw)
+                {
+                    throw new InvalidOperationException(
+                        $"Header '{headerName}' maps to metadata key '{metadataEntry.Key}', which is already present."
+                    );
+                }
+
+                builder.AddOrReplace(metadataEntry.Key, metadataEntry.Value);
+                continue;
+            }
+
+            builder.Add(metadataEntry.Key, metadataEntry.Value);
+        }
     }
 
     private MetadataValue ParseValues(IReadOnlyList<string> values, MetadataValueAnnotation annotation)

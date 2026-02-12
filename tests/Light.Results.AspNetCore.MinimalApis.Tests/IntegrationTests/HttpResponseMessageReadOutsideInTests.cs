@@ -168,8 +168,10 @@ public sealed class HttpResponseMessageReadOutsideInTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = AllHeadersSelectionStrategy.Instance,
-            HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser]))
+            HeaderParsingService = new DefaultHttpHeaderParsingService(
+                AllHeadersSelectionStrategy.Instance,
+                HttpHeaderParserRegistry.Create([parser])
+            )
         };
 
         using var httpClient = _fixture.CreateHttpClient();
@@ -193,9 +195,11 @@ public sealed class HttpResponseMessageReadOutsideInTests
         var parser = new TraceHeaderParser();
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = AllHeadersSelectionStrategy.Instance,
-            HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser])),
-            HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
+            HeaderParsingService = new DefaultHttpHeaderParsingService(
+                AllHeadersSelectionStrategy.Instance,
+                HttpHeaderParserRegistry.Create([parser]),
+                HeaderConflictStrategy.LastWriteWins
+            )
         };
 
         using var httpClient = _fixture.CreateHttpClient();
@@ -219,8 +223,9 @@ public sealed class HttpResponseMessageReadOutsideInTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy =
+            HeaderParsingService = new DefaultHttpHeaderParsingService(
                 new AllowListHeaderSelectionStrategy(["X-Bool", "X-Int", "X-Double", "X-Text", "X-Ids"])
+            )
         };
 
         using var httpClient = _fixture.CreateHttpClient();
@@ -257,10 +262,10 @@ public sealed class HttpResponseMessageReadOutsideInTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["X-Bool", "X-Int", "X-Double"]),
             HeaderParsingService = new DefaultHttpHeaderParsingService(
+                new AllowListHeaderSelectionStrategy(["X-Bool", "X-Int", "X-Double"]),
                 HttpHeaderParserRegistry.Create(Array.Empty<HttpHeaderParser>()),
-                HeaderValueParsingMode.StringOnly
+                headerValueParsingMode: HeaderValueParsingMode.StringOnly
             )
         };
 
@@ -413,7 +418,6 @@ public sealed class HttpResponseMessageReadOutsideInTests
 
         return new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = NoHeadersSelectionStrategy.Instance,
             SerializerOptions = serializerOptions
         };
     }

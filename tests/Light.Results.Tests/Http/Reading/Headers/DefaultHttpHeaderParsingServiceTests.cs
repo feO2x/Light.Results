@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using FluentAssertions;
-using Light.Results.Http.Reading;
 using Light.Results.Http.Reading.Headers;
 using Light.Results.Metadata;
 using Xunit;
@@ -12,7 +11,7 @@ namespace Light.Results.Tests.Http.Reading.Headers;
 public sealed class DefaultHttpHeaderParsingServiceTests
 {
     [Fact]
-    public void Constructor_ShouldThrow_WhenParsersAreNull()
+    public void Constructor_ShouldThrow_WhenSelectionStrategyIsNull()
     {
         Action act = () => _ = new DefaultHttpHeaderParsingService(null!);
 
@@ -24,7 +23,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     {
         var parser = new TestParser();
         var registry = HttpHeaderParserRegistry.Create([parser]);
-        var service = new DefaultHttpHeaderParsingService(registry);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            registry
+        );
 
         var parsed = service.ParseHeader(
             "X-TraceId",
@@ -39,7 +41,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     [Fact]
     public void ParseHeader_ShouldThrow_WhenValuesAreNull()
     {
-        var service = new DefaultHttpHeaderParsingService(DefaultHttpHeaderParsingService.EmptyParsers);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            DefaultHttpHeaderParsingService.EmptyParsers
+        );
 
         Action act = () => service.ParseHeader(
             "X-Test",
@@ -53,7 +58,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     [Fact]
     public void ParseHeader_ShouldParseBooleanValue()
     {
-        var service = new DefaultHttpHeaderParsingService(DefaultHttpHeaderParsingService.EmptyParsers);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            DefaultHttpHeaderParsingService.EmptyParsers
+        );
 
         var boolean = service.ParseHeader("X-Bool", ["true"], MetadataValueAnnotation.SerializeInHttpHeader);
 
@@ -64,7 +72,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     [Fact]
     public void ParseHeader_ShouldParseIntegerValue()
     {
-        var service = new DefaultHttpHeaderParsingService(DefaultHttpHeaderParsingService.EmptyParsers);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            DefaultHttpHeaderParsingService.EmptyParsers
+        );
 
         var integer = service.ParseHeader("X-Int", ["123"], MetadataValueAnnotation.SerializeInHttpHeader);
 
@@ -75,7 +86,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     [Fact]
     public void ParseHeader_ShouldParseDoubleValue()
     {
-        var service = new DefaultHttpHeaderParsingService(DefaultHttpHeaderParsingService.EmptyParsers);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            DefaultHttpHeaderParsingService.EmptyParsers
+        );
 
         var doubleValue = service.ParseHeader("X-Double", ["3.5"], MetadataValueAnnotation.SerializeInHttpHeader);
 
@@ -86,7 +100,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     [Fact]
     public void ParseHeader_ShouldPreserveNanStringValue()
     {
-        var service = new DefaultHttpHeaderParsingService(DefaultHttpHeaderParsingService.EmptyParsers);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            DefaultHttpHeaderParsingService.EmptyParsers
+        );
 
         var nan = service.ParseHeader("X-NaN", ["NaN"], MetadataValueAnnotation.SerializeInHttpHeader);
 
@@ -97,7 +114,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     [Fact]
     public void ParseHeader_ShouldPreserveInfinityStringValue()
     {
-        var service = new DefaultHttpHeaderParsingService(DefaultHttpHeaderParsingService.EmptyParsers);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            DefaultHttpHeaderParsingService.EmptyParsers
+        );
 
         var infinity = service.ParseHeader("X-Infinity", ["Infinity"], MetadataValueAnnotation.SerializeInHttpHeader);
 
@@ -108,7 +128,10 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     [Fact]
     public void ParseHeader_ShouldParseMultipleValuesIntoMetadataArray()
     {
-        var service = new DefaultHttpHeaderParsingService(DefaultHttpHeaderParsingService.EmptyParsers);
+        var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
+            DefaultHttpHeaderParsingService.EmptyParsers
+        );
 
         const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpHeader;
         var parsed = service.ParseHeader(
@@ -133,8 +156,9 @@ public sealed class DefaultHttpHeaderParsingServiceTests
     public void ParseHeader_ShouldPreserveStringValues_WhenStringOnlyModeIsUsed()
     {
         var service = new DefaultHttpHeaderParsingService(
+            AllHeadersSelectionStrategy.Instance,
             DefaultHttpHeaderParsingService.EmptyParsers,
-            HeaderValueParsingMode.StringOnly
+            headerValueParsingMode: HeaderValueParsingMode.StringOnly
         );
 
         var parsed = service.ParseHeader(

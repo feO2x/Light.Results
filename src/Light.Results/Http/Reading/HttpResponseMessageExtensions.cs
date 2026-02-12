@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Light.Results.Http.Reading.Headers;
 using Light.Results.Http.Reading.Json;
 using Light.Results.Metadata;
 
@@ -301,75 +297,15 @@ public static class HttpResponseMessageExtensions
     )
         where TResult : struct, ICanReplaceMetadata<TResult>
     {
-        var headerMetadata = ReadHeaderMetadata(response, options);
+        var headerMetadata = options.HeaderParsingService.ReadHeaderMetadata(
+            response.Headers,
+            response.Content?.Headers
+        );
         var mergedMetadata = MetadataObjectExtensions.MergeIfNeeded(
             headerMetadata,
             result.Metadata,
             options.MergeStrategy
         );
         return mergedMetadata is null ? result : result.ReplaceMetadata(mergedMetadata);
-    }
-
-    private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightResultsHttpReadOptions options)
-    {
-        var headerSelectionStrategy = options.HeaderSelectionStrategy;
-        if (headerSelectionStrategy is NoHeadersSelectionStrategy)
-        {
-            return null;
-        }
-
-        var parsingService = options.HeaderParsingService;
-
-        var builder = MetadataObjectBuilder.Create();
-        try
-        {
-            AppendHeaders(response.Headers, options, parsingService, headerSelectionStrategy, ref builder);
-            if (response.Content is not null)
-            {
-                AppendHeaders(response.Content.Headers, options, parsingService, headerSelectionStrategy, ref builder);
-            }
-
-            return builder.Count == 0 ? null : builder.Build();
-        }
-        finally
-        {
-            builder.Dispose();
-        }
-    }
-
-    private static void AppendHeaders(
-        HttpHeaders headers,
-        LightResultsHttpReadOptions options,
-        IHttpHeaderParsingService parsingService,
-        IHttpHeaderSelectionStrategy headerSelectionStrategy,
-        ref MetadataObjectBuilder builder
-    )
-    {
-        foreach (var header in headers)
-        {
-            var headerName = header.Key;
-            if (!headerSelectionStrategy.ShouldInclude(headerName))
-            {
-                continue;
-            }
-
-            var values = header.Value as IReadOnlyList<string> ?? header.Value.ToArray();
-            var metadataEntry = parsingService.ParseHeader(headerName, values, options.HeaderMetadataAnnotation);
-
-            if (builder.TryGetValue(metadataEntry.Key, out _))
-            {
-                if (options.HeaderConflictStrategy == HeaderConflictStrategy.Throw)
-                {
-                    throw new InvalidOperationException(
-                        $"Header '{headerName}' maps to metadata key '{metadataEntry.Key}', which is already present."
-                    );
-                }
-
-                builder.AddOrReplace(metadataEntry.Key, metadataEntry.Value);
-                continue;
-            }
-
-            builder.Add(metadataEntry.Key, metadataEntry.Value);
-        }
     }
 }

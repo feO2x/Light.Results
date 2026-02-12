@@ -66,7 +66,9 @@ public sealed class RegularRoundTripIntegrationTests
     {
         var options = new LightResultsHttpReadOptions
         {
-            HeaderSelectionStrategy = new AllowListHeaderSelectionStrategy(["Count"])
+            HeaderParsingService = new DefaultHttpHeaderParsingService(
+                new AllowListHeaderSelectionStrategy(["Count"])
+            )
         };
         using var httpClient = _fixture.CreateHttpClient();
 
