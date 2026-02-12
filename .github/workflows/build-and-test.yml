@@ -30,9 +30,7 @@ jobs:
           --configuration Release
           --no-build
           --verbosity normal
-          --collect:"XPlat Code Coverage"
-          --
-          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          --settings ./coverage.runsettings
       - name: Merge coverage reports
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool
