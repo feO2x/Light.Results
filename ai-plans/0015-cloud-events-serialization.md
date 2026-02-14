@@ -44,6 +44,7 @@ The official CloudEvents JSON format specification can be found at https://githu
 - [ ] Transport-agnostic JSON serialization helpers are extracted from `Http/` into `SharedJsonSerialization/`, with existing tests verifying no regressions.
 - [ ] All new code is Native AOT compatible (`Utf8JsonReader`/`Utf8JsonWriter`-based). `MakeGenericType` is allowed when the generic type definition is statically referenced via `typeof`, ensuring the trimmer preserves it. Avoid unbound reflection where the target type could be trimmed.
 - [ ] All new code lives in the `Light.Results` project (netstandard2.0) under the `Light.Results.CloudEvents` namespace.
+- [ ] Composition Root `Module` classes with `IServiceCollection` extension methods are provided for DI registration of CloudEvents writing and reading options and services, following the pattern of `Http/Writing/Module.cs` and `Http/Reading/Module.cs`.
 - [ ] Automated tests are written for writing and reading CloudEvents envelopes.
 
 ## Technical Details
@@ -228,3 +229,10 @@ Maps metadata entries to CloudEvents attribute key/value pairs. Follows the same
 
 **`ICloudEventAttributeParsingService`:**
 Maps CloudEvents extension attribute entries back to metadata key/value pairs. Follows the same pattern as `IHttpHeaderParsingService` / `DefaultHttpHeaderParsingService` — a parser registry keyed by attribute name, with a default implementation that uses a `FrozenDictionary<string, CloudEventAttributeParser>`.
+
+### Composition Root Integration
+
+Following the pattern of `Http/Writing/Module.cs` and `Http/Reading/Module.cs`, provide `Module` classes in the CloudEvents writing and reading namespaces with `IServiceCollection` extension methods for DI registration:
+
+- **Writing Module** — registers `LightResultsCloudEventWriteOptions` via the options pattern and wires up the `ICloudEventAttributeConversionService` with its `FrozenDictionary<string, CloudEventAttributeConverter>` registry (analogous to `AddLightResultsHttpHeaderConversionService`).
+- **Reading Module** — registers `LightResultsCloudEventReadOptions` via the options pattern and wires up the `ICloudEventAttributeParsingService` with its `FrozenDictionary<string, CloudEventAttributeParser>` registry (analogous to `AddLightResultsHttpHeaderParsingService`).
