@@ -3,7 +3,6 @@ using System.Text.Json;
 using Light.Results.CloudEvents.Reading.Json;
 using Light.Results.Http.Reading.Json;
 using Light.Results.Metadata;
-using MetadataJsonReader = Light.Results.SharedJsonSerialization.MetadataJsonReader;
 
 namespace Light.Results.CloudEvents.Reading;
 
@@ -63,7 +62,11 @@ public static class ReadOnlyMemoryCloudEventExtensions
     )
     {
         var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
-        var parsedEnvelope = ParseEnvelope(cloudEvent);
+        var envelopeSerializerOptions = GetEnvelopeSerializerOptions(readOptions);
+        var parsedEnvelope = JsonSerializer.Deserialize<CloudEventEnvelopePayload>(
+            cloudEvent.Span,
+            envelopeSerializerOptions
+        );
         var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
 
         var result = ParseResultPayload(parsedEnvelope, isFailure, readOptions);
@@ -96,7 +99,11 @@ public static class ReadOnlyMemoryCloudEventExtensions
     )
     {
         var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
-        var parsedEnvelope = ParseEnvelope(cloudEvent);
+        var envelopeSerializerOptions = GetEnvelopeSerializerOptions(readOptions);
+        var parsedEnvelope = JsonSerializer.Deserialize<CloudEventEnvelopePayload>(
+            cloudEvent.Span,
+            envelopeSerializerOptions
+        );
         var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
 
         var result = ParseGenericResultPayload<T>(parsedEnvelope, isFailure, readOptions);
@@ -114,170 +121,24 @@ public static class ReadOnlyMemoryCloudEventExtensions
         );
     }
 
-    private static ParsedEnvelope ParseEnvelope(ReadOnlyMemory<byte> cloudEvent)
+    private static JsonSerializerOptions GetEnvelopeSerializerOptions(LightResultsCloudEventReadOptions options)
     {
-        var reader = new Utf8JsonReader(cloudEvent.Span, isFinalBlock: true, state: default);
-        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException("CloudEvent payload must be a JSON object.");
-        }
+        var serializerOptions = new JsonSerializerOptions(options.SerializerOptions);
+        serializerOptions.Converters.Add(new CloudEventEnvelopePayloadJsonConverter());
+        return serializerOptions;
+    }
 
-        string? specVersion = null;
-        string? type = null;
-        string? source = null;
-        string? subject = null;
-        string? id = null;
-        DateTimeOffset? time = null;
-        string? dataContentType = null;
-        string? dataSchema = null;
-
-        byte[]? dataBytes = null;
-        var hasData = false;
-        var isDataNull = false;
-
-        using var extensionBuilder = MetadataObjectBuilder.Create();
-
-        while (reader.Read())
-        {
-            if (reader.TokenType == JsonTokenType.EndObject)
-            {
-                break;
-            }
-
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw new JsonException("Expected property name in CloudEvent envelope.");
-            }
-
-            if (reader.ValueTextEquals("specversion"))
-            {
-                specVersion = ReadRequiredStringValue(ref reader, "specversion");
-            }
-            else if (reader.ValueTextEquals("type"))
-            {
-                type = ReadRequiredStringValue(ref reader, "type");
-            }
-            else if (reader.ValueTextEquals("source"))
-            {
-                source = ReadRequiredStringValue(ref reader, "source");
-            }
-            else if (reader.ValueTextEquals("subject"))
-            {
-                subject = ReadOptionalStringValue(ref reader, "subject");
-            }
-            else if (reader.ValueTextEquals("id"))
-            {
-                id = ReadRequiredStringValue(ref reader, "id");
-            }
-            else if (reader.ValueTextEquals("time"))
-            {
-                var parsedTime = ReadOptionalStringValue(ref reader, "time");
-                if (!string.IsNullOrWhiteSpace(parsedTime))
-                {
-                    if (!DateTimeOffset.TryParse(parsedTime, out var parsed))
-                    {
-                        throw new JsonException("CloudEvent attribute 'time' must be a valid RFC 3339 timestamp.");
-                    }
-
-                    time = parsed;
-                }
-            }
-            else if (reader.ValueTextEquals("datacontenttype"))
-            {
-                dataContentType = ReadOptionalStringValue(ref reader, "datacontenttype");
-            }
-            else if (reader.ValueTextEquals("dataschema"))
-            {
-                dataSchema = ReadOptionalStringValue(ref reader, "dataschema");
-            }
-            else if (reader.ValueTextEquals("data_base64"))
-            {
-                throw new JsonException("CloudEvent attribute 'data_base64' is not supported by this integration.");
-            }
-            else if (reader.ValueTextEquals("data"))
-            {
-                if (!reader.Read())
-                {
-                    throw new JsonException("Unexpected end of JSON while reading data.");
-                }
-
-                hasData = true;
-                if (reader.TokenType == JsonTokenType.Null)
-                {
-                    isDataNull = true;
-                }
-                else
-                {
-                    using var document = JsonDocument.ParseValue(ref reader);
-                    dataBytes = JsonSerializer.SerializeToUtf8Bytes(document.RootElement);
-                }
-            }
-            else
-            {
-                var extensionAttributeName = reader.GetString() ??
-                                             throw new JsonException(
-                                                 "CloudEvent extension attribute names must be strings."
-                                             );
-                if (!reader.Read())
-                {
-                    throw new JsonException("Unexpected end of JSON while reading extension attribute value.");
-                }
-
-                var extensionValue = ReadExtensionAttributeValue(ref reader);
-                extensionBuilder.AddOrReplace(extensionAttributeName, extensionValue);
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(specVersion))
-        {
-            throw new JsonException("CloudEvent attribute 'specversion' is required.");
-        }
-
-        if (!string.Equals(specVersion, CloudEventConstants.SpecVersion, StringComparison.Ordinal))
-        {
-            throw new JsonException(
-                $"CloudEvent attribute 'specversion' must be '{CloudEventConstants.SpecVersion}'."
-            );
-        }
-
-        if (string.IsNullOrWhiteSpace(type))
-        {
-            throw new JsonException("CloudEvent attribute 'type' is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            throw new JsonException("CloudEvent attribute 'source' is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(id))
-        {
-            throw new JsonException("CloudEvent attribute 'id' is required.");
-        }
-
-        ValidateSource(source!);
-        ValidateDataSchema(dataSchema);
-        ValidateDataContentType(dataContentType);
-
-        MetadataObject? extensionAttributes = extensionBuilder.Count == 0 ? null : extensionBuilder.Build();
-
-        return new ParsedEnvelope(
-            type!,
-            source!,
-            id!,
-            subject,
-            time,
-            dataContentType,
-            dataSchema,
-            extensionAttributes,
-            hasData,
-            isDataNull,
-            dataBytes
-        );
+    private static JsonSerializerOptions GetDataSerializerOptions(LightResultsCloudEventReadOptions options)
+    {
+        var serializerOptions = new JsonSerializerOptions(options.SerializerOptions);
+        serializerOptions.Converters.Add(new CloudEventFailurePayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverterFactory());
+        return serializerOptions;
     }
 
     private static Result ParseResultPayload(
-        ParsedEnvelope parsedEnvelope,
+        CloudEventEnvelopePayload parsedEnvelope,
         bool isFailure,
         LightResultsCloudEventReadOptions options
     )
@@ -295,19 +156,21 @@ public static class ReadOnlyMemoryCloudEventExtensions
         }
 
         var dataBytes = parsedEnvelope.DataBytes!;
-        var dataReader = new Utf8JsonReader(dataBytes, isFinalBlock: true, state: default);
-        if (!dataReader.Read())
-        {
-            throw new JsonException("CloudEvent data payload is empty.");
-        }
+        var dataSerializerOptions = GetDataSerializerOptions(options);
 
         if (isFailure)
         {
-            var failurePayload = CloudEventDataJsonReader.ReadFailurePayload(ref dataReader);
+            var failurePayload = JsonSerializer.Deserialize<CloudEventFailurePayload>(
+                dataBytes.AsSpan(),
+                dataSerializerOptions
+            );
             return Result.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
 
-        var successPayload = ResultJsonReader.ReadSuccessPayload(ref dataReader);
+        var successPayload = JsonSerializer.Deserialize<CloudEventSuccessPayload>(
+            dataBytes.AsSpan(),
+            dataSerializerOptions
+        );
         var metadata = successPayload.Metadata;
         if (metadata is not null)
         {
@@ -321,7 +184,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
     }
 
     private static Result<T> ParseGenericResultPayload<T>(
-        ParsedEnvelope parsedEnvelope,
+        CloudEventEnvelopePayload parsedEnvelope,
         bool isFailure,
         LightResultsCloudEventReadOptions options
     )
@@ -332,15 +195,14 @@ public static class ReadOnlyMemoryCloudEventExtensions
         }
 
         var dataBytes = parsedEnvelope.DataBytes!;
-        var dataReader = new Utf8JsonReader(dataBytes, isFinalBlock: true, state: default);
-        if (!dataReader.Read())
-        {
-            throw new JsonException("CloudEvent data payload is empty.");
-        }
+        var dataSerializerOptions = GetDataSerializerOptions(options);
 
         if (isFailure)
         {
-            var failurePayload = CloudEventDataJsonReader.ReadFailurePayload(ref dataReader);
+            var failurePayload = JsonSerializer.Deserialize<CloudEventFailurePayload>(
+                dataBytes.AsSpan(),
+                dataSerializerOptions
+            );
             return Result<T>.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
 
@@ -351,13 +213,19 @@ public static class ReadOnlyMemoryCloudEventExtensions
 
         if (normalizedPreference == PreferSuccessPayload.BareValue)
         {
-            var payload = ResultJsonReader.ReadBareSuccessPayload<T>(ref dataReader, options.SerializerOptions);
+            var payload = JsonSerializer.Deserialize<CloudEventBareSuccessPayload<T>>(
+                dataBytes.AsSpan(),
+                dataSerializerOptions
+            );
             return CreateSuccessfulGenericResult(payload.Value, metadata: null);
         }
 
         if (normalizedPreference == PreferSuccessPayload.WrappedValue)
         {
-            var payload = ResultJsonReader.ReadWrappedSuccessPayload<T>(ref dataReader, options.SerializerOptions);
+            var payload = JsonSerializer.Deserialize<CloudEventWrappedSuccessPayload<T>>(
+                dataBytes.AsSpan(),
+                dataSerializerOptions
+            );
             var metadata = payload.Metadata;
             if (metadata is not null)
             {
@@ -370,7 +238,10 @@ public static class ReadOnlyMemoryCloudEventExtensions
             return CreateSuccessfulGenericResult(payload.Value, metadata);
         }
 
-        var autoPayload = ResultJsonReader.ReadAutoSuccessPayload<T>(ref dataReader, options.SerializerOptions);
+        var autoPayload = JsonSerializer.Deserialize<CloudEventAutoSuccessPayload<T>>(
+            dataBytes.AsSpan(),
+            dataSerializerOptions
+        );
         var autoMetadata = autoPayload.Metadata;
         if (autoMetadata is not null)
         {
@@ -383,7 +254,10 @@ public static class ReadOnlyMemoryCloudEventExtensions
         return CreateSuccessfulGenericResult(autoPayload.Value, autoMetadata);
     }
 
-    private static bool DetermineIsFailure(ParsedEnvelope parsedEnvelope, LightResultsCloudEventReadOptions options)
+    private static bool DetermineIsFailure(
+        CloudEventEnvelopePayload parsedEnvelope,
+        LightResultsCloudEventReadOptions options
+    )
     {
         if (parsedEnvelope.ExtensionAttributes is { } extensionAttributes &&
             extensionAttributes.TryGetValue(
@@ -483,153 +357,5 @@ public static class ReadOnlyMemoryCloudEventExtensions
         {
             throw new JsonException("Result value cannot be null.", argumentNullException);
         }
-    }
-
-    private static MetadataValue ReadExtensionAttributeValue(ref Utf8JsonReader reader)
-    {
-        var parsedValue = MetadataJsonReader.ReadMetadataValue(
-            ref reader,
-            MetadataValueAnnotation.SerializeInCloudEventData
-        );
-
-        return IsPrimitive(parsedValue.Kind) ?
-            MetadataValueAnnotationHelper.WithAnnotation(
-                parsedValue,
-                MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
-            ) :
-            parsedValue;
-    }
-
-    private static bool IsPrimitive(MetadataKind metadataKind) =>
-        metadataKind == MetadataKind.Null ||
-        metadataKind == MetadataKind.Boolean ||
-        metadataKind == MetadataKind.Int64 ||
-        metadataKind == MetadataKind.Double ||
-        metadataKind == MetadataKind.String;
-
-    private static string ReadRequiredStringValue(ref Utf8JsonReader reader, string propertyName)
-    {
-        if (!reader.Read())
-        {
-            throw new JsonException($"Unexpected end of JSON while reading '{propertyName}'.");
-        }
-
-        if (reader.TokenType != JsonTokenType.String)
-        {
-            throw new JsonException($"CloudEvent attribute '{propertyName}' must be a string.");
-        }
-
-        return reader.GetString() ?? string.Empty;
-    }
-
-    private static string? ReadOptionalStringValue(ref Utf8JsonReader reader, string propertyName)
-    {
-        if (!reader.Read())
-        {
-            throw new JsonException($"Unexpected end of JSON while reading '{propertyName}'.");
-        }
-
-        if (reader.TokenType == JsonTokenType.Null)
-        {
-            return null;
-        }
-
-        if (reader.TokenType != JsonTokenType.String)
-        {
-            throw new JsonException($"CloudEvent attribute '{propertyName}' must be a string or null.");
-        }
-
-        return reader.GetString();
-    }
-
-    private static void ValidateSource(string source)
-    {
-        if (!Uri.TryCreate(source, UriKind.RelativeOrAbsolute, out _))
-        {
-            throw new JsonException("CloudEvent attribute 'source' must be a valid URI-reference.");
-        }
-    }
-
-    private static void ValidateDataSchema(string? dataSchema)
-    {
-        if (string.IsNullOrWhiteSpace(dataSchema))
-        {
-            return;
-        }
-
-        if (!Uri.TryCreate(dataSchema, UriKind.Absolute, out _))
-        {
-            throw new JsonException("CloudEvent attribute 'dataschema' must be an absolute URI.");
-        }
-    }
-
-    private static void ValidateDataContentType(string? dataContentType)
-    {
-        if (string.IsNullOrWhiteSpace(dataContentType))
-        {
-            return;
-        }
-
-        var contentType = dataContentType!;
-        var separatorIndex = contentType.IndexOf(';');
-        var mediaType = separatorIndex >= 0 ?
-            contentType.Substring(0, separatorIndex).Trim() :
-            contentType.Trim();
-
-        if (string.Equals(mediaType, "application/json", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        if (mediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        throw new JsonException(
-            "CloudEvent attribute 'datacontenttype' must be 'application/json' or a media type ending with '+json'."
-        );
-    }
-
-    private readonly struct ParsedEnvelope
-    {
-        public ParsedEnvelope(
-            string type,
-            string source,
-            string id,
-            string? subject,
-            DateTimeOffset? time,
-            string? dataContentType,
-            string? dataSchema,
-            MetadataObject? extensionAttributes,
-            bool hasData,
-            bool isDataNull,
-            byte[]? dataBytes
-        )
-        {
-            Type = type;
-            Source = source;
-            Id = id;
-            Subject = subject;
-            Time = time;
-            DataContentType = dataContentType;
-            DataSchema = dataSchema;
-            ExtensionAttributes = extensionAttributes;
-            HasData = hasData;
-            IsDataNull = isDataNull;
-            DataBytes = dataBytes;
-        }
-
-        public string Type { get; }
-        public string Source { get; }
-        public string Id { get; }
-        public string? Subject { get; }
-        public DateTimeOffset? Time { get; }
-        public string? DataContentType { get; }
-        public string? DataSchema { get; }
-        public MetadataObject? ExtensionAttributes { get; }
-        public bool HasData { get; }
-        public bool IsDataNull { get; }
-        public byte[]? DataBytes { get; }
     }
 }
