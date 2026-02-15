@@ -18,7 +18,10 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <param name="options">Optional settings that control parsing behavior, metadata merging, and failure detection.</param>
     /// <returns>The deserialized <see cref="Result" /> created from the CloudEvent data section.</returns>
     /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
+    /// <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.
+    /// </exception>
     public static Result ReadResult(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
@@ -37,7 +40,10 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <typeparam name="T">The type of the success value stored in the <see cref="Result{T}" />.</typeparam>
     /// <returns>The deserialized <see cref="Result{T}" /> created from the CloudEvent data section.</returns>
     /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
+    /// <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.
+    /// </exception>
     public static Result<T> ReadResult<T>(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
@@ -55,7 +61,10 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <param name="options">Optional settings that control parsing behavior, metadata merging, and failure detection.</param>
     /// <returns>The parsed <see cref="CloudEventEnvelope" /> containing the original CloudEvent attributes and a deserialized <see cref="Result" />.</returns>
     /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
+    /// <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.
+    /// </exception>
     public static CloudEventEnvelope ReadResultWithCloudEventEnvelope(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
@@ -68,7 +77,11 @@ public static class ReadOnlyMemoryCloudEventExtensions
         );
         var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
 
-        var result = ParseResultPayload(parsedEnvelope, isFailure, readOptions);
+        var dataSegment = parsedEnvelope is { HasData: true, IsDataNull: false } ?
+            cloudEvent.Slice(parsedEnvelope.DataStart, parsedEnvelope.DataLength) :
+            ReadOnlyMemory<byte>.Empty;
+
+        var result = ParseResultPayload(dataSegment, isFailure, readOptions);
 
         return new CloudEventEnvelope(
             parsedEnvelope.Type,
@@ -91,7 +104,10 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <typeparam name="T">The type of the success value stored in the <see cref="Result{T}" />.</typeparam>
     /// <returns>The parsed <see cref="CloudEventEnvelope{T}" /> containing the original CloudEvent attributes and a deserialized <see cref="Result{T}" />.</returns>
     /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
+    /// <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.
+    /// </exception>
     public static CloudEventEnvelope<T> ReadResultWithCloudEventEnvelope<T>(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
@@ -104,7 +120,11 @@ public static class ReadOnlyMemoryCloudEventExtensions
         );
         var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
 
-        var result = ParseGenericResultPayload<T>(parsedEnvelope, isFailure, readOptions);
+        var dataSegment = parsedEnvelope.HasData && !parsedEnvelope.IsDataNull ?
+            cloudEvent.Slice(parsedEnvelope.DataStart, parsedEnvelope.DataLength) :
+            ReadOnlyMemory<byte>.Empty;
+
+        var result = ParseGenericResultPayload<T>(dataSegment, parsedEnvelope.HasData, isFailure, readOptions);
 
         return new CloudEventEnvelope<T>(
             parsedEnvelope.Type,
@@ -121,12 +141,12 @@ public static class ReadOnlyMemoryCloudEventExtensions
 
 
     private static Result ParseResultPayload(
-        CloudEventEnvelopePayload parsedEnvelope,
+        ReadOnlyMemory<byte> dataSegment,
         bool isFailure,
         LightResultsCloudEventReadOptions options
     )
     {
-        if (!parsedEnvelope.HasData || parsedEnvelope.IsDataNull)
+        if (dataSegment.IsEmpty)
         {
             if (isFailure)
             {
@@ -138,19 +158,17 @@ public static class ReadOnlyMemoryCloudEventExtensions
             return Result.Ok();
         }
 
-        var dataBytes = parsedEnvelope.DataBytes!;
-
         if (isFailure)
         {
             var failurePayload = JsonSerializer.Deserialize<CloudEventFailurePayload>(
-                dataBytes.AsSpan(),
+                dataSegment.Span,
                 options.SerializerOptions
             );
             return Result.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
 
         var successPayload = JsonSerializer.Deserialize<CloudEventSuccessPayload>(
-            dataBytes.AsSpan(),
+            dataSegment.Span,
             options.SerializerOptions
         );
         var metadata = successPayload.Metadata;
@@ -166,22 +184,23 @@ public static class ReadOnlyMemoryCloudEventExtensions
     }
 
     private static Result<T> ParseGenericResultPayload<T>(
-        CloudEventEnvelopePayload parsedEnvelope,
+        ReadOnlyMemory<byte> dataSegment,
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local - this is not a precondition check.
+        // This will shortcut the deserialization of the cloud event.
+        bool hasData,
         bool isFailure,
         LightResultsCloudEventReadOptions options
     )
     {
-        if (!parsedEnvelope.HasData || parsedEnvelope.IsDataNull)
+        if (dataSegment.IsEmpty || !hasData)
         {
             throw new JsonException("CloudEvent payloads for Result<T> must contain non-null data.");
         }
 
-        var dataBytes = parsedEnvelope.DataBytes!;
-
         if (isFailure)
         {
             var failurePayload = JsonSerializer.Deserialize<CloudEventFailurePayload>(
-                dataBytes.AsSpan(),
+                dataSegment.Span,
                 options.SerializerOptions
             );
             return Result<T>.Fail(failurePayload.Errors, failurePayload.Metadata);
@@ -195,7 +214,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
         if (normalizedPreference == PreferSuccessPayload.BareValue)
         {
             var payload = JsonSerializer.Deserialize<CloudEventBareSuccessPayload<T>>(
-                dataBytes.AsSpan(),
+                dataSegment.Span,
                 options.SerializerOptions
             );
             return CreateSuccessfulGenericResult(payload.Value, metadata: null);
@@ -204,7 +223,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
         if (normalizedPreference == PreferSuccessPayload.WrappedValue)
         {
             var payload = JsonSerializer.Deserialize<CloudEventWrappedSuccessPayload<T>>(
-                dataBytes.AsSpan(),
+                dataSegment.Span,
                 options.SerializerOptions
             );
             var metadata = payload.Metadata;
@@ -220,7 +239,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
         }
 
         var autoPayload = JsonSerializer.Deserialize<CloudEventAutoSuccessPayload<T>>(
-            dataBytes.AsSpan(),
+            dataSegment.Span,
             options.SerializerOptions
         );
         var autoMetadata = autoPayload.Metadata;

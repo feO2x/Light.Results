@@ -13,13 +13,13 @@ This creates three allocations (JsonDocument, internal buffers, byte[] copy) tha
 
 ## Acceptance Criteria
 
-- [ ] `CloudEventEnvelopePayload` stores a `ReadOnlyMemory<byte>` slice instead of `byte[]` for the data segment
-- [ ] No `JsonDocument` is allocated when parsing the CloudEvent envelope
-- [ ] No intermediate `byte[]` copy is created for the data payload
-- [ ] The original buffer slice is used directly when deserializing the data payload
-- [ ] All existing CloudEvent reading functionality remains intact
-- [ ] Automated tests are written or updated to verify the new implementation
-- [ ] BenchmarkDotNet benchmarks are added to `./benchmarks/Benchmarks/` to measure the allocation reduction
+- [x] `CloudEventEnvelopePayload` stores position-based tracking (`DataStart`, `DataLength`) instead of `byte[]` for the data segment
+- [x] No `JsonDocument` is allocated when parsing the CloudEvent envelope
+- [x] No intermediate `byte[]` copy is created for the data payload
+- [x] The original buffer slice is used directly when deserializing the data payload
+- [x] All existing CloudEvent reading functionality remains intact
+- [x] Automated tests are written or updated to verify the new implementation
+- [x] BenchmarkDotNet benchmarks are added to `./benchmarks/Benchmarks/` to measure the allocation reduction
 
 ## Technical Details
 

@@ -4,92 +4,31 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// Represents a parsed CloudEvent envelope with raw data bytes for deferred payload deserialization.
+/// Represents a parsed CloudEvent envelope with indicators for the Cloud Events <c>data</c> property.
 /// </summary>
-public readonly struct CloudEventEnvelopePayload
-{
-    /// <summary>
-    /// Initializes a new instance of <see cref="CloudEventEnvelopePayload" />.
-    /// </summary>
-    public CloudEventEnvelopePayload(
-        string type,
-        string source,
-        string id,
-        string? subject,
-        DateTimeOffset? time,
-        string? dataContentType,
-        string? dataSchema,
-        MetadataObject? extensionAttributes,
-        bool hasData,
-        bool isDataNull,
-        byte[]? dataBytes
-    )
-    {
-        Type = type;
-        Source = source;
-        Id = id;
-        Subject = subject;
-        Time = time;
-        DataContentType = dataContentType;
-        DataSchema = dataSchema;
-        ExtensionAttributes = extensionAttributes;
-        HasData = hasData;
-        IsDataNull = isDataNull;
-        DataBytes = dataBytes;
-    }
-
-    /// <summary>
-    /// Gets the CloudEvent type attribute.
-    /// </summary>
-    public string Type { get; }
-
-    /// <summary>
-    /// Gets the CloudEvent source attribute.
-    /// </summary>
-    public string Source { get; }
-
-    /// <summary>
-    /// Gets the CloudEvent id attribute.
-    /// </summary>
-    public string Id { get; }
-
-    /// <summary>
-    /// Gets the optional CloudEvent subject attribute.
-    /// </summary>
-    public string? Subject { get; }
-
-    /// <summary>
-    /// Gets the optional CloudEvent time attribute.
-    /// </summary>
-    public DateTimeOffset? Time { get; }
-
-    /// <summary>
-    /// Gets the optional CloudEvent datacontenttype attribute.
-    /// </summary>
-    public string? DataContentType { get; }
-
-    /// <summary>
-    /// Gets the optional CloudEvent dataschema attribute.
-    /// </summary>
-    public string? DataSchema { get; }
-
-    /// <summary>
-    /// Gets the parsed extension attributes.
-    /// </summary>
-    public MetadataObject? ExtensionAttributes { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether the data property was present in the envelope.
-    /// </summary>
-    public bool HasData { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether the data property was null.
-    /// </summary>
-    public bool IsDataNull { get; }
-
-    /// <summary>
-    /// Gets the raw UTF-8 bytes of the data payload for deferred deserialization.
-    /// </summary>
-    public byte[]? DataBytes { get; }
-}
+/// <param name="Type">The CloudEvent type attribute.</param>
+/// <param name="Source">The CloudEvent source attribute.</param>
+/// <param name="Id">The CloudEvent id attribute.</param>
+/// <param name="Subject">The optional CloudEvent subject attribute.</param>
+/// <param name="Time">The optional CloudEvent time attribute.</param>
+/// <param name="DataContentType">The optional CloudEvent datacontenttype attribute.</param>
+/// <param name="DataSchema">The optional CloudEvent dataschema attribute.</param>
+/// <param name="ExtensionAttributes">The parsed extension attributes.</param>
+/// <param name="HasData">A value indicating whether the data property was present in the envelope.</param>
+/// <param name="IsDataNull">A value indicating whether the data property was null.</param>
+/// <param name="DataStart">The byte offset where the data value begins in the original buffer.</param>
+/// <param name="DataLength">The length of the data value in bytes.</param>
+public readonly record struct CloudEventEnvelopePayload(
+    string Type,
+    string Source,
+    string Id,
+    string? Subject,
+    DateTimeOffset? Time,
+    string? DataContentType,
+    string? DataSchema,
+    MetadataObject? ExtensionAttributes,
+    bool HasData,
+    bool IsDataNull,
+    int DataStart,
+    int DataLength
+);
