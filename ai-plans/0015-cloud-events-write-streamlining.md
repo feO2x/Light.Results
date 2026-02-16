@@ -2,7 +2,7 @@
 
 ## Rationale
 
-The current CloudEvents writing implementation bypasses the STJ pipeline by directly using `Utf8JsonWriter` in `CloudEventResultExtensions`. While this approach was optimized in the previous iteration (replacing `MemoryStream` with `PooledByteBufferWriter`), it has fundamental architectural limitations:
+The current CloudEvents writing implementation bypasses the STJ pipeline by not calling `JsonSerializer.Serialize()` in `CloudEventResultExtensions`. While this approach was optimized in the previous iteration (replacing `MemoryStream` with `PooledByteBufferWriter`), it has fundamental architectural limitations:
 
 1. **No converter customization**: Callers cannot exchange the default JSON converters for `Result`, `Result<T>`, or metadata types because STJ's `JsonSerializer.Serialize()` is never invoked.
 
@@ -12,36 +12,32 @@ The current CloudEvents writing implementation bypasses the STJ pipeline by dire
 
 4. **Limited composability**: Messaging libraries that use STJ cannot easily integrate with the current design.
 
-This plan introduces an intermediary **readonly record struct** that represents a fully-resolved CloudEvent envelope. JSON converters serialize this envelope type, delegating data serialization to separate `Result`/`Result<T>` data converters. This design enables full STJ pipeline integration, stateless converters, and clean separation of concerns.
+This plan introduces the use of an intermediary **readonly record struct** (`CloudEventEnvelopeForWriting<T>`) that represents a fully-resolved Cloud Events envelope with frozen serialization options. A single JSON converter serializes this envelope type, handling both envelope attributes and Result data inline. This design enables full STJ pipeline integration, stateless converters, and clean separation of concerns.
+
+We still use `Utf8JsonWriter` with `PooledByteBufferWriter`, the former is passed to `JsonSerializer.Serialize` to invoke the STJ pipeline correctly.
 
 ## Acceptance Criteria
 
-### Reuse Existing Envelope Types
-- [ ] The existing `CloudEventEnvelope` and `CloudEventEnvelope<T>` types in `Light.Results.CloudEvents` namespace are reused for writing (no new types needed).
-- [ ] Writing code references these shared types rather than creating duplicates.
+### Writing-Specific Envelope Types
+- [ ] A `ResolvedCloudEventWriteOptions` readonly record struct captures frozen serialization options (e.g., `MetadataSerializationMode`).
+- [ ] A `CloudEventEnvelopeForWriting<T>` readonly record struct (and non-generic variant) carries resolved Cloud Events attributes and the frozen options.
+- [ ] These types are separate from the reading envelope (`CloudEventEnvelope<T>`) to avoid conflating read and write concerns.
 
 ### Envelope JSON Converters
-- [ ] `CloudEventEnvelopeJsonConverter` serializes `CloudEventEnvelope` by writing envelope attributes and delegating `Data` serialization to STJ.
-- [ ] `CloudEventEnvelopeJsonConverter<T>` serializes `CloudEventEnvelope<T>` similarly.
-- [ ] `CloudEventEnvelopeJsonConverterFactory` creates generic envelope converters for any `CloudEventEnvelope<T>`.
-- [ ] Envelope converters are **stateless** (no constructor parameters).
-- [ ] Envelope converters are **write-only** (`Read` throws `NotSupportedException`). Reading uses a separate flow with `CloudEventEnvelopePayload` for byte offset tracking.
-
-### Result Data Converters (CloudEvent Context)
-- [ ] `CloudEventResultDataJsonConverter` serializes `Result` as CloudEvent data payload (metadata only for success, errors + metadata for failure).
-- [ ] `CloudEventResultDataJsonConverter<T>` serializes `Result<T>` as CloudEvent data payload (value + metadata for success, errors + metadata for failure).
-- [ ] `CloudEventResultDataJsonConverterFactory` creates generic data converters for any `Result<T>`.
-- [ ] Data converters respect `MetadataSerializationMode` from `LightResultsCloudEventWriteOptions` (retrieved via `JsonSerializerOptions`).
-- [ ] Data converters are **write-only** (`Read` throws `NotSupportedException`). Reading uses separate payload converters.
+- [ ] `CloudEventEnvelopeForWritingJsonConverter` serializes `CloudEventEnvelopeForWriting` by writing envelope attributes and Result data inline.
+- [ ] `CloudEventEnvelopeForWritingJsonConverter<T>` serializes `CloudEventEnvelopeForWriting<T>` similarly.
+- [ ] `CloudEventEnvelopeForWritingJsonConverterFactory` creates generic envelope converters for any `CloudEventEnvelopeForWriting<T>`.
+- [ ] Converters are **stateless** (no constructor parameters).
+- [ ] Converters are **write-only** (`Read` throws `NotSupportedException`). Reading uses a separate flow with `CloudEventEnvelopePayload` for byte offset tracking.
+- [ ] Converters serialize Result data (value/errors/metadata) inline with direct access to `envelope.ResolvedOptions.MetadataMode`.
 
 ### Extension Methods
-- [ ] `ToCloudEventEnvelope()` extension methods on `Result` and `Result<T>` construct the envelope struct with resolved attributes.
+- [ ] `ToCloudEventEnvelopeForWriting()` extension methods on `Result` and `Result<T>` construct the envelope struct with resolved attributes and frozen options.
 - [ ] `ToCloudEvent()` extension methods remain available, internally constructing the envelope and calling `JsonSerializer.Serialize()`.
 - [ ] `WriteCloudEvent(Utf8JsonWriter)` methods remain for callers who need direct writer control.
 
 ### Module Registration
-- [ ] `AddDefaultLightResultsCloudEventWriteJsonConverters()` registers all envelope and data converters without requiring options at registration time.
-- [ ] `LightResultsCloudEventWriteOptions` can be stored in `JsonSerializerOptions.TypeInfoResolver` or as a custom property for data converters to retrieve.
+- [ ] `AddDefaultLightResultsCloudEventWriteJsonConverters()` registers the envelope converters without requiring options at registration time.
 
 ### Code Hygiene
 - [ ] Legacy converter classes (`CloudEventWriteResultJsonConverter`, `CloudEventWriteResultJsonConverterFactory`) are removed.
@@ -55,16 +51,37 @@ This plan introduces an intermediary **readonly record struct** that represents 
 
 ## Technical Details
 
-### Reusing Existing Envelope Types
+### Writing-Specific Envelope Types
 
-The `CloudEventEnvelope` and `CloudEventEnvelope<T>` types already exist in `src/Light.Results/CloudEvents/CloudEventEnvelope.cs`:
+The existing `CloudEventEnvelope<T>` types in `src/Light.Results/CloudEvents/CloudEventEnvelope.cs` are used for **reading** and should remain focused on that concern. Writing requires additional context (serialization options) that reading doesn't need.
+
+#### ResolvedCloudEventWriteOptions
+
+A frozen struct capturing resolved serialization state:
 
 ```csharp
-public readonly record struct CloudEventEnvelope<T>(
+public readonly record struct ResolvedCloudEventWriteOptions(
+    MetadataSerializationMode MetadataMode
+    // Future resolved settings added here as needed
+);
+```
+
+This struct is constructed in `ToCloudEventEnvelopeForWriting()` by merging:
+- Global `LightResultsCloudEventWriteOptions` (from DI or defaults)
+- Per-call parameter overrides
+- Per-call options overrides
+
+Note: `JsonSerializerOptions` is NOT included because it's already part of the STJ pipeline.
+
+#### CloudEventEnvelopeForWriting
+
+```csharp
+public readonly record struct CloudEventEnvelopeForWriting<T>(
     string Type,
     string Source,
     string Id,
     Result<T> Data,
+    ResolvedCloudEventWriteOptions ResolvedOptions,
     string? Subject = null,
     DateTimeOffset? Time = null,
     string? DataContentType = null,
@@ -73,57 +90,56 @@ public readonly record struct CloudEventEnvelope<T>(
 );
 ```
 
-These types are already used by the reading code (`ReadResultWithCloudEventEnvelope`) and are located in the shared `Light.Results.CloudEvents` namespace. The writing code will reuse them directly.
+A non-generic `CloudEventEnvelopeForWriting` (with `Result Data`) follows the same pattern.
 
-The `ToCloudEventEnvelope()` extension method handles:
+The `ToCloudEventEnvelopeForWriting()` extension method handles:
 - Resolving `Type` based on `IsValid` (success vs failure type)
 - Generating `Id` if not provided
 - Extracting extension attributes from result metadata
 - Validating `Source` as URI-reference and `DataSchema` as absolute URI
+- Creating `ResolvedCloudEventWriteOptions` from merged configuration sources
 
 ### Converter Architecture
 
 ```
-CloudEvents/Writing/Json/
-├── CloudEventEnvelopeJsonConverter.cs
-│   ├── CloudEventEnvelopeJsonConverter (non-generic)
-│   ├── CloudEventEnvelopeJsonConverter<T>
-│   └── CloudEventEnvelopeJsonConverterFactory
-├── CloudEventResultDataJsonConverter.cs
-│   ├── CloudEventResultDataJsonConverter (non-generic)
-│   ├── CloudEventResultDataJsonConverter<T>
-│   └── CloudEventResultDataJsonConverterFactory
+CloudEvents/Writing/
+├── ResolvedCloudEventWriteOptions.cs
+├── CloudEventEnvelopeForWriting.cs
+├── Json/
+│   └── CloudEventEnvelopeForWritingJsonConverter.cs
+│       ├── CloudEventEnvelopeForWritingJsonConverter (non-generic)
+│       ├── CloudEventEnvelopeForWritingJsonConverter<T>
+│       └── CloudEventEnvelopeForWritingJsonConverterFactory
 ```
 
-#### Envelope Converter Responsibilities
+#### Converter Responsibilities
 
-The envelope converter writes:
+The single converter handles both envelope attributes and Result data serialization:
+
+**Envelope attributes:**
 1. `specversion` (always "1.0")
 2. `type`, `source`, `id`, `time` (required attributes)
 3. `subject`, `dataschema` (if present)
 4. `datacontenttype` (always "application/json")
 5. Extension attributes (iterating `ExtensionAttributes` MetadataObject)
-6. `data` property — delegates to `JsonSerializer.Serialize(envelope.Data, options)`
 
-Because the envelope converter doesn't know about `LightResultsCloudEventWriteOptions`, it simply writes what's in the struct. All resolution logic moves to `ToCloudEventEnvelope()`.
+**Result data (written inline as `data` property):**
 
-#### Data Converter Responsibilities
-
-The data converter writes the `Result` or `Result<T>` as the CloudEvent data payload:
-
-**For success:**
+*For success:*
 - Non-generic `Result`: writes `{ "metadata": { ... } }` if metadata exists with `SerializeInCloudEventData` annotation, otherwise writes `null` or empty object.
-- Generic `Result<T>`: writes `{ "value": ..., "metadata": { ... } }` or just the value if no metadata.
+- Generic `Result<T>`: writes `{ "value": ..., "metadata": { ... } }` as a wrapped object. If no metadata exists, writes just `{ "value": ... }` (still wrapped).
 
-**For failure:**
+*For failure:*
 - Writes `{ "errors": [...], "metadata": { ... } }` using existing error serialization helpers.
 
-The data converter retrieves `LightResultsCloudEventWriteOptions` from `JsonSerializerOptions` to determine `MetadataSerializationMode`. This can be done via:
-- A custom `IJsonTypeInfoResolver` that stores options
-- The `JsonSerializerOptions.TypeInfoResolverChain` with a marker resolver
-- A static `AsyncLocal<LightResultsCloudEventWriteOptions>` scoped per serialization call
+The converter accesses `envelope.ResolvedOptions.MetadataMode` directly to determine metadata serialization behavior. This eliminates the need to pass options between converters through the STJ pipeline.
 
-Recommendation: Use a simple extension method `GetCloudEventWriteOptions(this JsonSerializerOptions)` that retrieves options from a known location (e.g., a registered singleton converter or a custom type info resolver).
+**Implementation details:**
+- **Value serialization**: Uses `JsonSerializer.Serialize(writer, result.Value, options)` to leverage existing converters for the `T` type.
+- **Metadata serialization**: Delegates to existing metadata serialization helpers to maintain consistency with HTTP serialization.
+- **Error serialization**: Uses existing error serialization helpers (same as HTTP path).
+- **Extension attributes**: Iterates `ExtensionAttributes` MetadataObject and writes each as a top-level property using `writer.WritePropertyName()` and appropriate value writers.
+- **Timestamp formatting**: `time` property (if present) is serialized as ISO 8601 using STJ's default `DateTimeOffset` converter.
 
 ### Extension Method Flow
 
@@ -139,46 +155,65 @@ public static byte[] ToCloudEvent<T>(
 )
 {
     var resolvedOptions = options ?? LightResultsCloudEventWriteOptions.Default;
-    var envelope = result.ToCloudEventEnvelope(
-        successType, failureType, id, source, ...
-        resolvedOptions
+    
+    // Create frozen options struct
+    var frozenOptions = new ResolvedCloudEventWriteOptions(
+        resolvedOptions.MetadataSerializationMode
     );
-    return JsonSerializer.SerializeToUtf8Bytes(envelope, resolvedOptions.SerializerOptions);
+    
+    // Construct envelope with frozen options
+    var envelope = result.ToCloudEventEnvelopeForWriting(
+        successType, failureType, id, source, ...
+        frozenOptions
+    );
+    
+    using var bufferWriter = new PooledByteBufferWriter();
+    using var writer = new Utf8JsonWriter(bufferWriter);
+    var envelopeTypeInfo = (JsonTypeInfo<CloudEventEnvelopeForWriting<T>>) 
+        resolvedOptions.SerializerOptions.GetTypeInfo(typeof(CloudEventEnvelopeForWriting<T>));
+    // TODO: ensure that envelopeTypeInfo is not null
+    JsonSerializer.Serialize(writer, envelope, envelopeTypeInfo);
+    writer.Flush();
+    return bufferWriter.ToArray();
 }
 ```
 
 This approach:
-1. Constructs the envelope struct (no heap allocation for the struct itself)
-2. Delegates entirely to STJ for serialization
-3. Allows callers to replace any converter in the chain
+1. Freezes configuration into `ResolvedCloudEventWriteOptions` (resolution happens once)
+2. Constructs the envelope struct (no heap allocation for the struct itself)
+3. Delegates entirely to STJ for serialization
+4. Allows callers to replace any converter in the chain
+5. Ensures converters receive all necessary context without ambient state lookups
 
-### Handling MetadataSerializationMode in Data Converters
+### Metadata Serialization Logic
 
-Since data converters need to know `MetadataSerializationMode`, and we want stateless converters, we can:
+The converter accesses `envelope.ResolvedOptions.MetadataMode` to determine metadata serialization:
 
-1. **Store options reference in SerializerOptions**: Add a marker converter or use `JsonSerializerOptions.UnknownTypeHandling` with a custom resolver that stores the options.
+1. Check `MetadataMode` (`MetadataSerializationMode` enum: `Always`, `ErrorsOnly`, or `Never`)
+2. Apply `MetadataValueAnnotation.SerializeInCloudEventData` annotation as a secondary filter
+3. Only serialize metadata values that pass both checks
 
-2. **Always serialize metadata in CloudEvent data**: Simplify by always including metadata with `SerializeInCloudEventData` annotation. The mode only affects whether to include it, but for CloudEvents the annotation already controls this.
+Note: For CloudEvents, metadata is always included in the `data` payload (not in envelope attributes), so the serialization mode only controls whether metadata appears in the data object.
 
-Recommendation: For CloudEvents, the `MetadataValueAnnotation.SerializeInCloudEventData` annotation is the primary filter. The `MetadataSerializationMode` can be checked once when constructing the envelope (to decide whether to include metadata at all), and the data converter simply writes whatever metadata is present in the result.
+This approach keeps all serialization logic in one place with direct access to frozen options, avoiding the complexity of passing state through the STJ pipeline.
 
 ### Removing Legacy Converters
 
 The following files can be deleted or significantly simplified:
-- `CloudEventWriteResultJsonConverter.cs` — replaced by envelope + data converters
-- `CloudEventWriteResultJsonConverterFactory.cs` — replaced by envelope factory
+- `CloudEventWriteResultJsonConverter.cs` — replaced by unified envelope converter
+- `CloudEventWriteResultJsonConverterFactory.cs` — replaced by unified envelope factory
 
 The complex private methods in `CloudEventResultExtensions` (attribute resolution, validation) remain but are invoked during envelope construction rather than during serialization.
 
 ### Performance Considerations
 
-1. **Struct envelope**: `CloudEventEnvelope<T>` is a readonly record struct, avoiding heap allocation for the envelope itself.
-2. **STJ source generators**: Callers can use `JsonSerializerContext` for AOT-friendly serialization.
-3. **Single STJ call**: One `JsonSerializer.Serialize()` call instead of manual writer manipulation.
-4. **Potential overhead**: STJ's converter resolution has some overhead, but this is typically negligible and enables caching.
+1. **Struct envelope**: `CloudEventEnvelopeForWriting<T>` is a readonly record struct, avoiding heap allocations.
+2. **Frozen options**: `ResolvedCloudEventWriteOptions` stores only a single enum value (4 bytes), minimal memory overhead.
+3. **Single-pass resolution**: Configuration merging happens once in `ToCloudEventEnvelope()`, not repeatedly during serialization.
+4. **STJ source generators**: Callers can use `JsonSerializerContext` for AOT-friendly serialization.
+5. **Single STJ call**: One `JsonSerializer.Serialize()` call instead of manual writer manipulation.
+6. **Potential overhead**: STJ's converter resolution has some overhead, but this is typically negligible and enables caching.
 
-Benchmarks should compare:
-- Current `PooledByteBufferWriter` + direct write approach
-- New `ToCloudEventEnvelope()` + `JsonSerializer.SerializeToUtf8Bytes()` approach
+We already have benchmarks which should be run to compare the performance of the new approach against the current implementation.
 
-If the new approach shows regression, consider keeping the direct-write path as an optimization while still offering the STJ-integrated path for extensibility.
+Even if we face regression, the benefits of a unified, maintainable, and extensible approach outweigh the performance cost.
