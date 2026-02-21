@@ -10,42 +10,10 @@ namespace Light.Results.Tests.Buffers;
 public sealed class PooledArrayTests
 {
     [Fact]
-    public void Constructor_WithNegativeLength_ShouldThrowArgumentOutOfRangeException()
-    {
-        var pool = new TrackingByteArrayPool();
-
-        var act = () => _ = new PooledArray(new byte[4], pool, -1);
-
-        act.Should().Throw<ArgumentOutOfRangeException>()
-           .WithParameterName("length");
-    }
-
-    [Fact]
-    public void Constructor_WithNullRentedArray_ShouldThrowArgumentNullException()
-    {
-        var pool = new TrackingByteArrayPool();
-
-        var act = () => _ = new PooledArray(null!, pool, 0);
-
-        act.Should().Throw<ArgumentNullException>()
-           .WithParameterName("rentedArray");
-    }
-
-    [Fact]
-    public void Constructor_WithNullArrayPool_ShouldThrowArgumentNullException()
-    {
-        var act = () => _ = new PooledArray(new byte[1], null!, 1);
-
-        act.Should().Throw<ArgumentNullException>()
-           .WithParameterName("arrayPool");
-    }
-
-    [Fact]
     public void AsMemory_ShouldReturnRequestedLength()
     {
         var pool = new TrackingByteArrayPool();
-        var rentedArray = new byte[] { 1, 2, 3, 4, 5 };
-        var pooledArray = new PooledArray(rentedArray, pool, 3);
+        using var pooledArray = CreatePooledArrayWithLength(pool, 3, 1, 2, 3, 4, 5);
 
         var memory = pooledArray.AsMemory();
 
@@ -56,39 +24,62 @@ public sealed class PooledArrayTests
     public void AsSpan_ShouldReturnRequestedLength()
     {
         var pool = new TrackingByteArrayPool();
-        var rentedArray = new byte[] { 1, 2, 3, 4, 5 };
-        var pooledArray = new PooledArray(rentedArray, pool, 2);
+        using var pooledArray = CreatePooledArray(pool, 1, 2, 3, 4, 5);
 
         var span = pooledArray.AsSpan();
 
-        span.ToArray().Should().Equal(1, 2);
+        span.ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
 
     [Fact]
     public void Dispose_ShouldReturnArrayToPoolOnlyOnce()
     {
         var pool = new TrackingByteArrayPool();
-        var rentedArray = new byte[] { 10, 20, 30 };
-        var pooledArray = new PooledArray(rentedArray, pool, 3);
+        var pooledArray = CreatePooledArray(pool, 10, 20, 30);
 
         pooledArray.Dispose();
         pooledArray.Dispose();
 
         pool.ReturnCalls.Should().Be(1);
-        pool.ReturnedArrays.Should().ContainSingle().Which.Should().BeSameAs(rentedArray);
+        pool.ReturnedArrays.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Dispose_WhenStructCopied_ShouldReturnArrayToPoolOnlyOnce()
+    {
+        var pool = new TrackingByteArrayPool();
+        var pooledArray = CreatePooledArray(pool, 10, 20, 30);
+        var copied = pooledArray;
+
+        pooledArray.Dispose();
+        copied.Dispose();
+
+        pool.ReturnCalls.Should().Be(1);
+        pool.ReturnedArrays.Should().ContainSingle();
     }
 
     [Fact]
     public void AsMemory_AfterDispose_ShouldThrowInvalidOperationException()
     {
         var pool = new TrackingByteArrayPool();
-        var pooledArray = new PooledArray(new byte[] { 1, 2 }, pool, 2);
+        var pooledArray = CreatePooledArray(pool, 1, 2);
         pooledArray.Dispose();
 
         var act = () => _ = pooledArray.AsMemory();
 
         act.Should().Throw<InvalidOperationException>()
            .WithMessage("*already disposed*");
+    }
+
+    private static PooledArray CreatePooledArray(ArrayPool<byte> pool, params byte[] bytes)
+        => CreatePooledArrayWithLength(pool, bytes.Length, bytes);
+
+    private static PooledArray CreatePooledArrayWithLength(ArrayPool<byte> pool, int length, params byte[] bytes)
+    {
+        var writer = new PooledByteBufferWriter(pool, bytes.Length);
+        bytes.CopyTo(writer.GetSpan(bytes.Length));
+        writer.Advance(length);
+        return writer.ToPooledArray();
     }
 
     private sealed class TrackingByteArrayPool : ArrayPool<byte>

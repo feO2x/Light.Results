@@ -88,10 +88,10 @@ public sealed class PooledByteBufferWriterTests
     }
 
     [Fact]
-    public void ToPooledArray_AfterCalled_ShouldPreventFurtherUsage()
+    public void ToPooledArray_AfterCalled_ShouldPreventFurtherWritingButAllowAdditionalHandles()
     {
         var writer = new PooledByteBufferWriter(initialCapacity: 2);
-        using var pooledArray = writer.ToPooledArray();
+        using var pooledArray1 = writer.ToPooledArray();
 
         var advanceAct = () => writer.Advance(1);
         var getMemoryAct = () => writer.GetMemory();
@@ -101,7 +101,26 @@ public sealed class PooledByteBufferWriterTests
         advanceAct.Should().Throw<InvalidOperationException>().WithMessage("*ToPooledArray*already been called*");
         getMemoryAct.Should().Throw<InvalidOperationException>().WithMessage("*ToPooledArray*already been called*");
         getSpanAct.Should().Throw<InvalidOperationException>().WithMessage("*ToPooledArray*already been called*");
-        toPooledArrayAct.Should().Throw<InvalidOperationException>().WithMessage("*ToPooledArray*already been called*");
+
+        var pooledArray2 = toPooledArrayAct.Should().NotThrow().Subject;
+        pooledArray2.AsSpan().ToArray().Should().Equal(pooledArray1.AsSpan().ToArray());
+        pooledArray2.Dispose();
+    }
+
+    [Fact]
+    public void ToPooledArray_MultipleHandles_ShouldShareIdempotentDisposeState()
+    {
+        var trackingPool = new TrackingByteArrayPool();
+        var writer = new PooledByteBufferWriter(trackingPool, initialCapacity: 2);
+        writer.Advance(1);
+
+        var pooledArray1 = writer.ToPooledArray();
+        var pooledArray2 = writer.ToPooledArray();
+
+        pooledArray1.Dispose();
+        pooledArray2.Dispose();
+
+        trackingPool.ReturnedArrays.Should().ContainSingle();
     }
 
     [Fact]
@@ -142,6 +161,44 @@ public sealed class PooledByteBufferWriterTests
         pooledArray.Dispose();
 
         trackingPool.ReturnedArrays.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Dispose_WithoutToPooledArray_ShouldReturnCurrentBufferToPoolOnlyOnce()
+    {
+        var trackingPool = new TrackingByteArrayPool();
+        var writer = new PooledByteBufferWriter(trackingPool, initialCapacity: 2);
+
+        writer.Dispose();
+        writer.Dispose();
+
+        trackingPool.ReturnedArrays.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Dispose_AfterToPooledArray_ShouldShareIdempotenceWithPooledArrayHandles()
+    {
+        var trackingPool = new TrackingByteArrayPool();
+        var writer = new PooledByteBufferWriter(trackingPool, initialCapacity: 2);
+        writer.Advance(1);
+        var pooledArray = writer.ToPooledArray();
+
+        writer.Dispose();
+        pooledArray.Dispose();
+
+        trackingPool.ReturnedArrays.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void ToPooledArray_AfterWriterDispose_ShouldThrowInvalidOperationException()
+    {
+        var writer = new PooledByteBufferWriter(initialCapacity: 2);
+        writer.Dispose();
+
+        var act = () => writer.ToPooledArray();
+
+        act.Should().Throw<InvalidOperationException>()
+           .WithMessage("*already disposed*");
     }
 
     [Fact]

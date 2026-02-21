@@ -7,7 +7,7 @@ namespace Light.Results.Buffers;
 /// A buffer writer that uses ArrayPool for efficient memory management.
 /// Provides high-performance writing to byte arrays with automatic resizing and memory pooling.
 /// </summary>
-public sealed class PooledByteBufferWriter : IBufferWriter<byte>
+public sealed class PooledByteBufferWriter : IBufferWriter<byte>, IDisposable
 {
     /// <summary>
     /// Gets the default initial capacity for the buffer, which is 2048 bytes.
@@ -17,7 +17,7 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
     private readonly ArrayPool<byte> _arrayPool;
     private byte[] _buffer;
     private int _index;
-    private bool _isDone;
+    private WriterState _state;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PooledByteBufferWriter" /> class.
@@ -46,6 +46,7 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
 
         _buffer = arrayPool.Rent(initialCapacity);
         _index = 0;
+        _state = WriterState.Writable;
     }
 
     /// <summary>
@@ -56,7 +57,7 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
     /// <exception cref="InvalidOperationException">Thrown when advancing past the end of the buffer, or when ToPooledArray has already been called.</exception>
     public void Advance(int count)
     {
-        EnsureNotDone();
+        EnsureWritable();
         if (count < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(count));
@@ -79,7 +80,7 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
     /// <exception cref="InvalidOperationException">Thrown when ToPooledArray has already been called.</exception>
     public Memory<byte> GetMemory(int sizeHint = 0)
     {
-        EnsureNotDone();
+        EnsureWritable();
         CheckAndResizeBuffer(sizeHint);
         return _buffer.AsMemory(_index);
     }
@@ -92,9 +93,27 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
     /// <exception cref="InvalidOperationException">Thrown when ToPooledArray has already been called.</exception>
     public Span<byte> GetSpan(int sizeHint = 0)
     {
-        EnsureNotDone();
+        EnsureWritable();
         CheckAndResizeBuffer(sizeHint);
         return _buffer.AsSpan(_index);
+    }
+
+    /// <summary>
+    /// Returns the currently rented buffer to the array pool.
+    /// </summary>
+    /// <remarks>
+    /// This method is idempotent and can be called multiple times safely.
+    /// </remarks>
+    public void Dispose()
+    {
+        if (_state == WriterState.Disposed)
+        {
+            return;
+        }
+
+        _arrayPool.Return(_buffer);
+        _buffer = Array.Empty<byte>();
+        _state = WriterState.Disposed;
     }
 
     /// <summary>
@@ -107,14 +126,37 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
     /// <exception cref="InvalidOperationException">Thrown when ToPooledArray has already been called.</exception>
     public PooledArray ToPooledArray()
     {
-        EnsureNotDone();
-        _isDone = true;
-        return new PooledArray(_buffer, _arrayPool, _index);
+        if (_state == WriterState.Disposed)
+        {
+            throw new InvalidOperationException("The PooledArray is already disposed");
+        }
+
+        if (_state == WriterState.Writable)
+        {
+            _state = WriterState.Leased;
+        }
+
+        return new PooledArray(this);
     }
 
-    private void EnsureNotDone()
+    /// <summary>
+    /// Returns a read-only view of the bytes that have been written into the pooled buffer.
+    /// </summary>
+    /// <returns>The written portion of the pooled buffer as <see cref="ReadOnlyMemory{Byte}" />.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the pooled array has already been disposed.</exception>
+    public ReadOnlyMemory<byte> PooledArrayAsMemory()
     {
-        if (_isDone)
+        if (_state == WriterState.Disposed)
+        {
+            throw new InvalidOperationException("The PooledArray is already disposed");
+        }
+
+        return _buffer.AsMemory(0, _index);
+    }
+
+    private void EnsureWritable()
+    {
+        if (_state != WriterState.Writable)
         {
             throw new InvalidOperationException(
                 $"{nameof(ToPooledArray)} has already been called. You cannot use the PooledByteBufferWriter after calling {nameof(ToPooledArray)}."
@@ -172,5 +214,12 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
         Array.Copy(_buffer, 0, newBuffer, 0, _index);
         _arrayPool.Return(_buffer);
         _buffer = newBuffer;
+    }
+
+    private enum WriterState
+    {
+        Writable,
+        Leased,
+        Disposed
     }
 }
