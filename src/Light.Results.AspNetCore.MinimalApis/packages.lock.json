@@ -11,7 +11,8 @@
       "light.results": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Bcl.HashCode": "[6.0.0, )"
+          "Microsoft.Bcl.HashCode": "[6.0.0, )",
+          "Ulid": "[1.4.1, )"
         }
       },
       "light.results.aspnetcore.shared": {
@@ -25,6 +26,12 @@
         "requested": "[6.0.0, )",
         "resolved": "6.0.0",
         "contentHash": "GI4jcoi6eC9ZhNOQylIBaWOQjyGaR8T6N3tC1u8p3EXfndLCVNNWa+Zp+ocjvvS3kNBN09Zma2HXL0ezO0dRfw=="
+      },
+      "Ulid": {
+        "type": "CentralTransitive",
+        "requested": "[1.4.1, )",
+        "resolved": "1.4.1",
+        "contentHash": "V6crLJ8a29raWeNwxYGfH9RTKA3H0nR0D9LAGzN3KtEsbiiaWkUjDor6OT5Oz7pxCK+NaY2hu2FLoYEOa8oCkA=="
       }
     }
   }

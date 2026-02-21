@@ -474,7 +474,7 @@ public static class CloudEventsResultExtensions
             var idFromAttributes = GetStringAttribute(convertedAttributes, "id");
             resolvedId = !string.IsNullOrWhiteSpace(idFromAttributes) ?
                 idFromAttributes! :
-                Guid.NewGuid().ToString();
+                Ulid.NewUlid().ToGuid().ToString();
         }
 
         var resolvedSubject = subject ?? GetStringAttribute(convertedAttributes, "subject");
