@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.Text.Json;
+using Light.Results.Buffers;
 using Light.Results.SharedJsonSerialization;
 
 namespace Light.Results.CloudEvents.Writing;
@@ -65,4 +67,15 @@ public sealed record LightResultsCloudEventsWriteOptions
     /// Defaults to generating a new GUID string.
     /// </summary>
     public Func<string>? IdResolver { get; set; }
+
+    /// <summary>
+    /// Gets or sets the array pool used for writing CloudEvents.
+    /// </summary>
+    public ArrayPool<byte> ArrayPool { get; set; } = ArrayPool<byte>.Shared;
+
+    /// <summary>
+    /// Gets or sets the initial array capacity used for writing CloudEvents. The default is 2048 bytes,
+    /// see <see cref="Buffers.PooledByteBufferWriter.DefaultInitialCapacity" />.
+    /// </summary>
+    public int PooledArrayInitialCapacity { get; set; } = PooledByteBufferWriter.DefaultInitialCapacity;
 }
