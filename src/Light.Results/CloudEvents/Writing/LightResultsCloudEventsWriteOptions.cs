@@ -64,7 +64,7 @@ public sealed record LightResultsCloudEventsWriteOptions
 
     /// <summary>
     /// Gets or sets a factory function to generate unique CloudEvent IDs.
-    /// Defaults to generating a new GUID string.
+    /// Defaults to generating a new UUIDv7 string.
     /// </summary>
     public Func<string>? IdResolver { get; set; }
 
