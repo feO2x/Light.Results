@@ -12,6 +12,15 @@ public static class MetadataValueAnnotationHelper
     /// Creates a new <see cref="MetadataValue" /> that has the same payload as <paramref name="value" />
     /// but with the specified <paramref name="annotation" />.
     /// </summary>
+    /// <param name="value">The metadata value whose payload should be preserved.</param>
+    /// <param name="annotation">The annotation to apply to the rewritten value and nested values.</param>
+    /// <returns>
+    /// A new <see cref="MetadataValue" /> containing the same payload as <paramref name="value" />
+    /// with <paramref name="annotation" /> applied.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="value" /> has an unsupported <see cref="MetadataKind" />.
+    /// </exception>
     public static MetadataValue WithAnnotation(MetadataValue value, MetadataValueAnnotation annotation)
     {
         switch (value.Kind)
@@ -45,11 +54,20 @@ public static class MetadataValueAnnotationHelper
     /// Creates a new <see cref="MetadataObject" /> where all contained values are rewritten with
     /// the provided <paramref name="annotation" />.
     /// </summary>
+    /// <param name="metadataObject">The source metadata object.</param>
+    /// <param name="annotation">The annotation to apply to all contained values recursively.</param>
+    /// <returns>
+    /// A rewritten <see cref="MetadataObject" /> with all contained values using
+    /// <paramref name="annotation" />.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when one of the contained values has an unsupported <see cref="MetadataKind" />.
+    /// </exception>
     public static MetadataObject WithAnnotation(MetadataObject metadataObject, MetadataValueAnnotation annotation)
     {
         if (metadataObject.Count == 0)
         {
-            return MetadataObject.Empty;
+            return metadataObject;
         }
 
         using var builder = MetadataObjectBuilder.Create(metadataObject.Count);
