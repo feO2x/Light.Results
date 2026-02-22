@@ -47,7 +47,7 @@ public static class CloudEventDataJsonReader
 
                 errors = SharedResultJsonReader.ReadRichErrors(
                     ref reader,
-                    MetadataValueAnnotation.SerializeInCloudEventData
+                    MetadataValueAnnotation.SerializeInCloudEventsData
                 );
                 hasErrors = true;
             }
@@ -62,7 +62,7 @@ public static class CloudEventDataJsonReader
                     null :
                     MetadataJsonReader.ReadMetadataObject(
                         ref reader,
-                        MetadataValueAnnotation.SerializeInCloudEventData
+                        MetadataValueAnnotation.SerializeInCloudEventsData
                     );
             }
             else

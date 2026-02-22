@@ -32,22 +32,22 @@ public enum MetadataValueAnnotation
     /// <summary>
     /// Serialize this value inside the CloudEvents <c>data</c> payload.
     /// </summary>
-    SerializeInCloudEventData = 4,
+    SerializeInCloudEventsData = 4,
 
     /// <summary>
     /// Serialize this value as a CloudEvents extension attribute.
-    /// Only valid for primitive types and arrays of primitives.
+    /// Only valid for primitive types.
     /// </summary>
-    SerializeAsCloudEventExtensionAttribute = 8,
+    SerializeInCloudEventsExtensionAttributes = 8,
 
     /// <summary>
     /// Serialize this value in both CloudEvents extension attributes and in the CloudEvent <c>data</c> payload.
     /// </summary>
-    SerializeInCloudEventExtensionAttributeAndData =
-        SerializeInCloudEventData | SerializeAsCloudEventExtensionAttribute,
+    SerializeInCloudEventsExtensionAttributeAndData =
+        SerializeInCloudEventsData | SerializeInCloudEventsExtensionAttributes,
 
     /// <summary>
     /// Serialize this value in both HTTP response bodies and CloudEvents <c>data</c> payloads.
     /// </summary>
-    SerializeInBodies = SerializeInHttpResponseBody | SerializeInCloudEventData
+    SerializeInBodies = SerializeInHttpResponseBody | SerializeInCloudEventsData
 }

@@ -176,7 +176,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
         {
             metadata = MetadataValueAnnotationHelper.WithAnnotation(
                 metadata.Value,
-                MetadataValueAnnotation.SerializeInCloudEventData
+                MetadataValueAnnotation.SerializeInCloudEventsData
             );
         }
 
@@ -231,7 +231,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
             {
                 metadata = MetadataValueAnnotationHelper.WithAnnotation(
                     metadata.Value,
-                    MetadataValueAnnotation.SerializeInCloudEventData
+                    MetadataValueAnnotation.SerializeInCloudEventsData
                 );
             }
 
@@ -247,7 +247,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
         {
             autoMetadata = MetadataValueAnnotationHelper.WithAnnotation(
                 autoMetadata.Value,
-                MetadataValueAnnotation.SerializeInCloudEventData
+                MetadataValueAnnotation.SerializeInCloudEventsData
             );
         }
 

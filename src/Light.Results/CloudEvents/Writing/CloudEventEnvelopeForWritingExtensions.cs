@@ -29,7 +29,7 @@ public static class CloudEventEnvelopeForWritingExtensions
         return envelope.ResolvedOptions.MetadataSerializationMode == MetadataSerializationMode.Always &&
                envelope.Data.Metadata.HasValue &&
                envelope.Data.Metadata.Value.HasAnyValuesWithAnnotation(
-                   MetadataValueAnnotation.SerializeInCloudEventData
+                   MetadataValueAnnotation.SerializeInCloudEventsData
                );
     }
 }

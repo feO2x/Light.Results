@@ -26,8 +26,10 @@ public sealed class CloudEventAttributeParserTests
         Action actWithDefault = () => _ = new TestParser("traceId", default);
         Action actWithEmpty = () => _ = new TestParser("traceId", ImmutableArray<string>.Empty);
 
-        actWithDefault.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "supportedAttributeNames");
-        actWithEmpty.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "supportedAttributeNames");
+        actWithDefault.Should().Throw<ArgumentException>()
+           .Where(exception => exception.ParamName == "supportedAttributeNames");
+        actWithEmpty.Should().Throw<ArgumentException>()
+           .Where(exception => exception.ParamName == "supportedAttributeNames");
     }
 
     [Fact]
@@ -47,12 +49,12 @@ public sealed class CloudEventAttributeParserTests
         var parsed = parser.ParseAttribute(
             "traceid",
             MetadataValue.FromString("abc"),
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         parsed.TryGetString(out var parsedString).Should().BeTrue();
         parsedString.Should().Be("traceid:traceId");
-        parsed.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        parsed.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     private sealed class TestParser : CloudEventAttributeParser

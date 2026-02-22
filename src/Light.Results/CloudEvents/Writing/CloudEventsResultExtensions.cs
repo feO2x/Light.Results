@@ -484,7 +484,9 @@ public static class CloudEventsResultExtensions
     )
     {
         if (metadata is null ||
-            !metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute))
+            !metadata.Value.HasAnyValuesWithAnnotation(
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            ))
         {
             return null;
         }
@@ -493,7 +495,7 @@ public static class CloudEventsResultExtensions
         using var builder = MetadataObjectBuilder.Create(metadata.Value.Count);
         foreach (var keyValuePair in metadata.Value)
         {
-            if (!keyValuePair.Value.HasAnnotation(MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute))
+            if (!keyValuePair.Value.HasAnnotation(MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes))
             {
                 continue;
             }

@@ -69,7 +69,7 @@ public sealed class CloudEventsResultExtensionsTests
         var metadata = MetadataObject.Create(
             (
                 "traceId",
-                MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventData)
+                MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventsData)
             )
         );
         var result = Result.Ok(metadata);
@@ -95,7 +95,7 @@ public sealed class CloudEventsResultExtensionsTests
         var metadata = MetadataObject.Create(
             (
                 "traceId",
-                MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventData)
+                MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventsData)
             )
         );
         var result = Result<string>.Ok("payload", metadata);
@@ -131,7 +131,7 @@ public sealed class CloudEventsResultExtensionsTests
         var metadata = MetadataObject.Create(
             (
                 "traceId",
-                MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventData)
+                MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventsData)
             )
         );
         var result = Result<int>.Fail(errors, metadata);
@@ -161,21 +161,21 @@ public sealed class CloudEventsResultExtensionsTests
                 "type",
                 MetadataValue.FromString(
                     "app.success.from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "source",
                 MetadataValue.FromString(
                     "urn:source:from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "id",
                 MetadataValue.FromString(
                     "evt-from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             )
         );
@@ -199,21 +199,21 @@ public sealed class CloudEventsResultExtensionsTests
                 "type",
                 MetadataValue.FromString(
                     "app.success.from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "source",
                 MetadataValue.FromString(
                     "urn:source:from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "id",
                 MetadataValue.FromString(
                     "evt-from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             )
         );
@@ -291,7 +291,7 @@ public sealed class CloudEventsResultExtensionsTests
                 "data",
                 MetadataValue.FromString(
                     "forbidden",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             )
         );
@@ -312,23 +312,23 @@ public sealed class CloudEventsResultExtensionsTests
     public void ToCloudEvent_ShouldSerializeAllMetadataKinds_WhenWrittenToDataPayload()
     {
         var metadata = MetadataObject.Create(
-            ("nullValue", MetadataValue.FromNull(MetadataValueAnnotation.SerializeInCloudEventData)),
-            ("boolValue", MetadataValue.FromBoolean(true, MetadataValueAnnotation.SerializeInCloudEventData)),
-            ("intValue", MetadataValue.FromInt64(42, MetadataValueAnnotation.SerializeInCloudEventData)),
-            ("doubleValue", MetadataValue.FromDouble(12.5, MetadataValueAnnotation.SerializeInCloudEventData)),
-            ("stringValue", MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventData)),
+            ("nullValue", MetadataValue.FromNull(MetadataValueAnnotation.SerializeInCloudEventsData)),
+            ("boolValue", MetadataValue.FromBoolean(true, MetadataValueAnnotation.SerializeInCloudEventsData)),
+            ("intValue", MetadataValue.FromInt64(42, MetadataValueAnnotation.SerializeInCloudEventsData)),
+            ("doubleValue", MetadataValue.FromDouble(12.5, MetadataValueAnnotation.SerializeInCloudEventsData)),
+            ("stringValue", MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventsData)),
             (
                 "arrayValue",
                 MetadataValue.FromArray(
                     MetadataArray.Create(MetadataValue.FromInt64(1), MetadataValue.FromString("x")),
-                    MetadataValueAnnotation.SerializeInCloudEventData
+                    MetadataValueAnnotation.SerializeInCloudEventsData
                 )
             ),
             (
                 "objectValue",
                 MetadataValue.FromObject(
                     MetadataObject.Create(("nested", MetadataValue.FromBoolean(true))),
-                    MetadataValueAnnotation.SerializeInCloudEventData
+                    MetadataValueAnnotation.SerializeInCloudEventsData
                 )
             )
         );
@@ -361,15 +361,15 @@ public sealed class CloudEventsResultExtensionsTests
         var metadata = MetadataObject.Create(
             (
                 "type",
-                MetadataValue.FromBoolean(true, MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute)
+                MetadataValue.FromBoolean(true, MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes)
             ),
             (
                 "source",
-                MetadataValue.FromInt64(42, MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute)
+                MetadataValue.FromInt64(42, MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes)
             ),
             (
                 "id",
-                MetadataValue.FromDouble(12.5, MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute)
+                MetadataValue.FromDouble(12.5, MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes)
             )
         );
         var result = Result.Ok(metadata);
@@ -393,28 +393,28 @@ public sealed class CloudEventsResultExtensionsTests
                 "type",
                 MetadataValue.FromString(
                     "app.success.from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "source",
                 MetadataValue.FromString(
                     "urn:source:from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "id",
                 MetadataValue.FromString(
                     "evt-from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "time",
                 MetadataValue.FromString(
                     expectedTime.ToString("O"),
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             )
         );
@@ -436,28 +436,28 @@ public sealed class CloudEventsResultExtensionsTests
                 "type",
                 MetadataValue.FromString(
                     "app.success.from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "source",
                 MetadataValue.FromString(
                     "urn:source:from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "id",
                 MetadataValue.FromString(
                     "evt-from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "time",
                 MetadataValue.FromString(
                     "not-a-time",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             )
         );
@@ -476,14 +476,14 @@ public sealed class CloudEventsResultExtensionsTests
                 "traceid",
                 MetadataValue.FromString(
                     "abc",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             ),
             (
                 "id",
                 MetadataValue.FromString(
                     "evt-from-metadata",
-                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
                 )
             )
         );

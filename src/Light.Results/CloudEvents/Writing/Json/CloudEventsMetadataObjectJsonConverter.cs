@@ -25,5 +25,5 @@ public sealed class CloudEventsMetadataObjectJsonConverter : JsonConverter<Metad
     /// Writes the JSON representation for the specified metadata object.
     /// </summary>
     public override void Write(Utf8JsonWriter writer, MetadataObject value, JsonSerializerOptions options) =>
-        writer.WriteMetadataObject(value, requiredAnnotation: MetadataValueAnnotation.SerializeInCloudEventData);
+        writer.WriteMetadataObject(value, requiredAnnotation: MetadataValueAnnotation.SerializeInCloudEventsData);
 }

@@ -116,7 +116,7 @@ public sealed class ReadOnlyMemoryCloudEventExtensionsTests
         result.Metadata.Should().NotBeNull();
         result.Metadata!.Value.TryGetString("traceid", out var traceId).Should().BeTrue();
         traceId.Should().Be("abc");
-        result.Metadata.Value["traceid"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        result.Metadata.Value["traceid"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     [Fact]
@@ -530,7 +530,7 @@ public sealed class ReadOnlyMemoryCloudEventExtensionsTests
         result.Metadata!.Value.TryGetObject("context", out var context).Should().BeTrue();
         context.TryGetString("nested", out var nested).Should().BeTrue();
         nested.Should().Be("x");
-        result.Metadata.Value["context"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        result.Metadata.Value["context"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     [Fact]

@@ -193,13 +193,13 @@ public static class CloudEventEnvelopeJsonReader
     {
         var parsedValue = MetadataJsonReader.ReadMetadataValue(
             ref reader,
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         return IsPrimitive(parsedValue.Kind) ?
             MetadataValueAnnotationHelper.WithAnnotation(
                 parsedValue,
-                MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
             ) :
             parsedValue;
     }

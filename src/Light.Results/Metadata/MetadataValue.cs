@@ -132,7 +132,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <param name="annotation">The serialization annotation.</param>
     /// <returns>The metadata value.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="annotation" /> includes header serialization
+    /// Thrown when <paramref name="annotation" /> includes CloudEvents extension attribute serialization.
+    /// Also thrown when <paramref name="annotation" /> includes header serialization
     /// and <paramref name="array" /> contains non-primitive children.
     /// </exception>
     public static MetadataValue FromArray(
@@ -166,7 +167,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             );
         }
 
-        if ((annotation & MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute) != 0)
+        if ((annotation & MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes) != 0)
         {
             throw new ArgumentException(
                 "Objects cannot be serialized as CloudEvents extension attributes. Use SerializeInCloudEventData instead.",
@@ -179,6 +180,14 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
     private static void ValidateArrayAnnotation(MetadataArray array, MetadataValueAnnotation annotation)
     {
+        if ((annotation & MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes) != 0)
+        {
+            throw new ArgumentException(
+                "Arrays cannot be serialized as CloudEvents extension attributes. Use SerializeInCloudEventData instead.",
+                nameof(annotation)
+            );
+        }
+
         if (array.HasOnlyPrimitiveChildren)
         {
             return;
@@ -191,16 +200,6 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 nameof(annotation)
             );
         }
-
-        if ((annotation & MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute) == 0)
-        {
-            return;
-        }
-
-        throw new ArgumentException(
-            "Arrays containing nested arrays or objects cannot be serialized as CloudEvents extension attributes.",
-            nameof(annotation)
-        );
     }
 
     // Implicit conversions for ergonomics

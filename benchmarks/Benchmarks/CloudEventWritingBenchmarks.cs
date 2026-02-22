@@ -64,11 +64,11 @@ public class CloudEventWritingBenchmarks
         var metadataBuilder = MetadataObjectBuilder.Create();
         metadataBuilder.Add(
             "correlationId",
-            MetadataValue.FromString("corr-123", MetadataValueAnnotation.SerializeInCloudEventData)
+            MetadataValue.FromString("corr-123", MetadataValueAnnotation.SerializeInCloudEventsData)
         );
         metadataBuilder.Add(
             "traceid",
-            MetadataValue.FromString("trace-456", MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute)
+            MetadataValue.FromString("trace-456", MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes)
         );
         var metadata = metadataBuilder.Build();
 
@@ -243,7 +243,7 @@ public class CloudEventWritingBenchmarks
     {
         var metadataForData = SelectMetadataByAnnotation(
             envelope.Data.Metadata,
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
         var includeData = !envelope.Data.IsValid ||
                           (
@@ -291,7 +291,7 @@ public class CloudEventWritingBenchmarks
     {
         var metadataForData = SelectMetadataByAnnotation(
             envelope.Data.Metadata,
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
         var includeWrappedSuccess = envelope.Data.IsValid &&
                                     envelope.ResolvedOptions.MetadataSerializationMode ==
@@ -393,7 +393,7 @@ public class CloudEventWritingBenchmarks
             writer.WritePropertyName(keyValuePair.Key);
             writer.WriteMetadataValue(
                 keyValuePair.Value,
-                MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
             );
         }
     }
@@ -422,7 +422,7 @@ public class CloudEventWritingBenchmarks
         foreach (var keyValuePair in metadata)
         {
             writer.WritePropertyName(keyValuePair.Key);
-            writer.WriteMetadataValue(keyValuePair.Value, MetadataValueAnnotation.SerializeInCloudEventData);
+            writer.WriteMetadataValue(keyValuePair.Value, MetadataValueAnnotation.SerializeInCloudEventsData);
         }
 
         writer.WriteEndObject();

@@ -16,7 +16,7 @@ public sealed class DefaultCloudEventAttributeParsingService : ICloudEventAttrib
     public DefaultCloudEventAttributeParsingService(
         FrozenDictionary<string, CloudEventAttributeParser>? parsers = null,
         CloudEventAttributeConflictStrategy conflictStrategy = CloudEventAttributeConflictStrategy.Throw,
-        MetadataValueAnnotation metadataAnnotation = MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+        MetadataValueAnnotation metadataAnnotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
     )
     {
         Parsers = parsers ?? EmptyParsers;
@@ -103,7 +103,7 @@ public sealed class DefaultCloudEventAttributeParsingService : ICloudEventAttrib
 
         var defaultValue = IsPrimitive(value.Kind) ?
             MetadataValueAnnotationHelper.WithAnnotation(value, annotation) :
-            MetadataValueAnnotationHelper.WithAnnotation(value, MetadataValueAnnotation.SerializeInCloudEventData);
+            MetadataValueAnnotationHelper.WithAnnotation(value, MetadataValueAnnotation.SerializeInCloudEventsData);
         return new KeyValuePair<string, MetadataValue>(attributeName, defaultValue);
     }
 

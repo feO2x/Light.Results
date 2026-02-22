@@ -14,11 +14,11 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             MetadataValue.FromNull(MetadataValueAnnotation.SerializeInHttpResponseBody),
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         rewritten.Kind.Should().Be(MetadataKind.Null);
-        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     [Fact]
@@ -26,12 +26,12 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             MetadataValue.FromBoolean(true, MetadataValueAnnotation.SerializeInHttpResponseBody),
-            MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+            MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
         );
 
         rewritten.TryGetBoolean(out var value).Should().BeTrue();
         value.Should().BeTrue();
-        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute);
+        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes);
     }
 
     [Fact]
@@ -39,12 +39,12 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             MetadataValue.FromInt64(42, MetadataValueAnnotation.SerializeInHttpHeader),
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         rewritten.TryGetInt64(out var value).Should().BeTrue();
         value.Should().Be(42);
-        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     [Fact]
@@ -52,12 +52,12 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             MetadataValue.FromDouble(12.5, MetadataValueAnnotation.SerializeInHttpResponseBody),
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         rewritten.TryGetDouble(out var value).Should().BeTrue();
         value.Should().Be(12.5);
-        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     [Fact]
@@ -65,12 +65,12 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInHttpResponseBody),
-            MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+            MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
         );
 
         rewritten.TryGetString(out var value).Should().BeTrue();
         value.Should().Be("abc");
-        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute);
+        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes);
     }
 
     [Fact]
@@ -85,20 +85,20 @@ public sealed class MetadataValueAnnotationHelperTests
 
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             MetadataValue.FromArray(array),
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         rewritten.TryGetArray(out var rewrittenArray).Should().BeTrue();
         rewrittenArray.Count.Should().Be(3);
-        rewrittenArray[0].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        rewrittenArray[0].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
 
         rewrittenArray[1].TryGetObject(out var rewrittenObject).Should().BeTrue();
-        rewrittenObject["inner"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        rewrittenObject["inner"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
 
         rewrittenArray[2].TryGetArray(out var nestedArray).Should().BeTrue();
-        nestedArray[0].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        nestedArray[0].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
 
-        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     [Fact]
@@ -115,13 +115,13 @@ public sealed class MetadataValueAnnotationHelperTests
 
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             metadataObject,
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
-        rewritten["flag"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
-        rewritten["count"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        rewritten["flag"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
+        rewritten["count"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
         rewritten["nested"].TryGetObject(out var nested).Should().BeTrue();
-        nested["name"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+        nested["name"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
             MetadataObject.Empty,
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         rewritten.Should().Equal(MetadataObject.Empty);
@@ -142,7 +142,7 @@ public sealed class MetadataValueAnnotationHelperTests
 
         var act = () => MetadataValueAnnotationHelper.WithAnnotation(
             invalidValue,
-            MetadataValueAnnotation.SerializeInCloudEventData
+            MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
         act.Should().Throw<ArgumentOutOfRangeException>()

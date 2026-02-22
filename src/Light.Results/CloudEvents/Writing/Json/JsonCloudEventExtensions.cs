@@ -179,7 +179,7 @@ public static class JsonCloudEventExtensions
         writer.WriteStartObject();
         writer.WriteRichErrors(errors, isValidationResponse: false, serializerOptions);
         if (metadata is not null &&
-            metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInCloudEventData))
+            metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInCloudEventsData))
         {
             writer.WriteMetadataPropertyAndValue(metadata.Value, serializerOptions);
         }
@@ -205,7 +205,7 @@ public static class JsonCloudEventExtensions
             writer.WritePropertyName(keyValuePair.Key);
             writer.WriteMetadataValue(
                 keyValuePair.Value,
-                MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
             );
         }
     }
