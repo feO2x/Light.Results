@@ -4,12 +4,12 @@ using Light.Results.SharedJsonSerialization;
 namespace Light.Results.CloudEvents.Writing;
 
 /// <summary>
-/// Provides helper methods for evaluating metadata serialization behavior on CloudEvent envelopes.
+/// Provides helper methods for evaluating metadata serialization behavior on CloudEvents envelopes.
 /// </summary>
 public static class CloudEventEnvelopeForWritingExtensions
 {
     /// <summary>
-    /// Determines whether the envelope's metadata should be written into the CloudEvent <c>data</c> section
+    /// Determines whether the envelope's metadata should be written into the CloudEvents <c>data</c> section
     /// when the result is valid.
     /// </summary>
     /// <typeparam name="TEnvelope">

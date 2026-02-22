@@ -33,7 +33,7 @@ public sealed class DefaultCloudEventAttributeParsingService : ICloudEventAttrib
         );
 
     /// <summary>
-    /// Gets the parsers keyed by CloudEvent extension attribute name.
+    /// Gets the parsers keyed by CloudEvents extension attribute name.
     /// </summary>
     public FrozenDictionary<string, CloudEventAttributeParser> Parsers { get; }
 
@@ -43,7 +43,7 @@ public sealed class DefaultCloudEventAttributeParsingService : ICloudEventAttrib
     public CloudEventAttributeConflictStrategy ConflictStrategy { get; }
 
     /// <summary>
-    /// Gets the annotation applied to metadata values originating from CloudEvent extension attributes.
+    /// Gets the annotation applied to metadata values originating from CloudEvents extension attributes.
     /// </summary>
     public MetadataValueAnnotation MetadataAnnotation { get; }
 
@@ -67,7 +67,7 @@ public sealed class DefaultCloudEventAttributeParsingService : ICloudEventAttrib
                 if (ConflictStrategy == CloudEventAttributeConflictStrategy.Throw)
                 {
                     throw new InvalidOperationException(
-                        $"CloudEvent attribute '{keyValuePair.Key}' maps to metadata key '{metadataEntry.Key}', which is already present."
+                        $"CloudEvents attribute '{keyValuePair.Key}' maps to metadata key '{metadataEntry.Key}', which is already present."
                     );
                 }
 
@@ -82,7 +82,7 @@ public sealed class DefaultCloudEventAttributeParsingService : ICloudEventAttrib
     }
 
     /// <summary>
-    /// Parses a single CloudEvent extension attribute.
+    /// Parses a single CloudEvents extension attribute.
     /// </summary>
     public KeyValuePair<string, MetadataValue> ParseExtensionAttribute(
         string attributeName,

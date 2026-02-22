@@ -11,12 +11,12 @@ namespace Light.Results.CloudEvents.Reading;
 public sealed record LightResultsCloudEventReadOptions
 {
     /// <summary>
-    /// Gets the default options instance for CloudEvent deserialization.
+    /// Gets the default options instance for CloudEvents deserialization.
     /// </summary>
     public static LightResultsCloudEventReadOptions Default { get; } = new ();
 
     /// <summary>
-    /// Gets or sets serializer options used to deserialize CloudEvent envelopes and data payloads.
+    /// Gets or sets serializer options used to deserialize CloudEvents envelopes and data payloads.
     /// </summary>
     public JsonSerializerOptions SerializerOptions { get; init; } =
         Module.DefaultSerializerOptions;
@@ -27,7 +27,7 @@ public sealed record LightResultsCloudEventReadOptions
     public PreferSuccessPayload PreferSuccessPayload { get; init; } = PreferSuccessPayload.Auto;
 
     /// <summary>
-    /// Gets or sets an optional fallback callback that classifies failures based on the CloudEvent <c>type</c>.
+    /// Gets or sets an optional fallback callback that classifies failures based on the CloudEvents <c>type</c>.
     /// </summary>
     public Func<string, bool>? IsFailureType { get; init; }
 

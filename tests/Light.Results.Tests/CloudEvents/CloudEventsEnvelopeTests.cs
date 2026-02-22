@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Light.Results.Tests.CloudEvents;
 
-public sealed class CloudEventEnvelopeTests
+public sealed class CloudEventsEnvelopeTests
 {
     [Fact]
     public void CloudEventEnvelope_ShouldExposeAllConfiguredValues()
@@ -15,7 +15,7 @@ public sealed class CloudEventEnvelopeTests
         var extensionAttributes = MetadataObject.Create(("traceid", MetadataValue.FromString("abc")));
         var data = Result.Fail(new Error { Message = "failure" });
 
-        var envelope = new CloudEventEnvelope(
+        var envelope = new CloudEventsEnvelope(
             Type: "app.failure",
             Source: "urn:test:source",
             Id: "evt-1",
@@ -36,7 +36,7 @@ public sealed class CloudEventEnvelopeTests
         envelope.DataContentType.Should().Be("application/json");
         envelope.DataSchema.Should().Be("https://example.org/schema");
         envelope.ExtensionAttributes.Should().Be(extensionAttributes);
-        CloudEventEnvelope.SpecVersion.Should().Be(CloudEventConstants.SpecVersion);
+        CloudEventsEnvelope.SpecVersion.Should().Be(CloudEventsConstants.SpecVersion);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public sealed class CloudEventEnvelopeTests
         var extensionAttributes = MetadataObject.Create(("attempt", MetadataValue.FromInt64(2)));
         var data = Result<int>.Ok(42);
 
-        var envelope = new CloudEventEnvelope<int>(
+        var envelope = new CloudEventsEnvelope<int>(
             Type: "app.success",
             Source: "urn:test:source",
             Id: "evt-2",
@@ -67,6 +67,6 @@ public sealed class CloudEventEnvelopeTests
         envelope.DataContentType.Should().Be("application/json");
         envelope.DataSchema.Should().Be("https://example.org/schema");
         envelope.ExtensionAttributes.Should().Be(extensionAttributes);
-        CloudEventEnvelope<int>.SpecVersion.Should().Be(CloudEventConstants.SpecVersion);
+        CloudEventsEnvelope<int>.SpecVersion.Should().Be(CloudEventsConstants.SpecVersion);
     }
 }

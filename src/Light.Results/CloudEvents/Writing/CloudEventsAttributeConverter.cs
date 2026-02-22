@@ -6,7 +6,7 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Writing;
 
 /// <summary>
-/// Base type for converting metadata values into CloudEvent attributes.
+/// Base type for converting metadata values into CloudEvents attributes.
 /// </summary>
 public abstract class CloudEventsAttributeConverter
 {
@@ -36,11 +36,11 @@ public abstract class CloudEventsAttributeConverter
     public ImmutableArray<string> SupportedMetadataKeys { get; }
 
     /// <summary>
-    /// Converts the specified metadata value into a CloudEvent attribute key and value pair.
+    /// Converts the specified metadata value into a CloudEvents attribute key and value pair.
     /// </summary>
     /// <param name="metadataKey">The metadata key.</param>
     /// <param name="value">The metadata value.</param>
-    /// <returns>The CloudEvent attribute key and value pair.</returns>
+    /// <returns>The CloudEvents attribute key and value pair.</returns>
     public abstract KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(
         string metadataKey,
         MetadataValue value

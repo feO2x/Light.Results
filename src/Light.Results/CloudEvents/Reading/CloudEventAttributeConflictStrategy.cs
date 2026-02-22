@@ -1,7 +1,7 @@
 namespace Light.Results.CloudEvents.Reading;
 
 /// <summary>
-/// Specifies how conflicts are handled when multiple CloudEvent attributes map to the same metadata key.
+/// Specifies how conflicts are handled when multiple CloudEvents attributes map to the same metadata key.
 /// </summary>
 public enum CloudEventAttributeConflictStrategy
 {

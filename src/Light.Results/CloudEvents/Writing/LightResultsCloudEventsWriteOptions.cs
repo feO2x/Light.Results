@@ -12,7 +12,7 @@ namespace Light.Results.CloudEvents.Writing;
 public sealed record LightResultsCloudEventsWriteOptions
 {
     /// <summary>
-    /// Gets the default options instance for CloudEvent serialization.
+    /// Gets the default options instance for CloudEvents serialization.
     /// </summary>
     public static LightResultsCloudEventsWriteOptions Default { get; } = new ();
 
@@ -22,7 +22,7 @@ public sealed record LightResultsCloudEventsWriteOptions
     public string? Source { get; set; }
 
     /// <summary>
-    /// Gets or sets when result metadata should be serialized in CloudEvent data payloads.
+    /// Gets or sets when result metadata should be serialized in CloudEvents data payloads.
     /// </summary>
     public MetadataSerializationMode MetadataSerializationMode { get; set; } = MetadataSerializationMode.Always;
 
@@ -32,38 +32,38 @@ public sealed record LightResultsCloudEventsWriteOptions
     public JsonSerializerOptions SerializerOptions { get; set; } = Module.DefaultSerializerOptions;
 
     /// <summary>
-    /// Gets or sets the conversion service used to map metadata entries to CloudEvent attributes.
+    /// Gets or sets the conversion service used to map metadata entries to CloudEvents attributes.
     /// </summary>
     public ICloudEventsAttributeConversionService ConversionService { get; set; } =
         DefaultCloudEventsAttributeConversionService.Instance;
 
     /// <summary>
-    /// Gets or sets the CloudEvent type for successful results. Used by STJ converters.
+    /// Gets or sets the CloudEvents type for successful results. Used by STJ converters.
     /// </summary>
     public string? SuccessType { get; set; }
 
     /// <summary>
-    /// Gets or sets the CloudEvent type for failed results. Used by STJ converters.
+    /// Gets or sets the CloudEvents type for failed results. Used by STJ converters.
     /// </summary>
     public string? FailureType { get; set; }
 
     /// <summary>
-    /// Gets or sets the CloudEvent subject. Used by STJ converters.
+    /// Gets or sets the CloudEvents subject. Used by STJ converters.
     /// </summary>
     public string? Subject { get; set; }
 
     /// <summary>
-    /// Gets or sets the CloudEvent data schema URI. Used by STJ converters.
+    /// Gets or sets the CloudEvents data schema URI. Used by STJ converters.
     /// </summary>
     public string? DataSchema { get; set; }
 
     /// <summary>
-    /// Gets or sets the CloudEvent time. When null, UTC now is used. Used by STJ converters.
+    /// Gets or sets the CloudEvents time. When null, UTC now is used. Used by STJ converters.
     /// </summary>
     public DateTimeOffset? Time { get; set; }
 
     /// <summary>
-    /// Gets or sets a factory function to generate unique CloudEvent IDs.
+    /// Gets or sets a factory function to generate unique CloudEvents IDs.
     /// Defaults to generating a new UUIDv7 string.
     /// </summary>
     public Func<string>? IdResolver { get; set; }

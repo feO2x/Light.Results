@@ -6,12 +6,12 @@ using Light.Results.SharedJsonSerialization.Reading;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// Provides low-level JSON parsing helpers for CloudEvent envelopes.
+/// Provides low-level JSON parsing helpers for CloudEvents envelopes.
 /// </summary>
 public static class CloudEventEnvelopeJsonReader
 {
     /// <summary>
-    /// Reads a CloudEvent envelope from the current JSON token.
+    /// Reads a CloudEvents envelope from the current JSON token.
     /// </summary>
     /// <param name="reader">The JSON reader positioned at the envelope object.</param>
     /// <returns>The parsed envelope payload.</returns>
@@ -20,7 +20,7 @@ public static class CloudEventEnvelopeJsonReader
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
-            throw new JsonException("CloudEvent payload must be a JSON object.");
+            throw new JsonException("CloudEvents payload must be a JSON object.");
         }
 
         string? specVersion = null;
@@ -48,7 +48,7 @@ public static class CloudEventEnvelopeJsonReader
 
             if (reader.TokenType != JsonTokenType.PropertyName)
             {
-                throw new JsonException("Expected property name in CloudEvent envelope.");
+                throw new JsonException("Expected property name in CloudEvents envelope.");
             }
 
             if (reader.ValueTextEquals("specversion"))
@@ -78,7 +78,7 @@ public static class CloudEventEnvelopeJsonReader
                 {
                     if (!DateTimeOffset.TryParse(parsedTime, out var parsed))
                     {
-                        throw new JsonException("CloudEvent attribute 'time' must be a valid RFC 3339 timestamp.");
+                        throw new JsonException("CloudEvents attribute 'time' must be a valid RFC 3339 timestamp.");
                     }
 
                     time = parsed;
@@ -94,7 +94,7 @@ public static class CloudEventEnvelopeJsonReader
             }
             else if (reader.ValueTextEquals("data_base64"))
             {
-                throw new JsonException("CloudEvent attribute 'data_base64' is not supported by this integration.");
+                throw new JsonException("CloudEvents attribute 'data_base64' is not supported by this integration.");
             }
             else if (reader.ValueTextEquals("data"))
             {
@@ -122,7 +122,7 @@ public static class CloudEventEnvelopeJsonReader
             {
                 var extensionAttributeName = reader.GetString() ??
                                              throw new JsonException(
-                                                 "CloudEvent extension attribute names must be strings."
+                                                 "CloudEvents extension attribute names must be strings."
                                              );
                 if (!reader.Read())
                 {
@@ -136,29 +136,29 @@ public static class CloudEventEnvelopeJsonReader
 
         if (string.IsNullOrWhiteSpace(specVersion))
         {
-            throw new JsonException("CloudEvent attribute 'specversion' is required.");
+            throw new JsonException("CloudEvents attribute 'specversion' is required.");
         }
 
-        if (!string.Equals(specVersion, CloudEventConstants.SpecVersion, StringComparison.Ordinal))
+        if (!string.Equals(specVersion, CloudEventsConstants.SpecVersion, StringComparison.Ordinal))
         {
             throw new JsonException(
-                $"CloudEvent attribute 'specversion' must be '{CloudEventConstants.SpecVersion}'."
+                $"CloudEvents attribute 'specversion' must be '{CloudEventsConstants.SpecVersion}'."
             );
         }
 
         if (string.IsNullOrWhiteSpace(type))
         {
-            throw new JsonException("CloudEvent attribute 'type' is required.");
+            throw new JsonException("CloudEvents attribute 'type' is required.");
         }
 
         if (string.IsNullOrWhiteSpace(source))
         {
-            throw new JsonException("CloudEvent attribute 'source' is required.");
+            throw new JsonException("CloudEvents attribute 'source' is required.");
         }
 
         if (string.IsNullOrWhiteSpace(id))
         {
-            throw new JsonException("CloudEvent attribute 'id' is required.");
+            throw new JsonException("CloudEvents attribute 'id' is required.");
         }
 
         ValidateSource(source!);
@@ -214,7 +214,7 @@ public static class CloudEventEnvelopeJsonReader
 
         if (reader.TokenType != JsonTokenType.String)
         {
-            throw new JsonException($"CloudEvent attribute '{propertyName}' must be a string.");
+            throw new JsonException($"CloudEvents attribute '{propertyName}' must be a string.");
         }
 
         return reader.GetString() ?? string.Empty;
@@ -234,7 +234,7 @@ public static class CloudEventEnvelopeJsonReader
 
         if (reader.TokenType != JsonTokenType.String)
         {
-            throw new JsonException($"CloudEvent attribute '{propertyName}' must be a string or null.");
+            throw new JsonException($"CloudEvents attribute '{propertyName}' must be a string or null.");
         }
 
         return reader.GetString();
@@ -244,7 +244,7 @@ public static class CloudEventEnvelopeJsonReader
     {
         if (!Uri.TryCreate(source, UriKind.RelativeOrAbsolute, out _))
         {
-            throw new JsonException("CloudEvent attribute 'source' must be a valid URI-reference.");
+            throw new JsonException("CloudEvents attribute 'source' must be a valid URI-reference.");
         }
     }
 
@@ -257,7 +257,7 @@ public static class CloudEventEnvelopeJsonReader
 
         if (!Uri.TryCreate(dataSchema, UriKind.Absolute, out _))
         {
-            throw new JsonException("CloudEvent attribute 'dataschema' must be an absolute URI.");
+            throw new JsonException("CloudEvents attribute 'dataschema' must be an absolute URI.");
         }
     }
 
@@ -285,7 +285,7 @@ public static class CloudEventEnvelopeJsonReader
         }
 
         throw new JsonException(
-            "CloudEvent attribute 'datacontenttype' must be 'application/json' or a media type ending with '+json'."
+            "CloudEvents attribute 'datacontenttype' must be 'application/json' or a media type ending with '+json'."
         );
     }
 }

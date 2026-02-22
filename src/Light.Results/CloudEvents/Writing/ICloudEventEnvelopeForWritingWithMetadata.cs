@@ -12,7 +12,7 @@ public interface ICloudEventEnvelopeForWritingWithMetadata<out TResult>
     /// <summary>
     /// Gets the resolved CloudEvents write options that govern whether metadata should be serialized.
     /// </summary>
-    ResolvedCloudEventWriteOptions ResolvedOptions { get; }
+    ResolvedCloudEventsWriteOptions ResolvedOptions { get; }
 
     /// <summary>
     /// Gets the result associated with the CloudEvents payload, if any.

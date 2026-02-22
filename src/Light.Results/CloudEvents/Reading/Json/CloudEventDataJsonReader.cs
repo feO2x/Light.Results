@@ -5,7 +5,7 @@ using Light.Results.SharedJsonSerialization.Reading;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// Provides low-level JSON parsing helpers for CloudEvent <c>data</c> payloads.
+/// Provides low-level JSON parsing helpers for CloudEvents <c>data</c> payloads.
 /// </summary>
 public static class CloudEventDataJsonReader
 {
@@ -19,7 +19,7 @@ public static class CloudEventDataJsonReader
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
-            throw new JsonException("CloudEvent failure data payload must be a JSON object.");
+            throw new JsonException("CloudEvents failure data payload must be a JSON object.");
         }
 
         Errors errors = default;
@@ -35,7 +35,7 @@ public static class CloudEventDataJsonReader
 
             if (reader.TokenType != JsonTokenType.PropertyName)
             {
-                throw new JsonException("Expected property name in CloudEvent failure data payload.");
+                throw new JsonException("Expected property name in CloudEvents failure data payload.");
             }
 
             if (reader.ValueTextEquals("errors"))
@@ -78,7 +78,7 @@ public static class CloudEventDataJsonReader
 
         if (!hasErrors || errors.IsEmpty)
         {
-            throw new JsonException("CloudEvent failure data payload must contain a non-empty errors array.");
+            throw new JsonException("CloudEvents failure data payload must contain a non-empty errors array.");
         }
 
         return new CloudEventFailurePayload(errors, metadata);

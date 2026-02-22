@@ -93,7 +93,7 @@ public sealed class MetadataValueAnnotationTests
             );
 
         act.Should().Throw<ArgumentException>()
-           .WithMessage("*cannot be serialized as CloudEvent extension attributes*");
+           .WithMessage("*cannot be serialized as CloudEvents extension attributes*");
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class MetadataValueAnnotationTests
             );
 
         act.Should().Throw<ArgumentException>()
-           .WithMessage("*cannot be serialized as CloudEvent extension attributes*");
+           .WithMessage("*cannot be serialized as CloudEvents extension attributes*");
     }
 
     [Fact]

@@ -169,7 +169,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         if ((annotation & MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute) != 0)
         {
             throw new ArgumentException(
-                "Objects cannot be serialized as CloudEvent extension attributes. Use SerializeInCloudEventData instead.",
+                "Objects cannot be serialized as CloudEvents extension attributes. Use SerializeInCloudEventData instead.",
                 nameof(annotation)
             );
         }
@@ -198,7 +198,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         }
 
         throw new ArgumentException(
-            "Arrays containing nested arrays or objects cannot be serialized as CloudEvent extension attributes.",
+            "Arrays containing nested arrays or objects cannot be serialized as CloudEvents extension attributes.",
             nameof(annotation)
         );
     }

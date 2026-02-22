@@ -37,7 +37,7 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
     public FrozenDictionary<string, CloudEventsAttributeConverter> Converters { get; }
 
     /// <summary>
-    /// Converts a metadata value into a CloudEvent attribute.
+    /// Converts a metadata value into a CloudEvents attribute.
     /// </summary>
     public KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(
         string metadataKey,
@@ -64,20 +64,20 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
         if (string.IsNullOrWhiteSpace(attributeName))
         {
             throw new ArgumentException(
-                "CloudEvent attribute names must not be null or whitespace.",
+                "CloudEvents attribute names must not be null or whitespace.",
                 nameof(attributeName)
             );
         }
 
-        if (CloudEventConstants.ForbiddenConvertedAttributeNames.Contains(attributeName))
+        if (CloudEventsConstants.ForbiddenConvertedAttributeNames.Contains(attributeName))
         {
             throw new ArgumentException(
-                $"The CloudEvent attribute '{attributeName}' is reserved and cannot be set via metadata conversion.",
+                $"The CloudEvents attribute '{attributeName}' is reserved and cannot be set via metadata conversion.",
                 nameof(attributeName)
             );
         }
 
-        if (CloudEventConstants.StandardAttributeNames.Contains(attributeName))
+        if (CloudEventsConstants.StandardAttributeNames.Contains(attributeName))
         {
             return;
         }
@@ -85,7 +85,7 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
         if (!IsValidExtensionAttributeName(attributeName))
         {
             throw new ArgumentException(
-                $"The CloudEvent extension attribute '{attributeName}' is invalid. Only lowercase alphanumeric names are allowed.",
+                $"The CloudEvents extension attribute '{attributeName}' is invalid. Only lowercase alphanumeric names are allowed.",
                 nameof(attributeName)
             );
         }
@@ -106,7 +106,7 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
 
     private static void ValidateAttributeValue(string attributeName, MetadataValue value)
     {
-        if (CloudEventConstants.StandardAttributeNames.Contains(attributeName))
+        if (CloudEventsConstants.StandardAttributeNames.Contains(attributeName))
         {
             return;
         }
@@ -114,7 +114,7 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
         if (!value.Kind.IsPrimitive())
         {
             throw new ArgumentException(
-                $"The CloudEvent extension attribute '{attributeName}' must be a primitive JSON value.",
+                $"The CloudEvents extension attribute '{attributeName}' must be a primitive JSON value.",
                 nameof(value)
             );
         }

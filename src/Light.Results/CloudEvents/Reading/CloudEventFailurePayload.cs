@@ -3,7 +3,7 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Reading;
 
 /// <summary>
-/// Represents a deserialized failed CloudEvent data payload.
+/// Represents a deserialized failed CloudEvents data payload.
 /// </summary>
 public readonly struct CloudEventFailurePayload
 {

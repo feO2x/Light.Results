@@ -7,7 +7,7 @@ namespace Light.Results.CloudEvents;
 /// <summary>
 /// Holds shared CloudEvents constants used by Light.Results.
 /// </summary>
-public static class CloudEventConstants
+public static class CloudEventsConstants
 {
     /// <summary>
     /// The CloudEvents specversion written and accepted by this integration.

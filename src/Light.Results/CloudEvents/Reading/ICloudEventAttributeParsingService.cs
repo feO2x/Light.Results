@@ -4,7 +4,7 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Reading;
 
 /// <summary>
-/// Maps CloudEvent extension attributes back to Light.Results metadata values.
+/// Maps CloudEvents extension attributes back to Light.Results metadata values.
 /// </summary>
 public interface ICloudEventAttributeParsingService
 {
@@ -15,7 +15,7 @@ public interface ICloudEventAttributeParsingService
     MetadataObject? ReadExtensionMetadata(MetadataObject extensionAttributes);
 
     /// <summary>
-    /// Parses a single CloudEvent extension attribute into a metadata key and value pair.
+    /// Parses a single CloudEvents extension attribute into a metadata key and value pair.
     /// </summary>
     KeyValuePair<string, MetadataValue> ParseExtensionAttribute(
         string attributeName,

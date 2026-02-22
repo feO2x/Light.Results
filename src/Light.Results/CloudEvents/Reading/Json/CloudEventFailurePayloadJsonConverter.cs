@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// JSON converter for reading <see cref="CloudEventFailurePayload" /> from CloudEvent data payloads.
+/// JSON converter for reading <see cref="CloudEventFailurePayload" /> from CloudEvents data payloads.
 /// </summary>
 public sealed class CloudEventFailurePayloadJsonConverter : JsonConverter<CloudEventFailurePayload>
 {

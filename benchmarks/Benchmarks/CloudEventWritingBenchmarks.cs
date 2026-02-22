@@ -348,7 +348,7 @@ public class CloudEventWritingBenchmarks
         bool isSuccess
     )
     {
-        writer.WriteString("specversion", CloudEventConstants.SpecVersion);
+        writer.WriteString("specversion", CloudEventsConstants.SpecVersion);
         writer.WriteString("type", type);
         writer.WriteString("source", source);
 
@@ -368,10 +368,10 @@ public class CloudEventWritingBenchmarks
             writer.WriteString("time", time.Value);
         }
 
-        writer.WriteString(CloudEventConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
+        writer.WriteString(CloudEventsConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
         if (includeData)
         {
-            writer.WriteString("datacontenttype", CloudEventConstants.JsonContentType);
+            writer.WriteString("datacontenttype", CloudEventsConstants.JsonContentType);
         }
     }
 
@@ -384,8 +384,8 @@ public class CloudEventWritingBenchmarks
 
         foreach (var keyValuePair in extensionAttributes.Value)
         {
-            if (CloudEventConstants.StandardAttributeNames.Contains(keyValuePair.Key) ||
-                CloudEventConstants.ForbiddenConvertedAttributeNames.Contains(keyValuePair.Key))
+            if (CloudEventsConstants.StandardAttributeNames.Contains(keyValuePair.Key) ||
+                CloudEventsConstants.ForbiddenConvertedAttributeNames.Contains(keyValuePair.Key))
             {
                 continue;
             }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Light.Results.CloudEvents.Reading;
 
 /// <summary>
-/// Provides helpers for building CloudEvent extension attribute parser registries.
+/// Provides helpers for building CloudEvents extension attribute parser registries.
 /// </summary>
 public static class CloudEventAttributeParserRegistry
 {

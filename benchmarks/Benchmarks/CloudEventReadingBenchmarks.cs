@@ -101,7 +101,7 @@ public class CloudEventReadingBenchmarks
     }
 
     [Benchmark]
-    public CloudEventEnvelope<ContactDto> ReadResultWithEnvelope_SmallPayload()
+    public CloudEventsEnvelope<ContactDto> ReadResultWithEnvelope_SmallPayload()
     {
         return _smallSuccessCloudEvent.ReadResultWithCloudEventEnvelope<ContactDto>(_options);
     }

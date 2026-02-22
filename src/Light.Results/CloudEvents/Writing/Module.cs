@@ -15,7 +15,7 @@ namespace Light.Results.CloudEvents.Writing;
 public static class Module
 {
     /// <summary>
-    /// Gets the default serializer options used by Light.Results CloudEvent writing.
+    /// Gets the default serializer options used by Light.Results CloudEvents writing.
     /// </summary>
     public static JsonSerializerOptions DefaultSerializerOptions { get; } = CreateDefaultSerializerOptions();
 
@@ -30,7 +30,7 @@ public static class Module
     }
 
     /// <summary>
-    /// Registers the CloudEvent attribute conversion service and converter registry.
+    /// Registers the CloudEvents attribute conversion service and converter registry.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="metadataKeyComparer">Optional metadata key comparer.</param>
@@ -101,7 +101,7 @@ public static class Module
     }
 
     /// <summary>
-    /// Creates a default <see cref="JsonSerializerOptions" /> instance for CloudEvent writing.
+    /// Creates a default <see cref="JsonSerializerOptions" /> instance for CloudEvents writing.
     /// </summary>
     /// <returns>A new default serializer options instance.</returns>
     public static JsonSerializerOptions CreateDefaultSerializerOptions()

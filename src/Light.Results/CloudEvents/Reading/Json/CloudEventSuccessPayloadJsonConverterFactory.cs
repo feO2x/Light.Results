@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// Creates converters for generic CloudEvent success payload types.
+/// Creates converters for generic CloudEvents success payload types.
 /// </summary>
 public sealed class CloudEventSuccessPayloadJsonConverterFactory : JsonConverterFactory
 {

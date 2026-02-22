@@ -15,7 +15,7 @@ public static class JsonCloudEventExtensions
     /// Serializes the contents of a <see cref="CloudEventEnvelopeForWriting" /> into the provided
     /// <see cref="Utf8JsonWriter" /> using the supplied serializer options.
     /// </summary>
-    /// <param name="writer">The writer that receives the CloudEvent JSON.</param>
+    /// <param name="writer">The writer that receives the CloudEvents JSON.</param>
     /// <param name="envelope">The envelope whose metadata and error details will be emitted.</param>
     /// <param name="serializerOptions">The serializer options used for writing complex values.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
@@ -75,7 +75,7 @@ public static class JsonCloudEventExtensions
     /// result value and optional metadata when configured.
     /// </summary>
     /// <typeparam name="T">The type of the value contained in the envelope.</typeparam>
-    /// <param name="writer">The writer that receives the CloudEvent JSON.</param>
+    /// <param name="writer">The writer that receives the CloudEvents JSON.</param>
     /// <param name="envelope">The envelope containing the typed payload and metadata.</param>
     /// <param name="serializerOptions">The serializer options used when writing the payload.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
@@ -139,7 +139,7 @@ public static class JsonCloudEventExtensions
     {
         writer.WriteStartObject();
 
-        writer.WriteString("specversion", CloudEventConstants.SpecVersion);
+        writer.WriteString("specversion", CloudEventsConstants.SpecVersion);
         writer.WriteString("type", type);
         writer.WriteString("source", source);
 
@@ -159,11 +159,11 @@ public static class JsonCloudEventExtensions
             writer.WriteString("time", time.Value.ToString("O", CultureInfo.InvariantCulture));
         }
 
-        writer.WriteString(CloudEventConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
+        writer.WriteString(CloudEventsConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
 
         if (includeData)
         {
-            writer.WriteString("datacontenttype", CloudEventConstants.JsonContentType);
+            writer.WriteString("datacontenttype", CloudEventsConstants.JsonContentType);
         }
 
         WriteExtensionAttributes(writer, extensionAttributes);
@@ -196,8 +196,8 @@ public static class JsonCloudEventExtensions
 
         foreach (var keyValuePair in convertedAttributes.Value)
         {
-            if (CloudEventConstants.StandardAttributeNames.Contains(keyValuePair.Key) ||
-                CloudEventConstants.ForbiddenConvertedAttributeNames.Contains(keyValuePair.Key))
+            if (CloudEventsConstants.StandardAttributeNames.Contains(keyValuePair.Key) ||
+                CloudEventsConstants.ForbiddenConvertedAttributeNames.Contains(keyValuePair.Key))
             {
                 continue;
             }

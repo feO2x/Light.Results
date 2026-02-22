@@ -6,7 +6,7 @@ using Light.Results.Http.Reading.Json;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// JSON converter for reading <see cref="CloudEventWrappedSuccessPayload{T}" /> from CloudEvent data payloads.
+/// JSON converter for reading <see cref="CloudEventWrappedSuccessPayload{T}" /> from CloudEvents data payloads.
 /// </summary>
 /// <typeparam name="T">The payload value type.</typeparam>
 public sealed class CloudEventWrappedSuccessPayloadJsonConverter<T> : JsonConverter<CloudEventWrappedSuccessPayload<T>>

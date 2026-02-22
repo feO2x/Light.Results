@@ -5,7 +5,7 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Reading;
 
 /// <summary>
-/// Base type for parsing CloudEvent extension attributes into metadata values.
+/// Base type for parsing CloudEvents extension attributes into metadata values.
 /// </summary>
 public abstract class CloudEventAttributeParser
 {
@@ -13,7 +13,7 @@ public abstract class CloudEventAttributeParser
     /// Initializes a new instance of <see cref="CloudEventAttributeParser" />.
     /// </summary>
     /// <param name="metadataKey">The metadata key to use for parsed values.</param>
-    /// <param name="supportedAttributeNames">The CloudEvent extension attribute names supported by this parser.</param>
+    /// <param name="supportedAttributeNames">The CloudEvents extension attribute names supported by this parser.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="metadataKey" /> is null/whitespace or
     /// <paramref name="supportedAttributeNames" /> is default/empty.
@@ -48,7 +48,7 @@ public abstract class CloudEventAttributeParser
     public ImmutableArray<string> SupportedAttributeNames { get; }
 
     /// <summary>
-    /// Parses the specified CloudEvent extension attribute value into metadata.
+    /// Parses the specified CloudEvents extension attribute value into metadata.
     /// </summary>
     public abstract MetadataValue ParseAttribute(
         string attributeName,

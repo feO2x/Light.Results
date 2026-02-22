@@ -4,15 +4,15 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// Represents a parsed CloudEvent envelope with indicators for the Cloud Events <c>data</c> property.
+/// Represents a parsed CloudEvents envelope with indicators for the Cloud Events <c>data</c> property.
 /// </summary>
-/// <param name="Type">The CloudEvent type attribute.</param>
-/// <param name="Source">The CloudEvent source attribute.</param>
-/// <param name="Id">The CloudEvent id attribute.</param>
-/// <param name="Subject">The optional CloudEvent subject attribute.</param>
-/// <param name="Time">The optional CloudEvent time attribute.</param>
-/// <param name="DataContentType">The optional CloudEvent datacontenttype attribute.</param>
-/// <param name="DataSchema">The optional CloudEvent dataschema attribute.</param>
+/// <param name="Type">The CloudEvents type attribute.</param>
+/// <param name="Source">The CloudEvents source attribute.</param>
+/// <param name="Id">The CloudEvents id attribute.</param>
+/// <param name="Subject">The optional CloudEvents subject attribute.</param>
+/// <param name="Time">The optional CloudEvents time attribute.</param>
+/// <param name="DataContentType">The optional CloudEvents datacontenttype attribute.</param>
+/// <param name="DataSchema">The optional CloudEvents dataschema attribute.</param>
 /// <param name="ExtensionAttributes">The parsed extension attributes.</param>
 /// <param name="HasData">A value indicating whether the data property was present in the envelope.</param>
 /// <param name="IsDataNull">A value indicating whether the data property was null.</param>

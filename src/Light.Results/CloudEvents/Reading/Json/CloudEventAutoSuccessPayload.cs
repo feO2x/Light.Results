@@ -3,7 +3,7 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Reading.Json;
 
 /// <summary>
-/// Represents a deserialized successful generic CloudEvent data payload with automatic wrapper detection.
+/// Represents a deserialized successful generic CloudEvents data payload with automatic wrapper detection.
 /// </summary>
 /// <typeparam name="T">The value type.</typeparam>
 public readonly struct CloudEventAutoSuccessPayload<T>

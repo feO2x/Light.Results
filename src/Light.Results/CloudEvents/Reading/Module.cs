@@ -15,7 +15,7 @@ namespace Light.Results.CloudEvents.Reading;
 public static class Module
 {
     /// <summary>
-    /// Gets the default serializer options used by Light.Results CloudEvent reading.
+    /// Gets the default serializer options used by Light.Results CloudEvents reading.
     /// </summary>
     public static JsonSerializerOptions DefaultSerializerOptions { get; } = CreateDefaultSerializerOptions();
 
@@ -30,7 +30,7 @@ public static class Module
     }
 
     /// <summary>
-    /// Registers the CloudEvent attribute parsing service and parser registry.
+    /// Registers the CloudEvents attribute parsing service and parser registry.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="attributeNameComparer">Optional attribute name comparer.</param>
@@ -84,7 +84,7 @@ public static class Module
     }
 
     /// <summary>
-    /// Adds the default JSON converters used by Light.Results CloudEvent reading.
+    /// Adds the default JSON converters used by Light.Results CloudEvents reading.
     /// </summary>
     /// <param name="serializerOptions">The JSON serializer options to configure.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <c>null</c>.</exception>
@@ -102,7 +102,7 @@ public static class Module
     }
 
     /// <summary>
-    /// Creates a default <see cref="JsonSerializerOptions" /> instance for CloudEvent reading.
+    /// Creates a default <see cref="JsonSerializerOptions" /> instance for CloudEvents reading.
     /// </summary>
     /// <returns>A new default serializer options instance.</returns>
     public static JsonSerializerOptions CreateDefaultSerializerOptions()
