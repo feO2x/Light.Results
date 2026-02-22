@@ -2,6 +2,8 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
+using Light.Results.SharedJsonSerialization.Writing;
 
 namespace Light.Results.Http.Writing.Json;
 
