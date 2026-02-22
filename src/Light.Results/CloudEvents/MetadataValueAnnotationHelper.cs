@@ -1,3 +1,4 @@
+using System;
 using Light.Results.Metadata;
 
 namespace Light.Results.CloudEvents;
@@ -36,7 +37,7 @@ public static class MetadataValueAnnotationHelper
                 value.TryGetObject(out var objectValue);
                 return MetadataValue.FromObject(WithAnnotation(objectValue, annotation), annotation);
             default:
-                return MetadataValue.FromNull(annotation);
+                throw new ArgumentOutOfRangeException(nameof(value), value.Kind, "Unsupported metadata kind.");
         }
     }
 

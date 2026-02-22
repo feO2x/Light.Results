@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using FluentAssertions;
 using Light.Results.CloudEvents;
 using Light.Results.Metadata;
@@ -131,5 +133,41 @@ public sealed class MetadataValueAnnotationHelperTests
         );
 
         rewritten.Should().Equal(MetadataObject.Empty);
+    }
+
+    [Fact]
+    public void WithAnnotation_WithUnsupportedMetadataKind_ShouldThrowArgumentOutOfRangeException()
+    {
+        var invalidValue = CreateMetadataValueWithInvalidKind();
+
+        var act = () => MetadataValueAnnotationHelper.WithAnnotation(
+            invalidValue,
+            MetadataValueAnnotation.SerializeInCloudEventData
+        );
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+           .Which.ParamName.Should().Be("value");
+    }
+
+    private static MetadataValue CreateMetadataValueWithInvalidKind()
+    {
+        var metadataValueType = typeof(MetadataValue);
+        var metadataPayloadType = metadataValueType.Assembly.GetType(
+            "Light.Results.Metadata.MetadataPayload",
+            throwOnError: true
+        )!;
+
+        var constructor = metadataValueType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null,
+            [typeof(MetadataKind), metadataPayloadType, typeof(MetadataValueAnnotation)],
+            modifiers: null
+        )!;
+
+        var payload = Activator.CreateInstance(metadataPayloadType)!;
+
+        return (MetadataValue) constructor.Invoke(
+            [(MetadataKind) byte.MaxValue, payload, MetadataValue.DefaultAnnotation]
+        );
     }
 }
