@@ -21,6 +21,7 @@
     <File Path="ai-plans\0015-cloud-events-serialization.md" />
     <File Path="ai-plans\0015-cloud-events-write-optimization.md" />
     <File Path="ai-plans\0015-cloud-events-write-streamlining.md" />
+    <File Path="ai-plans\0015-final-code-review.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
