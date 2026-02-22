@@ -132,7 +132,7 @@ public sealed class RentedArrayBufferWriter : IBufferWriter<byte>, IRentedArray
     /// An instance of <see cref="IRentedArray" /> that lets you access the underlying array in a read-only manner and
     /// that lets you return the array to the Array Pool on disposal.
     /// </returns>
-    /// <exception cref="InvalidOperationException">Thrown when FinishWriting has already been called.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the buffer writer is already disposed.</exception>
     public IRentedArray FinishWriting()
     {
         if (_state == WriterState.Disposed)
