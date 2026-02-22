@@ -137,7 +137,7 @@ public sealed class RentedArrayBufferWriter : IBufferWriter<byte>, IRentedArray
     {
         if (_state == WriterState.Disposed)
         {
-            throw new InvalidOperationException("The PooledArray is already disposed");
+            throw new InvalidOperationException("The buffer writer is already disposed");
         }
 
         if (_state == WriterState.Writable)
@@ -152,7 +152,7 @@ public sealed class RentedArrayBufferWriter : IBufferWriter<byte>, IRentedArray
     {
         if (_state == WriterState.Disposed)
         {
-            throw new InvalidOperationException("The PooledArray is already disposed");
+            throw new InvalidOperationException("The rented array is already disposed");
         }
 
         return _buffer.AsMemory(0, _index);
@@ -163,7 +163,7 @@ public sealed class RentedArrayBufferWriter : IBufferWriter<byte>, IRentedArray
         if (_state != WriterState.Writable)
         {
             throw new InvalidOperationException(
-                $"{nameof(FinishWriting)} has already been called. You cannot use the PooledByteBufferWriter after calling {nameof(FinishWriting)}."
+                $"{nameof(FinishWriting)} has already been called. You cannot use the buffer writer after calling {nameof(FinishWriting)}."
             );
         }
     }
