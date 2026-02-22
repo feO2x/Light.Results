@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Text.Json;
 using Light.Results.Metadata;
 using Light.Results.SharedJsonSerialization.Reading;
@@ -76,7 +77,12 @@ public static class CloudEventEnvelopeJsonReader
                 var parsedTime = ReadOptionalStringValue(ref reader, "time");
                 if (!string.IsNullOrWhiteSpace(parsedTime))
                 {
-                    if (!DateTimeOffset.TryParse(parsedTime, out var parsed))
+                    if (!DateTimeOffset.TryParse(
+                            parsedTime,
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.RoundtripKind,
+                            out var parsed
+                        ))
                     {
                         throw new JsonException("CloudEvents attribute 'time' must be a valid RFC 3339 timestamp.");
                     }
