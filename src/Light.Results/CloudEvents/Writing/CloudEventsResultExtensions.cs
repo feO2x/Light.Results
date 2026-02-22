@@ -17,9 +17,15 @@ public static class CloudEventsResultExtensions
     /// <param name="result">The result to serialize.</param>
     /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
     /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
     /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
-    /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
+    /// <param name="subject">
+    /// The optional CloudEvents <c>subject</c>. We highly recommend setting this value for routing and
+    /// observability purposes.
+    /// </param>
     /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
     /// <param name="time">The CloudEvent timestamp. Defaults to <see cref="DateTimeOffset.UtcNow" /> when not provided.</param>
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
@@ -28,7 +34,7 @@ public static class CloudEventsResultExtensions
     /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
     /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
     /// neither path provides valid values. Consider explicitly setting <paramref name="id" /> and <paramref name="subject" />
-    /// to keep downstream consumers idempotent.
+    /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvent <c>type</c> or <c>source</c> cannot be resolved.</exception>
     public static byte[] ToCloudEvent(
@@ -53,30 +59,36 @@ public static class CloudEventsResultExtensions
             time,
             options
         );
-        return pooledArray.AsMemory().ToArray();
+        return pooledArray.Memory.ToArray();
     }
 
     /// <summary>
-    /// Serializes a non-generic <see cref="Result" /> into a pooled byte buffer that contains the CloudEvents JSON envelope.
+    /// Serializes a non-generic <see cref="Result" /> into a rented byte array that contains the CloudEvents JSON envelope.
     /// </summary>
     /// <param name="result">The result instance to serialize.</param>
-    /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
-    /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
-    /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
-    /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
-    /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
-    /// <param name="time">The CloudEvent timestamp. Defaults to <see cref="DateTimeOffset.UtcNow" /> when not provided.</param>
+    /// <param name="successType">Optional CloudEvents <c>type</c> to use when the result is valid.</param>
+    /// <param name="failureType">Optional CloudEvents <c>type</c> to use when the result contains failures.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
+    /// <param name="source">The CloudEvents <c>source</c> URI reference to apply.</param>
+    /// <param name="subject">
+    /// The optional CloudEvents <c>subject</c>. We highly recommend setting this value for routing and
+    /// observability purposes.
+    /// </param>
+    /// <param name="dataschema">The optional CloudEvents <c>dataschema</c> absolute URI.</param>
+    /// <param name="time">The CloudEvents timestamp. Defaults to <see cref="DateTimeOffset.UtcNow" /> when not provided.</param>
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
-    /// <returns>A <see cref="PooledArray" /> whose lifetime is owned by the caller.</returns>
+    /// <returns>An <see cref="IRentedArray" /> whose lifetime is owned by the caller.</returns>
     /// <remarks>
     /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
     /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
     /// neither path provides valid values. Consider explicitly setting <paramref name="id" /> and <paramref name="subject" />
-    /// to keep downstream consumers idempotent.
+    /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
-    /// <exception cref="InvalidOperationException">Thrown when the CloudEvent <c>type</c> or <c>source</c> cannot be resolved.</exception>
-    public static PooledArray ToCloudEventPooled(
+    /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    public static IRentedArray ToCloudEventPooled(
         this Result result,
         string? successType = null,
         string? failureType = null,
@@ -89,11 +101,19 @@ public static class CloudEventsResultExtensions
     )
     {
         options ??= LightResultsCloudEventsWriteOptions.Default;
-        var bufferWriter = new PooledByteBufferWriter(options.ArrayPool, options.PooledArrayInitialCapacity);
-        using var writer = new Utf8JsonWriter(bufferWriter);
-        result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
-        writer.Flush();
-        return bufferWriter.ToPooledArray();
+        var bufferWriter = new RentedArrayBufferWriter(options.ArrayPool, options.PooledArrayInitialCapacity);
+        try
+        {
+            using var writer = new Utf8JsonWriter(bufferWriter);
+            result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
+            writer.Flush();
+            return bufferWriter.FinishWriting();
+        }
+        catch (Exception)
+        {
+            bufferWriter.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -103,17 +123,25 @@ public static class CloudEventsResultExtensions
     /// <param name="writer">The JSON writer receiving the CloudEvent payload.</param>
     /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
     /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
     /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
-    /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
+    /// <param name="subject">
+    /// The optional CloudEvents <c>subject</c>. We highly recommend setting this value for routing and
+    /// observability purposes.
+    /// </param>
     /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
     /// <param name="time">The CloudEvent timestamp. Defaults to <see cref="DateTimeOffset.UtcNow" /> when not provided.</param>
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvent <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <remarks>
-    /// Required CloudEvents attributes (<c>type</c>, <c>source</c>) are resolved from metadata, provided arguments, or
-    /// <paramref name="options" />. Provide <paramref name="id" /> and <paramref name="subject" /> to support idempotency when possible.
+    /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
+    /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
+    /// neither path provides valid values. Consider explicitly setting <paramref name="id" /> and <paramref name="subject" />
+    /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     public static void WriteCloudEvent(
         this Result result,
@@ -154,18 +182,26 @@ public static class CloudEventsResultExtensions
     /// <param name="result">The result that provides data and metadata for the CloudEvent.</param>
     /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
     /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
     /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
-    /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
+    /// <param name="subject">
+    /// The optional CloudEvents <c>subject</c>. We highly recommend setting this value for routing and
+    /// observability purposes.
+    /// </param>
     /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
     /// <param name="time">The CloudEvent timestamp. Defaults to <see cref="DateTimeOffset.UtcNow" /> when not provided.</param>
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
     /// <returns>A fully resolved CloudEvent envelope that can be serialized without additional allocations.</returns>
     /// <remarks>
-    /// The envelope inherits required attributes from metadata, from the provided arguments, or from <paramref name="options" />.
-    /// An <see cref="InvalidOperationException" /> is thrown when the mandatory <c>type</c> or <c>source</c> attributes cannot be computed.
-    /// Setting <paramref name="id" /> and <paramref name="subject" /> is recommended for idempotent event processing.
+    /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
+    /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
+    /// neither path provides valid values. Consider explicitly setting <paramref name="id" /> and <paramref name="subject" />
+    /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
+    /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     public static CloudEventEnvelopeForWriting ToCloudEventEnvelopeForWriting(
         this Result result,
         string? successType = null,
@@ -215,9 +251,15 @@ public static class CloudEventsResultExtensions
     /// <param name="result">The result to serialize.</param>
     /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
     /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
     /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
-    /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
+    /// <param name="subject">
+    /// The optional CloudEvents <c>subject</c>. We highly recommend setting this value for routing and
+    /// observability purposes.
+    /// </param>
     /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
     /// <param name="time">The CloudEvent timestamp. Defaults to <see cref="DateTimeOffset.UtcNow" /> when not provided.</param>
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
@@ -251,7 +293,7 @@ public static class CloudEventsResultExtensions
             time,
             options
         );
-        return pooledArray.AsMemory().ToArray();
+        return pooledArray.Memory.ToArray();
     }
 
     /// <summary>
@@ -261,21 +303,27 @@ public static class CloudEventsResultExtensions
     /// <param name="result">The result to serialize.</param>
     /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
     /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
     /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
-    /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
+    /// <param name="subject">
+    /// The optional CloudEvents <c>subject</c>. We highly recommend setting this value for routing and
+    /// observability purposes.
+    /// </param>
     /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
     /// <param name="time">The CloudEvent timestamp. Defaults to <see cref="DateTimeOffset.UtcNow" /> when not provided.</param>
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
-    /// <returns>A <see cref="PooledArray" /> whose lifetime is owned by the caller.</returns>
+    /// <returns>An <see cref="IRentedArray" /> whose lifetime is owned by the caller.</returns>
     /// <remarks>
     /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
     /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
     /// neither path provides valid values. Consider explicitly setting <paramref name="id" /> and <paramref name="subject" />
-    /// to keep downstream consumers idempotent.
+    /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvent <c>type</c> or <c>source</c> cannot be resolved.</exception>
-    public static PooledArray ToCloudEventPooled<T>(
+    public static IRentedArray ToCloudEventPooled<T>(
         this Result<T> result,
         string? successType = null,
         string? failureType = null,
@@ -288,11 +336,19 @@ public static class CloudEventsResultExtensions
     )
     {
         options ??= LightResultsCloudEventsWriteOptions.Default;
-        var bufferWriter = new PooledByteBufferWriter(options.ArrayPool, options.PooledArrayInitialCapacity);
-        using var writer = new Utf8JsonWriter(bufferWriter);
-        result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
-        writer.Flush();
-        return bufferWriter.ToPooledArray();
+        var bufferWriter = new RentedArrayBufferWriter(options.ArrayPool, options.PooledArrayInitialCapacity);
+        try
+        {
+            using var writer = new Utf8JsonWriter(bufferWriter);
+            result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
+            writer.Flush();
+            return bufferWriter.FinishWriting();
+        }
+        catch (Exception)
+        {
+            bufferWriter.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -303,7 +359,10 @@ public static class CloudEventsResultExtensions
     /// <param name="writer">The JSON writer receiving the CloudEvent payload.</param>
     /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
     /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
     /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
     /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
     /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
@@ -312,8 +371,10 @@ public static class CloudEventsResultExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvent <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <remarks>
-    /// Required CloudEvents attributes (<c>type</c>, <c>source</c>) are resolved from metadata, provided arguments, or
-    /// <paramref name="options" />. Provide <paramref name="id" /> and <paramref name="subject" /> to support idempotency when possible.
+    /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
+    /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
+    /// neither path provides valid values. Consider explicitly setting <paramref name="id" /> and <paramref name="subject" />
+    /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     public static void WriteCloudEvent<T>(
         this Result<T> result,
@@ -355,7 +416,10 @@ public static class CloudEventsResultExtensions
     /// <param name="result">The result that provides data and metadata for the CloudEvent.</param>
     /// <param name="successType">Optional CloudEvent <c>type</c> to use when the result is valid.</param>
     /// <param name="failureType">Optional CloudEvent <c>type</c> to use when the result contains failures.</param>
-    /// <param name="id">An explicit CloudEvent <c>id</c>; generated when omitted.</param>
+    /// <param name="id">
+    /// An explicit CloudEvent <c>id</c>; generated when omitted. We highly recommend setting this value for idempotent
+    /// event processing. If you do not set this value, a new ID will be generated on each call.
+    /// </param>
     /// <param name="source">The CloudEvent <c>source</c> URI reference to apply.</param>
     /// <param name="subject">The optional CloudEvent <c>subject</c>.</param>
     /// <param name="dataschema">The optional CloudEvent <c>dataschema</c> absolute URI.</param>
@@ -363,10 +427,12 @@ public static class CloudEventsResultExtensions
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
     /// <returns>A fully resolved CloudEvent envelope that can be serialized without additional allocations.</returns>
     /// <remarks>
-    /// The envelope inherits required attributes from metadata, from the provided arguments, or from <paramref name="options" />.
-    /// An <see cref="InvalidOperationException" /> is thrown when the mandatory <c>type</c> or <c>source</c> attributes cannot be computed.
-    /// Setting <paramref name="id" /> and <paramref name="subject" /> is recommended for idempotent event processing.
+    /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
+    /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
+    /// neither path provides valid values. Consider explicitly setting <paramref name="id" /> and <paramref name="subject" />
+    /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
+    /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     public static CloudEventEnvelopeForWriting<T> ToCloudEventEnvelopeForWriting<T>(
         this Result<T> result,
         string? successType = null,
@@ -550,7 +616,7 @@ public static class CloudEventsResultExtensions
             ))
         {
             throw new ArgumentException(
-                $"CloudEvent attribute '{attributeName}' has an invalid RFC 3339 timestamp value.",
+                $"CloudEvents attribute '{attributeName}' has an invalid RFC 3339 timestamp value.",
                 attributeName
             );
         }
@@ -563,7 +629,7 @@ public static class CloudEventsResultExtensions
         if (!Uri.TryCreate(source, UriKind.RelativeOrAbsolute, out _))
         {
             throw new ArgumentException(
-                "CloudEvent attribute 'source' must be a valid URI-reference.",
+                "CloudEvents attribute 'source' must be a valid URI-reference.",
                 nameof(source)
             );
         }
@@ -579,7 +645,7 @@ public static class CloudEventsResultExtensions
         if (!Uri.TryCreate(dataSchema, UriKind.Absolute, out _))
         {
             throw new ArgumentException(
-                "CloudEvent attribute 'dataschema' must be an absolute URI.",
+                "CloudEvents attribute 'dataschema' must be an absolute URI.",
                 nameof(dataSchema)
             );
         }

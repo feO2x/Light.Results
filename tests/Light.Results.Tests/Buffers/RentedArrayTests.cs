@@ -7,26 +7,26 @@ using Xunit;
 
 namespace Light.Results.Tests.Buffers;
 
-public sealed class PooledArrayTests
+public sealed class RentedArrayTests
 {
     [Fact]
-    public void AsMemory_ShouldReturnRequestedLength()
+    public void Memory_ShouldReturnRequestedLength()
     {
         var pool = new TrackingByteArrayPool();
-        using var pooledArray = CreatePooledArrayWithLength(pool, 3, 1, 2, 3, 4, 5);
+        using var pooledArray = CreateRentedArrayWithLength(pool, 3, 1, 2, 3, 4, 5);
 
-        var memory = pooledArray.AsMemory();
+        var memory = pooledArray.Memory;
 
         memory.ToArray().Should().Equal(1, 2, 3);
     }
 
     [Fact]
-    public void AsSpan_ShouldReturnRequestedLength()
+    public void Span_ShouldReturnRequestedLength()
     {
         var pool = new TrackingByteArrayPool();
         using var pooledArray = CreatePooledArray(pool, 1, 2, 3, 4, 5);
 
-        var span = pooledArray.AsSpan();
+        var span = pooledArray.Span;
 
         span.ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
@@ -45,7 +45,7 @@ public sealed class PooledArrayTests
     }
 
     [Fact]
-    public void Dispose_WhenStructCopied_ShouldReturnArrayToPoolOnlyOnce()
+    public void Dispose_WhenCalledMultipleTimes_ShouldReturnArrayToPoolOnlyOnce()
     {
         var pool = new TrackingByteArrayPool();
         var pooledArray = CreatePooledArray(pool, 10, 20, 30);
@@ -59,27 +59,27 @@ public sealed class PooledArrayTests
     }
 
     [Fact]
-    public void AsMemory_AfterDispose_ShouldThrowInvalidOperationException()
+    public void Memory_AfterDispose_ShouldThrowInvalidOperationException()
     {
         var pool = new TrackingByteArrayPool();
         var pooledArray = CreatePooledArray(pool, 1, 2);
         pooledArray.Dispose();
 
-        var act = () => _ = pooledArray.AsMemory();
+        var act = () => _ = pooledArray.Memory;
 
         act.Should().Throw<InvalidOperationException>()
            .WithMessage("*already disposed*");
     }
 
-    private static PooledArray CreatePooledArray(ArrayPool<byte> pool, params byte[] bytes)
-        => CreatePooledArrayWithLength(pool, bytes.Length, bytes);
+    private static IRentedArray CreatePooledArray(ArrayPool<byte> pool, params byte[] bytes) =>
+        CreateRentedArrayWithLength(pool, bytes.Length, bytes);
 
-    private static PooledArray CreatePooledArrayWithLength(ArrayPool<byte> pool, int length, params byte[] bytes)
+    private static IRentedArray CreateRentedArrayWithLength(ArrayPool<byte> pool, int length, params byte[] bytes)
     {
-        var writer = new PooledByteBufferWriter(pool, bytes.Length);
+        var writer = new RentedArrayBufferWriter(pool, bytes.Length);
         bytes.CopyTo(writer.GetSpan(bytes.Length));
         writer.Advance(length);
-        return writer.ToPooledArray();
+        return writer.FinishWriting();
     }
 
     private sealed class TrackingByteArrayPool : ArrayPool<byte>

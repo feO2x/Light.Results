@@ -75,7 +75,7 @@ public sealed record LightResultsCloudEventsWriteOptions
 
     /// <summary>
     /// Gets or sets the initial array capacity used for writing CloudEvents. The default is 2048 bytes,
-    /// see <see cref="Buffers.PooledByteBufferWriter.DefaultInitialCapacity" />.
+    /// see <see cref="RentedArrayBufferWriter.DefaultInitialCapacity" />.
     /// </summary>
-    public int PooledArrayInitialCapacity { get; set; } = PooledByteBufferWriter.DefaultInitialCapacity;
+    public int PooledArrayInitialCapacity { get; set; } = RentedArrayBufferWriter.DefaultInitialCapacity;
 }
