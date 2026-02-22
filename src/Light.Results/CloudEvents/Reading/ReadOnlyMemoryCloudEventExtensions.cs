@@ -27,9 +27,9 @@ public static class ReadOnlyMemoryCloudEventExtensions
         LightResultsCloudEventReadOptions? options = null
     )
     {
-        var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
-        var envelope = cloudEvent.ReadResultWithCloudEventEnvelope(readOptions);
-        return MergeEnvelopeMetadataIfNeeded(envelope.Data, envelope.ExtensionAttributes, readOptions);
+        options ??= LightResultsCloudEventReadOptions.Default;
+        var envelope = cloudEvent.ReadResultWithCloudEventEnvelope(options);
+        return MergeEnvelopeMetadataIfNeeded(envelope.Data, envelope.ExtensionAttributes, options);
     }
 
     /// <summary>
@@ -49,9 +49,9 @@ public static class ReadOnlyMemoryCloudEventExtensions
         LightResultsCloudEventReadOptions? options = null
     )
     {
-        var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
-        var envelope = cloudEvent.ReadResultWithCloudEventEnvelope<T>(readOptions);
-        return MergeEnvelopeMetadataIfNeeded(envelope.Data, envelope.ExtensionAttributes, readOptions);
+        options ??= LightResultsCloudEventReadOptions.Default;
+        var envelope = cloudEvent.ReadResultWithCloudEventEnvelope<T>(options);
+        return MergeEnvelopeMetadataIfNeeded(envelope.Data, envelope.ExtensionAttributes, options);
     }
 
     /// <summary>
@@ -70,18 +70,18 @@ public static class ReadOnlyMemoryCloudEventExtensions
         LightResultsCloudEventReadOptions? options = null
     )
     {
-        var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
+        options ??= LightResultsCloudEventReadOptions.Default;
         var parsedEnvelope = JsonSerializer.Deserialize<CloudEventEnvelopePayload>(
             cloudEvent.Span,
-            readOptions.SerializerOptions
+            options.SerializerOptions
         );
-        var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
+        var isFailure = DetermineIsFailure(parsedEnvelope, options);
 
         var dataSegment = parsedEnvelope is { HasData: true, IsDataNull: false } ?
             cloudEvent.Slice(parsedEnvelope.DataStart, parsedEnvelope.DataLength) :
             ReadOnlyMemory<byte>.Empty;
 
-        var result = ParseResultPayload(dataSegment, isFailure, readOptions);
+        var result = ParseResultPayload(dataSegment, isFailure, options);
 
         return new CloudEventEnvelope(
             parsedEnvelope.Type,
@@ -113,18 +113,18 @@ public static class ReadOnlyMemoryCloudEventExtensions
         LightResultsCloudEventReadOptions? options = null
     )
     {
-        var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
+        options ??= LightResultsCloudEventReadOptions.Default;
         var parsedEnvelope = JsonSerializer.Deserialize<CloudEventEnvelopePayload>(
             cloudEvent.Span,
-            readOptions.SerializerOptions
+            options.SerializerOptions
         );
-        var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
+        var isFailure = DetermineIsFailure(parsedEnvelope, options);
 
-        var dataSegment = parsedEnvelope.HasData && !parsedEnvelope.IsDataNull ?
+        var dataSegment = parsedEnvelope is { HasData: true, IsDataNull: false } ?
             cloudEvent.Slice(parsedEnvelope.DataStart, parsedEnvelope.DataLength) :
             ReadOnlyMemory<byte>.Empty;
 
-        var result = ParseGenericResultPayload<T>(dataSegment, parsedEnvelope.HasData, isFailure, readOptions);
+        var result = ParseGenericResultPayload<T>(dataSegment, parsedEnvelope.HasData, isFailure, options);
 
         return new CloudEventEnvelope<T>(
             parsedEnvelope.Type,
