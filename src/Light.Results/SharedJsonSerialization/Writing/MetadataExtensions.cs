@@ -48,7 +48,7 @@ public static class MetadataExtensions
     /// Writes the JSON representation for the specified metadata value.
     /// </summary>
     /// <param name="writer">The System.Text.Json writer instance which writes the target JSON document.</param>
-    /// <param name="value">The metadata value to be writter.</param>
+    /// <param name="value">The metadata value to be written.</param>
     /// <param name="requiredAnnotation">
     /// The annotation that must be present on complex child values so that they are included in the JSON document.
     /// </param>
