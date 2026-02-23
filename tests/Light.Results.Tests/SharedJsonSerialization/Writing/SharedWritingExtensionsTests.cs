@@ -137,6 +137,32 @@ public sealed class SharedWritingExtensionsTests
     }
 
     [Fact]
+    public void WriteRichErrors_ShouldThrow_WhenWriterIsNull()
+    {
+        var errors = new Errors(new Error { Message = "Foo" });
+        var options = new JsonSerializerOptions { TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+
+        var act = () => ErrorsExtensions.WriteRichErrors(null!, errors, false, options);
+
+        act.Should().Throw<ArgumentNullException>()
+           .WithParameterName("writer");
+    }
+
+    [Fact]
+    public void WriteRichErrors_ShouldThrow_WhenSerializerOptionsIsNull()
+    {
+        var errors = new Errors(new Error { Message = "Foo" });
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+
+        // ReSharper disable once AccessToDisposedClosure - act is called before disposal
+        var act = () => writer.WriteRichErrors(errors, false, null!);
+
+        act.Should().Throw<ArgumentNullException>()
+           .WithParameterName("serializerOptions");
+    }
+
+    [Fact]
     public void GetNormalizedTargetForValidationResponse_ShouldThrow_WhenTargetIsNull()
     {
         var error = new Error { Message = "invalid", Target = null };

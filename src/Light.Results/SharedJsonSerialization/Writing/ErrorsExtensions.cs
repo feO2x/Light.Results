@@ -27,6 +27,16 @@ public static class ErrorsExtensions
         JsonSerializerOptions serializerOptions
     )
     {
+        if (writer is null)
+        {
+            throw new ArgumentNullException(nameof(writer));
+        }
+
+        if (serializerOptions is null)
+        {
+            throw new ArgumentNullException(nameof(serializerOptions));
+        }
+
         writer.WritePropertyName("errors");
         writer.WriteStartArray();
 
