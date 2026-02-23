@@ -2,6 +2,8 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
+using Light.Results.SharedJsonSerialization.Writing;
 
 namespace Light.Results.Http.Writing.Json;
 
@@ -21,9 +23,7 @@ public sealed class HttpWriteResultJsonConverter : JsonConverter<Result>
     public HttpWriteResultJsonConverter(LightResultsHttpWriteOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
-    /// <summary>
-    /// Throws a <see cref="NotSupportedException" /> because this converter only supports writing.
-    /// </summary>
+    /// <inheritdoc />
     public override Result Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
         throw new NotSupportedException(
             $"{nameof(HttpWriteResultJsonConverter)} supports serialization only. Use a deserialization converter for reading."
@@ -103,9 +103,7 @@ public sealed class HttpWriteResultJsonConverter<T> : JsonConverter<Result<T>>
     public HttpWriteResultJsonConverter(LightResultsHttpWriteOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
-    /// <summary>
-    /// Throws a <see cref="NotSupportedException" /> because this converter only supports writing.
-    /// </summary>
+    /// <inheritdoc />
     public override Result<T> Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,

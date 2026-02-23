@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'/>
+    <title>Benchmarks.CloudEventReadingBenchmarks-20260215-081809</title>
+
+    <style type="text/css">
+        table {
+            border-collapse: collapse;
+            display: block;
+            width: 100%;
+            overflow: auto;
+        }
+
+        td, th {
+            padding: 6px 13px;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+
+        tr {
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Linux Ubuntu 24.04.4 LTS (Noble Numbat)
+AMD Ryzen 9 5950X 3.40GHz, 1 CPU, 32 logical and 16 physical cores
+.NET SDK 10.0.103
+  [Host]     : .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+  DefaultJob : .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+    <thead>
+    <tr>
+        <th>Method</th>
+        <th>Mean</th>
+        <th>Error</th>
+        <th>StdDev</th>
+        <th>Ratio</th>
+        <th>RatioSD</th>
+        <th>Gen0</th>
+        <th>Gen1</th>
+        <th>Allocated</th>
+        <th>Alloc Ratio</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>ReadResult_SmallPayload</td>
+        <td>1.357 &mu;s</td>
+        <td>0.0132 &mu;s</td>
+        <td>0.0117 &mu;s</td>
+        <td>1.00</td>
+        <td>0.01</td>
+        <td>0.0286</td>
+        <td>-</td>
+        <td>504 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>ReadResult_MediumPayload</td>
+        <td>8.146 &mu;s</td>
+        <td>0.1039 &mu;s</td>
+        <td>0.0972 &mu;s</td>
+        <td>6.00</td>
+        <td>0.09</td>
+        <td>0.3204</td>
+        <td>-</td>
+        <td>5416 B</td>
+        <td>10.75</td>
+    </tr>
+    <tr>
+        <td>ReadResult_LargePayload</td>
+        <td>74.760 &mu;s</td>
+        <td>1.4771 &mu;s</td>
+        <td>1.9207 &mu;s</td>
+        <td>55.08</td>
+        <td>1.46</td>
+        <td>3.0518</td>
+        <td>0.8545</td>
+        <td>52000 B</td>
+        <td>103.17</td>
+    </tr>
+    <tr>
+        <td>ReadResult_Failure</td>
+        <td>1.384 &mu;s</td>
+        <td>0.0143 &mu;s</td>
+        <td>0.0120 &mu;s</td>
+        <td>1.02</td>
+        <td>0.01</td>
+        <td>0.0572</td>
+        <td>-</td>
+        <td>960 B</td>
+        <td>1.90</td>
+    </tr>
+    <tr>
+        <td>ReadResultWithEnvelope_SmallPayload</td>
+        <td>1.382 &mu;s</td>
+        <td>0.0108 &mu;s</td>
+        <td>0.0096 &mu;s</td>
+        <td>1.02</td>
+        <td>0.01</td>
+        <td>0.0286</td>
+        <td>-</td>
+        <td>504 B</td>
+        <td>1.00</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

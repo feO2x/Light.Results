@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization.Reading;
 
 namespace Light.Results.Http.Reading.Json;
 
@@ -392,93 +393,12 @@ public static class ResultJsonReader
 
     private static void ReadRichErrors(ref Utf8JsonReader reader, List<ErrorBuilder> errors)
     {
-        while (reader.Read())
+        var parsedErrors = SharedResultJsonReader.ReadRichErrors(ref reader);
+        for (var i = 0; i < parsedErrors.Count; i++)
         {
-            if (reader.TokenType == JsonTokenType.EndArray)
-            {
-                break;
-            }
-
-            if (reader.TokenType != JsonTokenType.StartObject)
-            {
-                throw new JsonException("Each error must be a JSON object.");
-            }
-
-            var error = ReadRichErrorObject(ref reader);
-            errors.Add(error);
+            var error = parsedErrors[i];
+            errors.Add(new ErrorBuilder(error.Message, error.Code, error.Target, error.Category, error.Metadata));
         }
-    }
-
-    private static ErrorBuilder ReadRichErrorObject(ref Utf8JsonReader reader)
-    {
-        string? message = null;
-        string? code = null;
-        string? target = null;
-        var category = ErrorCategory.Unclassified;
-        MetadataObject? metadata = null;
-
-        while (reader.Read())
-        {
-            if (reader.TokenType == JsonTokenType.EndObject)
-            {
-                break;
-            }
-
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw new JsonException("Expected property name in error object.");
-            }
-
-            if (reader.ValueTextEquals("message"))
-            {
-                message = ReadStringValue(ref reader);
-            }
-            else if (reader.ValueTextEquals("code"))
-            {
-                code = ReadOptionalStringValue(ref reader);
-            }
-            else if (reader.ValueTextEquals("target"))
-            {
-                target = ReadOptionalStringValue(ref reader);
-            }
-            else if (reader.ValueTextEquals("category"))
-            {
-                var categoryString = ReadOptionalStringValue(ref reader);
-                if (!string.IsNullOrWhiteSpace(categoryString) &&
-                    !Enum.TryParse(categoryString, ignoreCase: true, out category))
-                {
-                    throw new JsonException($"Unknown error category '{categoryString}'.");
-                }
-            }
-            else if (reader.ValueTextEquals("metadata"))
-            {
-                if (!reader.Read())
-                {
-                    throw new JsonException("Unexpected end of JSON while reading error metadata.");
-                }
-
-                metadata = reader.TokenType == JsonTokenType.Null ?
-                    null :
-                    MetadataJsonReader.ReadMetadataObject(ref reader);
-            }
-            else
-            {
-                if (!reader.Read())
-                {
-                    throw new JsonException("Unexpected end of JSON while skipping error property.");
-                }
-
-                reader.Skip();
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            throw new JsonException("Error objects must include a message.");
-        }
-
-        var messageValue = message!;
-        return new ErrorBuilder(messageValue, code, target, category, metadata);
     }
 
     private static void ReadAspNetErrors(

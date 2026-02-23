@@ -44,7 +44,7 @@ public sealed class MetadataValueAnnotationTests
     {
         var value = MetadataValue.FromDecimal(123.45m);
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Fact]
@@ -81,6 +81,51 @@ public sealed class MetadataValueAnnotationTests
     }
 
     [Fact]
+    public void FromArray_WithNestedArray_ThrowsOnCloudEventsExtensionAnnotation()
+    {
+        var innerArray = MetadataArray.Create(1, 2);
+        var outerArray = MetadataArray.Create(innerArray);
+
+        var act = () =>
+            MetadataValue.FromArray(
+                outerArray,
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            );
+
+        act.Should().Throw<ArgumentException>()
+           .WithMessage("*cannot be serialized as CloudEvents extension attributes*");
+    }
+
+    [Fact]
+    public void FromArray_WithPrimitiveValues_ThrowsOnCloudEventsExtensionAnnotation()
+    {
+        var array = MetadataArray.Create(1, 2, 3);
+
+        var act = () =>
+            MetadataValue.FromArray(
+                array,
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            );
+
+        act.Should().Throw<ArgumentException>()
+           .WithMessage("*cannot be serialized as CloudEvents extension attributes*");
+    }
+
+    [Fact]
+    public void FromArray_WithNestedArray_AllowsCloudEventsDataAnnotation()
+    {
+        var innerArray = MetadataArray.Create(1, 2);
+        var outerArray = MetadataArray.Create(innerArray);
+
+        var value = MetadataValue.FromArray(
+            outerArray,
+            MetadataValueAnnotation.SerializeInCloudEventsData
+        );
+
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
+    }
+
+    [Fact]
     public void FromObject_ThrowsOnHeaderAnnotation()
     {
         var obj = MetadataObject.Create(("key", "value"));
@@ -92,12 +137,27 @@ public sealed class MetadataValueAnnotationTests
     }
 
     [Fact]
+    public void FromObject_ThrowsOnCloudEventsExtensionAnnotation()
+    {
+        var obj = MetadataObject.Create(("key", "value"));
+
+        var act = () =>
+            MetadataValue.FromObject(
+                obj,
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            );
+
+        act.Should().Throw<ArgumentException>()
+           .WithMessage("*cannot be serialized as CloudEvents extension attributes*");
+    }
+
+    [Fact]
     public void FromObject_AllowsBodyAnnotation()
     {
         var obj = MetadataObject.Create(("key", "value"));
         var value = MetadataValue.FromObject(obj);
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Fact]
@@ -105,7 +165,7 @@ public sealed class MetadataValueAnnotationTests
     {
         MetadataValue value = "test";
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Fact]
@@ -113,7 +173,7 @@ public sealed class MetadataValueAnnotationTests
     {
         var value = MetadataValue.FromString("test");
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Theory]
