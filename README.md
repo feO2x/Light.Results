@@ -9,14 +9,14 @@ with integrations for ASP.NET Core Minimal APIs and MVC, `HttpResponseMessage`, 
 
 ## ✨ Key Features
 
-- 🧱 **Simple result model** — a `Result` / `Result<T>` is either a success value or one or more errors.
-- 📝 **Structured errors** — errors can include message, code, target, category, and metadata.
-- 🗂️ **Serializable metadata system** — metadata uses dedicated JSON-like types (instead of `Dictionary<string, object>`) so results stay reliably serializable.
-- 🔁 **Functional helpers included** — common operations like `Map`, `Bind`, `Match`, and `Tap` are built in.
-- 🌐 **HTTP support** — results can be serialized/deserialized for HTTP, including RFC-9457 / RFC-7807 Problem Details style payloads.
-- ☁️ **CloudEvents JSON support** — results can be read/written for asynchronous messaging scenarios with CloudEvents Spec 1.0.
-- 🧩 **ASP.NET Core integration** — dedicated packages for Minimal APIs and MVC allow you to easily transform `Result` / `Result<T>` to HTTP responses, supporting RFC-9457 / RFC-7807 Problem Details.
-- ⚡ **Performance-oriented** — designed for minimal overhead using fast conversions and minimal allocations to reduce GC pressure.
+- 🧱 **Zero-boilerplate result model** — `Result` / `Result<T>` is either a success value or one or more structured errors. No exceptions for expected failures.
+- 📝 **Rich, machine-readable errors** — every `Error` carries a human-readable `Message`, stable `Code`, input `Target`, and `Category` — ready for API contracts and frontend mapping.
+- 🗂️ **Serialize-safe metadata** — metadata uses dedicated JSON-like types instead of `Dictionary<string, object>`, so results serialize reliably across any protocol.
+- 🔁 **Full functional operator suite** — `Map`, `Bind`, `Match`, `Ensure`, `Tap`, `Switch`, and their `Async` variants let you build clean, chainable pipelines.
+- 🌐 **HTTP-native** — serialize results as RFC-9457 Problem Details and deserialize `HttpResponseMessage` back into typed `Result<T>`, round-trip included.
+- ☁️ **CloudEvents JSON support** — publish and consume results as CloudEvents Spec 1.0 payloads for reliable async messaging.
+- 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping.
+- ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, and fast paths keep GC pressure near zero even at high throughput.
 
 ## 📦 Installation
 
