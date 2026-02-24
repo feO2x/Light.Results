@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -37,7 +38,7 @@ public sealed class LightActionResult : BaseLightActionResult<Result>
     /// <param name="httpContext">The current HTTP context.</param>
     /// <param name="resolvedOptions">The frozen options for this request.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    protected override async Task WriteBodyAsync(
+    protected override Task WriteBodyAsync(
         Result enrichedResult,
         HttpContext httpContext,
         ResolvedHttpWriteOptions resolvedOptions
@@ -46,11 +47,18 @@ public sealed class LightActionResult : BaseLightActionResult<Result>
         var serializerOptions = httpContext.RequestServices.ResolveMvcJsonSerializerOptions(SerializerOptions);
         var wrapper = enrichedResult.ToHttpResultForWriting(resolvedOptions);
 
-        var typeInfo = (JsonTypeInfo<HttpResultForWriting>) serializerOptions.GetTypeInfo(typeof(HttpResultForWriting));
-        await JsonSerializer.SerializeAsync(
+        var typeInfo = serializerOptions.GetTypeInfo(typeof(HttpResultForWriting));
+        if (typeInfo is not JsonTypeInfo<HttpResultForWriting> castTypeInfo)
+        {
+            throw new InvalidOperationException(
+                "Could not resolve 'JsonTypeInfo<HttpResultForWriting>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
+            );
+        }
+
+        return JsonSerializer.SerializeAsync(
             httpContext.Response.BodyWriter,
             wrapper,
-            typeInfo,
+            castTypeInfo,
             httpContext.RequestAborted
         );
     }
@@ -95,12 +103,18 @@ public sealed class LightActionResult<T> : BaseLightActionResult<Result<T>>
         var serializerOptions = httpContext.RequestServices.ResolveMvcJsonSerializerOptions(SerializerOptions);
         var wrapper = enrichedResult.ToHttpResultForWriting(resolvedOptions);
 
-        var typeInfo =
-            (JsonTypeInfo<HttpResultForWriting<T>>) serializerOptions.GetTypeInfo(typeof(HttpResultForWriting<T>));
+        var typeInfo = serializerOptions.GetTypeInfo(typeof(HttpResultForWriting<T>));
+        if (typeInfo is not JsonTypeInfo<HttpResultForWriting<T>> castTypeInfo)
+        {
+            throw new InvalidOperationException(
+                $"Could not resolve 'JsonTypeInfo<HttpResultForWriting<{nameof(T)}>>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
+            );
+        }
+
         await JsonSerializer.SerializeAsync(
             httpContext.Response.BodyWriter,
             wrapper,
-            typeInfo,
+            castTypeInfo,
             httpContext.RequestAborted
         );
     }

@@ -69,10 +69,16 @@ public static class ErrorsExtensions
 
             if (error.Metadata.HasValue)
             {
-                var metadataTypeInfo =
-                    (JsonTypeInfo<MetadataObject>) serializerOptions.GetTypeInfo(typeof(MetadataObject));
+                var metadataTypeInfo = serializerOptions.GetTypeInfo(typeof(MetadataObject));
+                if (metadataTypeInfo is not JsonTypeInfo<MetadataObject> castTypeInfo)
+                {
+                    throw new InvalidOperationException(
+                        "Could not resolve 'JsonTypeInfo<MetadataObject>'. Please ensure that your JsonSerializerOptions are configured correctly."
+                    );
+                }
+
                 writer.WritePropertyName("metadata");
-                JsonSerializer.Serialize(writer, error.Metadata.Value, metadataTypeInfo);
+                JsonSerializer.Serialize(writer, error.Metadata.Value, castTypeInfo);
             }
 
             writer.WriteEndObject();

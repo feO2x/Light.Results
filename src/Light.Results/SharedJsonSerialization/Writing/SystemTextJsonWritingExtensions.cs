@@ -68,6 +68,13 @@ public static class SystemTextJsonWritingExtensions
         }
 
         var valueTypeInfo = options.GetTypeInfo(typeof(T));
+        if (valueTypeInfo is null)
+        {
+            throw new InvalidOperationException(
+                $"Could not find JsonTypeInfo for type '{nameof(T)}'. Please ensure that your JsonSerializerOptions are configured correctly."
+            );
+        }
+
         var runtimeType = value.GetType();
         if (valueTypeInfo.ShouldUseWith(runtimeType))
         {
