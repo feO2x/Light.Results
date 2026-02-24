@@ -380,3 +380,147 @@ consumer.ReceivedAsync += async (_, eventArgs) =>
 
 await channel.BasicConsumeAsync(queue: "users.updated", autoAck: false, consumer: consumer);
 ```
+
+## ⚙️ Configuration
+
+### HTTP write options (`LightResultsHttpWriteOptions`)
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `ValidationProblemSerializationFormat` | `AspNetCoreCompatible` | Controls how validation errors are serialized for HTTP 400/422 responses. Defaults to `AspNetCoreCompatible` for backwards-compatibility, we encourage you to use `Rich`. |
+| `MetadataSerializationMode` | `ErrorsOnly` | Controls whether metadata is serialized in response bodies (`ErrorsOnly` or `Always`). |
+| `CreateProblemDetailsInfo` | `null` | Optional custom factory for generating Problem Details fields (`type`, `title`, `detail`, etc.). |
+| `FirstErrorCategoryIsLeadingCategory` | `true` | If `true`, the first error category decides the HTTP status code for failures. If `false`, Light.Results checks if all errors have the same category and chooses `Unclassified` when they differ. |
+
+### HTTP read options (`LightResultsHttpReadOptions`)
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `HeaderParsingService` | `ParseNoHttpHeadersService.Instance` | Controls how HTTP headers are converted into metadata (default: skip all headers). |
+| `MergeStrategy` | `AddOrReplace` | Strategy used when merging metadata with the same key from headers and body. |
+| `PreferSuccessPayload` | `Auto` | How to interpret successful payloads (`Auto`, `BareValue`, `WrappedValue`). |
+| `TreatProblemDetailsAsFailure` | `true` | If `true`, `application/problem+json` is treated as failure even for 2xx status codes. |
+| `SerializerOptions` | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options used for deserialization. |
+
+### CloudEvents write options (`LightResultsCloudEventsWriteOptions`)
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `Source` | `null` | Default CloudEvents `source` URI reference if not set per call. |
+| `MetadataSerializationMode` | `Always` | Controls whether metadata is serialized into CloudEvents `data`. |
+| `SerializerOptions` | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options used for deserialization. |
+| `ConversionService` | `DefaultCloudEventsAttributeConversionService.Instance` | Converts metadata entries into CloudEvents extension attributes. |
+| `SuccessType` | `null` | Default CloudEvents `type` for successful results. |
+| `FailureType` | `null` | Default CloudEvents `type` for failed results. |
+| `Subject` | `null` | Default CloudEvents `subject`. |
+| `DataSchema` | `null` | Default CloudEvents `dataschema` URI. |
+| `Time` | `null` | Default CloudEvents `time` value (`UTC now` is used when omitted). |
+| `IdResolver` | `null` | Optional function used to generate CloudEvents `id` values. |
+| `ArrayPool` | `ArrayPool<byte>.Shared` | Buffer pool used for CloudEvents serialization. |
+| `PooledArrayInitialCapacity` | `RentedArrayBufferWriter.DefaultInitialCapacity` | Initial buffer size used for pooled serialization, which is 2048 bytes. |
+
+### CloudEvents read options (`LightResultsCloudEventsReadOptions`)
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `SerializerOptions` | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options used for deserialization. |
+| `PreferSuccessPayload` | `Auto` | How to interpret successful payloads (`Auto`, `BareValue`, `WrappedValue`). |
+| `IsFailureType` | `null` | Optional fallback classifier to decide failure based on CloudEvents `type`. |
+| `ParsingService` | `null` | Optional parser for mapping extension attributes to metadata. |
+| `MergeStrategy` | `AddOrReplace` | Strategy used when merging envelope extension attributes and payload metadata. |
+
+### Configure HTTP behavior
+
+```csharp
+using Light.Results.Http.Writing;
+using Light.Results.SharedJsonSerialization;
+
+builder.Services.Configure<LightResultsHttpWriteOptions>(options =>
+{
+	options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich;
+	options.MetadataSerializationMode = MetadataSerializationMode.Always;
+	options.FirstErrorCategoryIsLeadingCategory = false;
+});
+```
+
+```csharp
+using Light.Results.Http.Reading;
+using Light.Results.Http.Reading.Headers;
+using Light.Results.Http.Reading.Json;
+
+var readOptions = new LightResultsHttpReadOptions
+{
+	HeaderParsingService = new DefaultHttpHeaderParsingService(new AllHeadersSelectionStrategy()),
+	PreferSuccessPayload = PreferSuccessPayload.Auto,
+	TreatProblemDetailsAsFailure = true
+};
+
+Result<UserDto> result = await response.ReadResultAsync<UserDto>(readOptions);
+```
+
+### Configure CloudEvents behavior
+
+```csharp
+using Light.Results.CloudEvents.Writing;
+using Light.Results.SharedJsonSerialization;
+
+builder.Services.Configure<LightResultsCloudEventsWriteOptions>(options =>
+{
+	options.Source = "urn:light-results:sample:user-service";
+	options.SuccessType = "users.updated";
+	options.FailureType = "users.update.failed";
+	options.MetadataSerializationMode = MetadataSerializationMode.Always;
+});
+```
+
+```csharp
+using System;
+using Light.Results.CloudEvents.Reading;
+using Light.Results.Http.Reading.Json;
+
+var cloudReadOptions = new LightResultsCloudEventsReadOptions
+{
+	IsFailureType = eventType => eventType.EndsWith(".failed", StringComparison.Ordinal),
+	PreferSuccessPayload = PreferSuccessPayload.Auto
+};
+
+Result<UserDto> result = messageBody.ReadResult<UserDto>(cloudReadOptions);
+```
+
+### Supported Error Categories
+
+| `ErrorCategory` | HTTP Status Code |
+| --- | --- |
+| `Unclassified` | `500` |
+| `Validation` | `400` |
+| `Unauthorized` | `401` |
+| `PaymentRequired` | `402` |
+| `Forbidden` | `403` |
+| `NotFound` | `404` |
+| `MethodNotAllowed` | `405` |
+| `NotAcceptable` | `406` |
+| `Timeout` | `408` |
+| `Conflict` | `409` |
+| `Gone` | `410` |
+| `LengthRequired` | `411` |
+| `PreconditionFailed` | `412` |
+| `ContentTooLarge` | `413` |
+| `UriTooLong` | `414` |
+| `UnsupportedMediaType` | `415` |
+| `RequestedRangeNotSatisfiable` | `416` |
+| `ExpectationFailed` | `417` |
+| `MisdirectedRequest` | `421` |
+| `UnprocessableContent` | `422` |
+| `Locked` | `423` |
+| `FailedDependency` | `424` |
+| `UpgradeRequired` | `426` |
+| `PreconditionRequired` | `428` |
+| `TooManyRequests` | `429` |
+| `RequestHeaderFieldsTooLarge` | `431` |
+| `UnavailableForLegalReasons` | `451` |
+| `InternalError` | `500` |
+| `NotImplemented` | `501` |
+| `BadGateway` | `502` |
+| `ServiceUnavailable` | `503` |
+| `GatewayTimeout` | `504` |
+| `InsufficientStorage` | `507` |
