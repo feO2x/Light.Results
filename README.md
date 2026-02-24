@@ -381,6 +381,200 @@ consumer.ReceivedAsync += async (_, eventArgs) =>
 await channel.BasicConsumeAsync(queue: "users.updated", autoAck: false, consumer: consumer);
 ```
 
+## 🧠 Basic Usage
+
+If you are new to the Result Pattern, think of it like this:
+
+- A method can either succeed or fail.
+- Instead of throwing exceptions for expected failures (validation, not found, conflicts), the method returns a value that explicitly describes the outcome.
+- Callers must handle both paths on purpose, which makes control flow easier to read and test.
+
+With Light.Results:
+
+- `Result<T>` means: either a success value of type `T`, or one or more errors.
+- `Result` (non-generic) means: success/failure without a return value (corresponds to `void`).
+- Each `Error` can carry machine-readable details such as `Code`, `Target`, `Category`, and `Metadata`.
+
+### When to use Result vs exceptions
+
+Use `Result` / `Result<T>` for expected business outcomes:
+
+- validation failed
+- resource not found
+- user is not authorized
+- domain rule was violated
+
+Use exceptions for truly unexpected failures:
+
+- database/network outage
+- misconfiguration
+- programming bugs and invariant violations (detected via Guard Clauses)
+
+This keeps exceptions exceptional, and keeps business outcomes explicit.
+
+### Create success and failure results
+
+```csharp
+using Light.Results;
+
+Result<int> success = Result<int>.Ok(42);
+
+var error = new Error
+{
+	Message = "The provided id is invalid",
+	Code = "user.invalid_id",
+	Target = "id",
+	Category = ErrorCategory.Validation
+};
+
+Result<int> failure = Result<int>.Fail(error);
+```
+
+### Use non-generic `Result` for command-style operations
+
+```csharp
+using Light.Results;
+
+static Result DeleteUser(Guid id)
+{
+	if (id == Guid.Empty)
+	{
+		return Result.Fail(new Error
+		{
+			Message = "User id must not be empty",
+			Code = "user.invalid_id",
+			Target = "id",
+			Category = ErrorCategory.Validation
+		});
+	}
+
+	return Result.Ok();
+}
+```
+
+### Return multiple validation errors
+
+```csharp
+using System.Collections.Generic;
+using Light.Results;
+
+static Result<string> ValidateUser(string? name, string? email)
+{
+	List<Error> errors = [];
+
+	if (string.IsNullOrWhiteSpace(name))
+	{
+		errors.Add(new Error
+		{
+			Message = "Name is required",
+			Code = "user.name_required",
+			Target = "name",
+			Category = ErrorCategory.Validation
+		});
+	}
+
+	if (string.IsNullOrWhiteSpace(email))
+	{
+		errors.Add(new Error
+		{
+			Message = "Email is required",
+			Code = "user.email_required",
+			Target = "email",
+			Category = ErrorCategory.Validation
+		});
+	}
+
+	if (errors.Count > 0)
+	{
+		return Result<string>.Fail(errors.ToArray());
+	}
+
+	return Result<string>.Ok("ok");
+}
+```
+
+### Consume a result safely
+
+`Result<T>.Value` is only valid when `IsValid` is `true`, otherwise an exception is thrown. Light.Results supports both imperative and functional styles.
+
+Imperative / structured programming (`if/else`):
+
+```csharp
+using System;
+using Light.Results;
+
+Result<int> result = GetCount();
+
+if (result.IsValid)
+{
+	Console.WriteLine($"Count: {result.Value}");
+}
+else
+{
+	foreach (var error in result.Errors)
+	{
+		Console.WriteLine($"{error.Target}: {error.Message}");
+	}
+}
+```
+
+Functional style (`Match`):
+
+```csharp
+using Light.Results;
+using Light.Results.FunctionalExtensions;
+
+Result<int> result = GetCount();
+
+string text = result.Match(
+	onSuccess: count => $"Count: {count}",
+	onError: errors => $"Request failed: {errors.First.Message}"
+);
+```
+
+Supported functional operators:
+
+| Category | Operators | What they are used for |
+| --- | --- | --- |
+| Transform success value | `Map`, `Bind` | Convert successful values or chain operations that already return `Result<T>`. |
+| Transform errors | `MapError` | Normalize or translate errors (for example domain -> transport layer). |
+| Add validation rules | `Ensure`, `FailIf` | Keep fluent pipelines while adding business or guard conditions. |
+| Handle outcomes | `Match`, `MatchFirst`, `Else` | Turn a result into a value/fallback without manually branching every time. |
+| Side effects | `Tap`, `TapError`, `Switch`, `SwitchFirst` | Perform logging/metrics/notifications on success or failure paths. |
+
+All operators also provide async variants with the `Async` suffix (for example `BindAsync`, `MatchAsync`, `TapErrorAsync`).
+
+Example pipeline:
+
+```csharp
+using Light.Results;
+using Light.Results.FunctionalExtensions;
+
+Result<string> message = GetUser(userId)
+	.Ensure(user => user.IsActive, new Error
+	{
+		Message = "User is not active",
+		Code = "user.inactive",
+		Category = ErrorCategory.Forbidden
+	})
+	.Map(user => user.Email)
+	.Match(
+		onSuccess: email => $"User email: {email}",
+		onError: errors => $"Failed: {errors.First.Message}"
+	);
+```
+
+### Keep error payloads useful for clients
+
+As a rule of thumb:
+
+- `Message`: human-readable explanation
+- `Code`: stable machine-readable identifier (great for frontend/API contracts)
+- `Target`: which input field/header/value failed
+- `Category`: determines transport mapping (for example HTTP status)
+
+Using a consistent error shape early will make your APIs and message consumers easier to evolve.
+
 ## ⚙️ Configuration
 
 ### HTTP write options (`LightResultsHttpWriteOptions`)
