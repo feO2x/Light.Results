@@ -1,0 +1,33 @@
+name: Release on NuGet
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  release-on-nuget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ./global.json
+      - name: Cache NuGet packages
+        uses: ./.github/actions/cache-nuget
+      - name: Prepare SNK file
+        env:
+          SNK: ${{ secrets.SNK }}
+        run: echo "$SNK" | base64 --decode > Light.Results.snk
+      - name: Create NuGet packages
+        # AssemblyOriginatorKeyFile must be a relative path from the csproj file that is being built, hence the ../../
+        run: dotnet pack ./Light.Results.slnx --configuration Release /p:SignAssembly=true /p:AssemblyOriginatorKeyFile=../../Light.Results.snk /p:ContinuousIntegrationBuild=true
+      - name: Delete SNK file
+        run: rm ./Light.Results.snk
+      - name: Push NuGet packages
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "./src/**/*.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
