@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/.github/workflows/">
     <File Path=".github\workflows\build-and-test.yml" />
+    <File Path=".github\workflows\release-on-nuget.yml" />
   </Folder>
   <Folder Name="/ai-plans/">
     <File Path="ai-plans\0001-metadata.md" />
