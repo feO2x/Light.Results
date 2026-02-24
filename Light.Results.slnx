@@ -35,6 +35,7 @@
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />
     <File Path="LICENSE" />
+    <File Path="Light.Results.Public.snk" />
     <File Path="Light.Results.sln.DotSettings" />
     <File Path="README.md" />
   </Folder>
