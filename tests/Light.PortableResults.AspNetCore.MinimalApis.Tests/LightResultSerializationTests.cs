@@ -16,7 +16,7 @@ public sealed class LightResultSerializationTests
     public async Task ExecuteAsync_ShouldSerializeWithCustomSerializerOptions()
     {
         var services = new ServiceCollection();
-        services.AddLightResultsForMinimalApis();
+        services.AddPortableResultsForMinimalApis();
 
         await using var provider = services.BuildServiceProvider();
         var responseBody = new MemoryStream();
@@ -44,7 +44,7 @@ public sealed class LightResultSerializationTests
     public async Task ExecuteAsync_ShouldSerializeGenericResultWithCustomSerializerOptions()
     {
         var services = new ServiceCollection();
-        services.AddLightResultsForMinimalApis();
+        services.AddPortableResultsForMinimalApis();
 
         await using var provider = services.BuildServiceProvider();
         var responseBody = new MemoryStream();

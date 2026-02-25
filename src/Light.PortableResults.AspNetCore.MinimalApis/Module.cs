@@ -14,7 +14,7 @@ public static class Module
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLightResultsForMinimalApis(this IServiceCollection services) =>
+    public static IServiceCollection AddPortableResultsForMinimalApis(this IServiceCollection services) =>
         services
            .AddPortableResultHttpWriteOptions()
            .AddPortableResultsHttpHeaderConversionService()

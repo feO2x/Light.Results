@@ -43,7 +43,7 @@ public sealed class HttpReadMinimalApiApp : IAsyncLifetime
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Services.AddLightResultsForMinimalApis();
+        builder.Services.AddPortableResultsForMinimalApis();
         builder.Services.Configure<JsonOptions>(
             options =>
             {

@@ -18,7 +18,7 @@ public sealed class RegularMinimalApiApp : IAsyncLifetime
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Services.AddLightResultsForMinimalApis();
+        builder.Services.AddPortableResultsForMinimalApis();
 
         App = builder.Build();
         App.MapGet("/api/contacts", GetContacts);
