@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 
-public sealed class LightResultEndpointExtensionsTests
+public sealed class PortableResultsEndpointExtensionsTests
 {
     [Fact]
     public void ProducesLightResult_ShouldRegisterWrappedResponseMetadata()

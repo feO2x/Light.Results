@@ -7,7 +7,7 @@ namespace Light.PortableResults.AspNetCore.MinimalApis;
 /// <summary>
 /// Extension methods for configuring OpenAPI metadata for Light.PortableResults endpoints.
 /// </summary>
-public static class LightResultEndpointExtensions
+public static class PortableResultsEndpointExtensions
 {
     /// <summary>
     /// Adds OpenAPI response metadata for LightSuccessResult with typed metadata schema.
