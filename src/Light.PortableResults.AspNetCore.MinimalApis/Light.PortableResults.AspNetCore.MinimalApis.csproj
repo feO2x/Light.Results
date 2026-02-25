@@ -4,7 +4,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <Description>Integration package for turning result instances into Minimal API's IResult instances. Compatible with Native AOT. Compatible with RFC 9457 (and RFC 7807) Problem Details responses.</Description>
     <PackageReleaseNotes>
-      Light.Results.AspNetCore.MinimalApis 0.1.0
+      Light.PortableResults.AspNetCore.MinimalApis 0.1.0
       ---------------------------------
 
       - Initial release 🚀
