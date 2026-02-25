@@ -116,7 +116,7 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
-    public void ToCloudEvent_ForFailure_ShouldWriteFailureOutcomeAndLightResultsErrorPayload()
+    public void ToCloudEvent_ForFailure_ShouldWriteFailureOutcomeAndPortableResultsErrorPayload()
     {
         var errors = new[]
         {

@@ -14,7 +14,7 @@ namespace Light.PortableResults.Tests.Http.Writing;
 public sealed class ModuleTests
 {
     [Fact]
-    public void AddLightResultsHttpHeaderConversionService_ShouldUseComparerForKeys()
+    public void AddPortableResultsHttpHeaderConversionService_ShouldUseComparerForKeys()
     {
         var services = new ServiceCollection();
         services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("x-trace"));
@@ -27,7 +27,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddLightResultsHttpHeaderConversionService_ShouldThrow_WhenDuplicateKeysExist()
+    public void AddPortableResultsHttpHeaderConversionService_ShouldThrow_WhenDuplicateKeysExist()
     {
         var services = new ServiceCollection();
         services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("duplicate"));
@@ -42,7 +42,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddDefaultLightResultsJsonConverters_ShouldThrow_WhenSerializerOptionsIsNull()
+    public void AddDefaultPortableResultsJsonConverters_ShouldThrow_WhenSerializerOptionsIsNull()
     {
         var act = () => Module.AddDefaultPortableResultsHttpWriteJsonConverters(null!);
 

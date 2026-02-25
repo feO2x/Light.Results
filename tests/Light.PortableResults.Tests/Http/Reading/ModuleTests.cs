@@ -13,7 +13,7 @@ namespace Light.PortableResults.Tests.Http.Reading;
 public sealed class ModuleTests
 {
     [Fact]
-    public void AddDefaultLightResultsHttpReadJsonConverters_ShouldThrow_WhenSerializerOptionsAreNull()
+    public void AddDefaultPortableResultsHttpReadJsonConverters_ShouldThrow_WhenSerializerOptionsAreNull()
     {
         var act = () => Module.AddDefaultPortableResultsHttpReadJsonConverters(null!);
 
@@ -21,7 +21,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddDefaultLightResultsHttpReadJsonConverters_ShouldAlwaysAddConverters()
+    public void AddDefaultPortableResultsHttpReadJsonConverters_ShouldAlwaysAddConverters()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
@@ -42,7 +42,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void CreateDefaultLightResultsHttpReadJsonSerializerOptions_ShouldDeserializeGenericAutoPayload()
+    public void CreateDefaultPortableResultsHttpReadJsonSerializerOptions_ShouldDeserializeGenericAutoPayload()
     {
         var serializerOptions = Module.CreateDefaultSerializerOptions();
 
@@ -54,7 +54,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void CreateDefaultLightResultsHttpReadJsonSerializerOptions_ShouldDeserializeNonGenericSuccessPayload()
+    public void CreateDefaultPortableResultsHttpReadJsonSerializerOptions_ShouldDeserializeNonGenericSuccessPayload()
     {
         var serializerOptions = Module.CreateDefaultSerializerOptions();
 
@@ -67,7 +67,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void CreateDefaultLightResultsHttpReadJsonSerializerOptions_ShouldDeserializeFailurePayload()
+    public void CreateDefaultPortableResultsHttpReadJsonSerializerOptions_ShouldDeserializeFailurePayload()
     {
         var serializerOptions = Module.CreateDefaultSerializerOptions();
 

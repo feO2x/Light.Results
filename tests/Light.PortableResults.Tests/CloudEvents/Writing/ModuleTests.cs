@@ -16,10 +16,10 @@ namespace Light.PortableResults.Tests.CloudEvents.Writing;
 public sealed class ModuleTests
 {
     [Fact]
-    public void AddLightResultsCloudEventsWriteOptions_ShouldRegisterOptions()
+    public void AddPortableResultsCloudEventsWriteOptions_ShouldRegisterOptions()
     {
         var services = new ServiceCollection();
-        services.AddLightResultsCloudEventsWriteOptions();
+        services.AddPortableResultsCloudEventsWriteOptions();
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<PortableResultsCloudEventsWriteOptions>();
@@ -32,11 +32,11 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddDefaultLightResultsCloudEventsWriteJsonConverters_ShouldRegisterEnvelopeConverters()
+    public void AddDefaultPortableResultsCloudEventsWriteJsonConverters_ShouldRegisterEnvelopeConverters()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-        serializerOptions.AddDefaultLightResultsCloudEventsWriteJsonConverters();
+        serializerOptions.AddDefaultPortableResultsCloudEventsWriteJsonConverters();
 
         serializerOptions.Converters.Should()
            .ContainSingle(converter => converter is CloudEventsEnvelopeForWritingJsonConverter);
@@ -45,11 +45,11 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddLightResultsCloudEventsAttributeConversionService_ShouldUseComparerForKeys()
+    public void AddPortableResultsCloudEventsAttributeConversionService_ShouldUseComparerForKeys()
     {
         var services = new ServiceCollection();
         services.AddSingleton<CloudEventsAttributeConverter>(new TestConverter("traceid"));
-        services.AddLightResultsCloudEventsAttributeConversionService(StringComparer.OrdinalIgnoreCase);
+        services.AddPortableResultsCloudEventsAttributeConversionService(StringComparer.OrdinalIgnoreCase);
 
         using var provider = services.BuildServiceProvider();
         var converters = provider.GetRequiredService<FrozenDictionary<string, CloudEventsAttributeConverter>>();
@@ -60,15 +60,16 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddLightResultsCloudEventsAttributeConversionService_ShouldThrow_WhenDuplicateKeysExist()
+    public void AddPortableResultsCloudEventsAttributeConversionService_ShouldThrow_WhenDuplicateKeysExist()
     {
         var services = new ServiceCollection();
         services.AddSingleton<CloudEventsAttributeConverter>(new TestConverter("duplicate"));
         services.AddSingleton<CloudEventsAttributeConverter>(new TestConverter("duplicate"));
-        services.AddLightResultsCloudEventsAttributeConversionService();
+        services.AddPortableResultsCloudEventsAttributeConversionService();
 
         using var provider = services.BuildServiceProvider();
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         Action act = () => provider.GetRequiredService<FrozenDictionary<string, CloudEventsAttributeConverter>>();
 
         act.Should().Throw<InvalidOperationException>().WithMessage("Cannot add '*duplicate*'");

@@ -149,7 +149,7 @@ public static class HttpExtensions
         return overrideOptions ??
                httpContext.RequestServices.GetService<IOptions<PortableResultsHttpWriteOptions>>()?.Value ??
                throw new InvalidOperationException(
-                   "No LightResultsHttpWriteOptions are configured in the DI container"
+                   "No PortableResultsHttpWriteOptions are configured in the DI container"
                );
     }
 }

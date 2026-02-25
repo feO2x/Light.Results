@@ -24,7 +24,7 @@ public static class Module
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLightResultsCloudEventsWriteOptions(this IServiceCollection services)
+    public static IServiceCollection AddPortableResultsCloudEventsWriteOptions(this IServiceCollection services)
     {
         services.AddOptions<PortableResultsCloudEventsWriteOptions>();
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<PortableResultsCloudEventsWriteOptions>>().Value);
@@ -40,7 +40,7 @@ public static class Module
     /// <exception cref="InvalidOperationException">
     /// Thrown when multiple converters register the same metadata key.
     /// </exception>
-    public static IServiceCollection AddLightResultsCloudEventsAttributeConversionService(
+    public static IServiceCollection AddPortableResultsCloudEventsAttributeConversionService(
         this IServiceCollection services,
         IEqualityComparer<string>? metadataKeyComparer = null
     )
@@ -90,7 +90,7 @@ public static class Module
     /// </summary>
     /// <param name="serializerOptions">The serializer options to configure.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <see langword="null" />.</exception>
-    public static void AddDefaultLightResultsCloudEventsWriteJsonConverters(
+    public static void AddDefaultPortableResultsCloudEventsWriteJsonConverters(
         this JsonSerializerOptions serializerOptions
     )
     {
@@ -111,7 +111,7 @@ public static class Module
     public static JsonSerializerOptions CreateDefaultSerializerOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        serializerOptions.AddDefaultLightResultsCloudEventsWriteJsonConverters();
+        serializerOptions.AddDefaultPortableResultsCloudEventsWriteJsonConverters();
         return serializerOptions;
     }
 }

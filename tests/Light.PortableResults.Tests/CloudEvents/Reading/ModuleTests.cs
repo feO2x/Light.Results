@@ -13,7 +13,7 @@ namespace Light.PortableResults.Tests.CloudEvents.Reading;
 public sealed class ModuleTests
 {
     [Fact]
-    public void AddLightResultsCloudEventsReadOptions_ShouldRegisterOptions()
+    public void AddPortableResultsCloudEventsReadOptions_ShouldRegisterOptions()
     {
         var services = new ServiceCollection();
         services.AddPortableResultsCloudEventsReadOptions();
@@ -26,10 +26,10 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddLightResultsCloudEventsAttributeParsingService_ShouldUseComparerForKeys()
+    public void AddPortableResultsCloudEventsAttributeParsingService_ShouldUseComparerForKeys()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<CloudEventsAttributeParser>(new TestParser("traceId", ImmutableArray.Create("traceid")));
+        services.AddSingleton<CloudEventsAttributeParser>(new TestParser("traceId", ["traceid"]));
         services.AddPortableResultsCloudEventsAttributeParsingService(StringComparer.OrdinalIgnoreCase);
 
         using var provider = services.BuildServiceProvider();
@@ -41,15 +41,16 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddLightResultsCloudEventsAttributeParsingService_ShouldThrow_WhenDuplicateAttributesExist()
+    public void AddPortableResultsCloudEventsAttributeParsingService_ShouldThrow_WhenDuplicateAttributesExist()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<CloudEventsAttributeParser>(new TestParser("a", ImmutableArray.Create("duplicate")));
-        services.AddSingleton<CloudEventsAttributeParser>(new TestParser("b", ImmutableArray.Create("duplicate")));
+        services.AddSingleton<CloudEventsAttributeParser>(new TestParser("a", ["duplicate"]));
+        services.AddSingleton<CloudEventsAttributeParser>(new TestParser("b", ["duplicate"]));
         services.AddPortableResultsCloudEventsAttributeParsingService();
 
         using var provider = services.BuildServiceProvider();
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         Action act = () => provider.GetRequiredService<FrozenDictionary<string, CloudEventsAttributeParser>>();
 
         act.Should().Throw<InvalidOperationException>().WithMessage("Cannot add '*duplicate*'");
