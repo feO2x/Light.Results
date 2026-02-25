@@ -8,12 +8,12 @@ namespace Light.PortableResults.Http.Reading;
 /// <summary>
 /// Options controlling how <see cref="System.Net.Http.HttpResponseMessage" /> responses are read into Light.PortableResults.
 /// </summary>
-public sealed record LightResultsHttpReadOptions
+public sealed record PortableResultsHttpReadOptions
 {
     /// <summary>
     /// Gets the default options instance for HTTP response deserialization.
     /// </summary>
-    public static LightResultsHttpReadOptions Default { get; } = new ();
+    public static PortableResultsHttpReadOptions Default { get; } = new ();
 
     /// <summary>
     /// Gets or sets the header parsing service used to transform headers into metadata entries.

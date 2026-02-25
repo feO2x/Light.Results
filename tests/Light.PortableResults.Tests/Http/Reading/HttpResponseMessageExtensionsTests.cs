@@ -90,7 +90,7 @@ public sealed class HttpResponseMessageExtensionsTests
             "application/problem+json"
         );
 
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             TreatProblemDetailsAsFailure = false
         };
@@ -118,7 +118,7 @@ public sealed class HttpResponseMessageExtensionsTests
             """
         );
 
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             PreferSuccessPayload = (PreferSuccessPayload) 99
         };
@@ -139,7 +139,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var serializerOptions = Module.CreateDefaultSerializerOptions();
         serializerOptions.Converters.Insert(0, new NullBareStringPayloadConverter());
 
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             SerializerOptions = serializerOptions,
             PreferSuccessPayload = PreferSuccessPayload.BareValue
@@ -160,7 +160,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var serializerOptions = Module.CreateDefaultSerializerOptions();
         serializerOptions.Converters.Insert(0, new EmptyFailurePayloadConverter());
 
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             SerializerOptions = serializerOptions
         };
@@ -183,7 +183,7 @@ public sealed class HttpResponseMessageExtensionsTests
         response.Headers.Add("X-TraceId", "first");
         response.Headers.Add("X-Correlation-Id", "second");
 
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),
@@ -207,7 +207,7 @@ public sealed class HttpResponseMessageExtensionsTests
         response.Headers.Add("X-TraceId", "first");
         response.Headers.Add("X-Correlation-Id", "second");
 
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 new AllowListHeaderSelectionStrategy(["X-TraceId", "X-Correlation-Id"]),

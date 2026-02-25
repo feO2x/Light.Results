@@ -17,14 +17,14 @@ public static class Module
     public static JsonSerializerOptions DefaultSerializerOptions { get; } = CreateDefaultSerializerOptions();
 
     /// <summary>
-    /// Registers <see cref="LightResultsHttpReadOptions" /> in the service container.
+    /// Registers <see cref="PortableResultsHttpReadOptions" /> in the service container.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLightResultsHttpReadOptions(this IServiceCollection services)
+    public static IServiceCollection AddPortableResultsHttpReadOptions(this IServiceCollection services)
     {
-        services.AddOptions<LightResultsHttpReadOptions>();
-        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsHttpReadOptions>>().Value);
+        services.AddOptions<PortableResultsHttpReadOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<PortableResultsHttpReadOptions>>().Value);
         return services;
     }
 

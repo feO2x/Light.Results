@@ -64,7 +64,7 @@ public sealed class RegularRoundTripIntegrationTests
     [Fact]
     public async Task ReadResultAsync_ShouldRoundTrip_HeaderMetadata_WhenConfigured()
     {
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 new AllowListHeaderSelectionStrategy(["Count"])

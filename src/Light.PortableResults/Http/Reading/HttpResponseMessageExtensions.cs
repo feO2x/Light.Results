@@ -47,7 +47,7 @@ public static class HttpResponseMessageExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="response" /> is <see langword="null" />.</exception>
     public static async Task<Result> ReadResultAsync(
         this HttpResponseMessage response,
-        LightResultsHttpReadOptions? options = null,
+        PortableResultsHttpReadOptions? options = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -56,7 +56,7 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        options ??= LightResultsHttpReadOptions.Default;
+        options ??= PortableResultsHttpReadOptions.Default;
         var isFailure = DetermineIfFailureResponse(response, options);
 
         var result = await ReadBodyResultAsync(response, options.SerializerOptions, isFailure, cancellationToken)
@@ -76,7 +76,7 @@ public static class HttpResponseMessageExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="response" /> is <see langword="null" />.</exception>
     public static async Task<Result<T>> ReadResultAsync<T>(
         this HttpResponseMessage response,
-        LightResultsHttpReadOptions? options = null,
+        PortableResultsHttpReadOptions? options = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -85,7 +85,7 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        options ??= LightResultsHttpReadOptions.Default;
+        options ??= PortableResultsHttpReadOptions.Default;
         var isFailure = DetermineIfFailureResponse(response, options);
 
         var result = await ReadBodyGenericResultAsync<T>(
@@ -100,7 +100,7 @@ public static class HttpResponseMessageExtensions
         return MergeHeaderMetadataIfNeeded(response, options, result);
     }
 
-    private static bool DetermineIfFailureResponse(HttpResponseMessage response, LightResultsHttpReadOptions options)
+    private static bool DetermineIfFailureResponse(HttpResponseMessage response, PortableResultsHttpReadOptions options)
     {
         var mediaType = response.Content?.Headers.ContentType?.MediaType;
         var isProblemDetailsContentType = string.Equals(
@@ -294,7 +294,7 @@ public static class HttpResponseMessageExtensions
 
     private static TResult MergeHeaderMetadataIfNeeded<TResult>(
         HttpResponseMessage response,
-        LightResultsHttpReadOptions options,
+        PortableResultsHttpReadOptions options,
         TResult result
     )
         where TResult : struct, ICanReplaceMetadata<TResult>

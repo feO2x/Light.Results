@@ -95,13 +95,13 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddLightResultsHttpReadOptions_ShouldRegisterOptions()
+    public void AddPortableResultsHttpReadOptions_ShouldRegisterOptions()
     {
         var services = new ServiceCollection();
-        services.AddLightResultsHttpReadOptions();
+        services.AddPortableResultsHttpReadOptions();
 
         using var provider = services.BuildServiceProvider();
-        var options = provider.GetRequiredService<LightResultsHttpReadOptions>();
+        var options = provider.GetRequiredService<PortableResultsHttpReadOptions>();
 
         options.Should().NotBeNull();
         options.SerializerOptions.Should().BeSameAs(Module.DefaultSerializerOptions);

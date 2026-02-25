@@ -54,7 +54,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
     [Fact]
     public async Task ReadResultAsync_ShouldParseWrappedValue_WhenPreferWrappedValueIsSet()
     {
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             PreferSuccessPayload = PreferSuccessPayload.WrappedValue
         };
@@ -193,7 +193,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
     public async Task ReadResultAsync_ShouldThrow_OnAliasConflictByDefault()
     {
         var parser = new TraceHeaderParser();
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 AllHeadersSelectionStrategy.Instance,
@@ -220,7 +220,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
     public async Task ReadResultAsync_ShouldAllowLastWriteWins_ForAliasConflicts()
     {
         var parser = new TraceHeaderParser();
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 AllHeadersSelectionStrategy.Instance,
@@ -248,7 +248,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
     [Fact]
     public async Task ReadResultAsync_ShouldParsePrimitiveAndMultiValueHeaders_WhenPrimitiveParsingIsEnabled()
     {
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 new AllowListHeaderSelectionStrategy(["X-Bool", "X-Int", "X-Double", "X-Text", "X-Ids"])
@@ -287,7 +287,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
     [Fact]
     public async Task ReadResultAsync_ShouldKeepHeaderValuesAsStrings_WhenStringOnlyParsingIsEnabled()
     {
-        var options = new LightResultsHttpReadOptions
+        var options = new PortableResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(
                 new AllowListHeaderSelectionStrategy(["X-Bool", "X-Int", "X-Double"]),
@@ -435,7 +435,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
         result.Should().Be(expectedResult);
     }
 
-    private static LightResultsHttpReadOptions CreateContextBackedOptions()
+    private static PortableResultsHttpReadOptions CreateContextBackedOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
@@ -443,7 +443,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
         };
         serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
 
-        return new LightResultsHttpReadOptions
+        return new PortableResultsHttpReadOptions
         {
             SerializerOptions = serializerOptions
         };
