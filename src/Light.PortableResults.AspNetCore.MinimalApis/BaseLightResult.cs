@@ -85,7 +85,7 @@ public abstract class BaseLightResult<TResult> : IResult
             result = enricher.Enrich(result, httpContext);
         }
 
-        var options = httpContext.ResolveLightResultOptions(OverrideOptions);
+        var options = httpContext.ResolvePortableResultsHttpWriteOptions(OverrideOptions);
         var resolvedOptions = options.ToResolvedHttpWriteOptions();
         SetHeaders(result, httpContext, resolvedOptions);
         return WriteBodyAsync(result, httpContext, resolvedOptions);

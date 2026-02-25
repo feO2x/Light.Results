@@ -140,7 +140,7 @@ public static class HttpExtensions
     /// <returns>The resolved <see cref="PortableResultsHttpWriteOptions" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no options can be resolved.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpContext" /> is <c>null</c>.</exception>
-    public static PortableResultsHttpWriteOptions ResolveLightResultOptions(
+    public static PortableResultsHttpWriteOptions ResolvePortableResultsHttpWriteOptions(
         this HttpContext httpContext,
         PortableResultsHttpWriteOptions? overrideOptions = null
     )
