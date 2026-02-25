@@ -25,7 +25,7 @@ public class HttpReadDeserializationBenchmarks
         _optimizedOptions = Module.CreateDefaultSerializerOptions();
 
         _legacyOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        _legacyOptions.AddDefaultLightResultsHttpReadJsonConverters();
+        _legacyOptions.AddDefaultPortableResultsHttpReadJsonConverters();
         _legacyOptions.Converters.Insert(0, new LegacyAutoContactPayloadJsonConverter());
 
         _autoBareJson =

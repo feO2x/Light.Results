@@ -33,7 +33,7 @@ public static class Module
     /// </summary>
     /// <param name="serializerOptions">The JSON serializer options to configure.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <c>null</c>.</exception>
-    public static void AddDefaultLightResultsHttpReadJsonConverters(this JsonSerializerOptions serializerOptions)
+    public static void AddDefaultPortableResultsHttpReadJsonConverters(this JsonSerializerOptions serializerOptions)
     {
         if (serializerOptions is null)
         {
@@ -54,7 +54,7 @@ public static class Module
     public static JsonSerializerOptions CreateDefaultSerializerOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
+        serializerOptions.AddDefaultPortableResultsHttpReadJsonConverters();
         return serializerOptions;
     }
 }

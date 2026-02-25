@@ -441,7 +441,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
         {
             TypeInfoResolver = HttpReadJsonContext.Default
         };
-        serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
+        serializerOptions.AddDefaultPortableResultsHttpReadJsonConverters();
 
         return new PortableResultsHttpReadOptions
         {

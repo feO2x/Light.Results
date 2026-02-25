@@ -15,7 +15,7 @@ public sealed class ModuleTests
     [Fact]
     public void AddDefaultLightResultsHttpReadJsonConverters_ShouldThrow_WhenSerializerOptionsAreNull()
     {
-        var act = () => Module.AddDefaultLightResultsHttpReadJsonConverters(null!);
+        var act = () => Module.AddDefaultPortableResultsHttpReadJsonConverters(null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
@@ -25,8 +25,8 @@ public sealed class ModuleTests
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-        serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
-        serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
+        serializerOptions.AddDefaultPortableResultsHttpReadJsonConverters();
+        serializerOptions.AddDefaultPortableResultsHttpReadJsonConverters();
 
         serializerOptions.Converters.Should().HaveCount(10);
         serializerOptions
