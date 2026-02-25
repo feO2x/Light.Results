@@ -3,12 +3,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Light.Results;
+using Light.Results.AspNetCore.MinimalApis;
 using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 
 public sealed class LightResultSerializationTests
 {

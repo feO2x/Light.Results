@@ -1,12 +1,13 @@
 using System.Linq;
 using FluentAssertions;
+using Light.Results.AspNetCore.MinimalApis;
 using Light.Results.AspNetCore.Shared;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Xunit;
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 
 public sealed class LightResultEndpointExtensionsTests
 {

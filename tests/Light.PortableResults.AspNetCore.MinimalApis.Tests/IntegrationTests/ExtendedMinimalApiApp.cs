@@ -4,8 +4,10 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
+using Light.Results;
+using Light.Results.AspNetCore.MinimalApis;
 using Light.Results.AspNetCore.MinimalApis.Serialization;
-using Light.Results.AspNetCore.MinimalApis.Tests.IntegrationTests;
 using Light.Results.AspNetCore.Shared.Enrichment;
 using Light.Results.Http;
 using Light.Results.Http.Writing;
@@ -20,7 +22,7 @@ using Xunit;
 
 [assembly: AssemblyFixture(typeof(ExtendedMinimalApiApp))]
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests.IntegrationTests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
 
 public sealed class ExtendedMinimalApiApp : IAsyncLifetime
 {

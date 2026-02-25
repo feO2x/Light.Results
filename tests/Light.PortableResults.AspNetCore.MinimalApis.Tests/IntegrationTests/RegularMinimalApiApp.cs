@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Light.Results.AspNetCore.MinimalApis.Tests.IntegrationTests;
+using Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
+using Light.Results;
+using Light.Results.AspNetCore.MinimalApis;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -10,7 +12,7 @@ using Xunit;
 
 [assembly: AssemblyFixture(typeof(RegularMinimalApiApp))]
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests.IntegrationTests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
 
 public sealed class RegularMinimalApiApp : IAsyncLifetime
 {

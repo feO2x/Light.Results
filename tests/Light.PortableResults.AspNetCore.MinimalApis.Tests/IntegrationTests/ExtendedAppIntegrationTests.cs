@@ -4,7 +4,7 @@ using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests.IntegrationTests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
 
 public sealed class ExtendedAppIntegrationTests
 {

@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using VerifyTests;
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 
 public static class ModuleInitializer
 {

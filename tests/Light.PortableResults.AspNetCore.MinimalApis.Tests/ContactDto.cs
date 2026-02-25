@@ -1,6 +1,6 @@
 using System;
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 
 public sealed record ContactDto
 {

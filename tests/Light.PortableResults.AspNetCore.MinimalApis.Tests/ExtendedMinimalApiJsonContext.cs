@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Light.Results.Http.Writing;
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
