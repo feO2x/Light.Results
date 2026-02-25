@@ -42,7 +42,7 @@ public sealed class CloudEventsResultExtensionsTests
     public void ToCloudEvent_ForNonGenericSuccessWithoutDataMetadata_ShouldOmitDataAndDataContentType()
     {
         var result = Result.Ok();
-        var options = new LightResultsCloudEventsWriteOptions
+        var options = new PortableResultsCloudEventsWriteOptions
         {
             Source = "urn:test:source",
             MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly
@@ -527,7 +527,7 @@ public sealed class CloudEventsResultExtensionsTests
 
         Action act = () => JsonSerializer.Deserialize<CloudEventsEnvelopeForWriting>(
             json,
-            LightResultsCloudEventsWriteOptions.Default.SerializerOptions
+            PortableResultsCloudEventsWriteOptions.Default.SerializerOptions
         );
 
         act.Should().Throw<NotSupportedException>();
@@ -541,15 +541,15 @@ public sealed class CloudEventsResultExtensionsTests
 
         Action act = () => JsonSerializer.Deserialize<CloudEventsEnvelopeForWriting<int>>(
             json,
-            LightResultsCloudEventsWriteOptions.Default.SerializerOptions
+            PortableResultsCloudEventsWriteOptions.Default.SerializerOptions
         );
 
         act.Should().Throw<NotSupportedException>();
     }
 
-    private static LightResultsCloudEventsWriteOptions CreateWriteOptions(string? source = "urn:test:source")
+    private static PortableResultsCloudEventsWriteOptions CreateWriteOptions(string? source = "urn:test:source")
     {
-        return new LightResultsCloudEventsWriteOptions
+        return new PortableResultsCloudEventsWriteOptions
         {
             Source = source
         };

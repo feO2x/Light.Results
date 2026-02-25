@@ -22,7 +22,7 @@ public sealed class ModuleTests
         services.AddLightResultsCloudEventsWriteOptions();
 
         using var provider = services.BuildServiceProvider();
-        var options = provider.GetRequiredService<LightResultsCloudEventsWriteOptions>();
+        var options = provider.GetRequiredService<PortableResultsCloudEventsWriteOptions>();
 
         options.Should().NotBeNull();
         options.Source.Should().BeNull();

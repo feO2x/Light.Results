@@ -47,7 +47,7 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
         using var pooledArray = result.ToCloudEventPooled(
@@ -99,10 +99,10 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
-        options ??= LightResultsCloudEventsWriteOptions.Default;
+        options ??= PortableResultsCloudEventsWriteOptions.Default;
         var bufferWriter = new RentedArrayBufferWriter(options.ArrayPool, options.PooledArrayInitialCapacity);
         try
         {
@@ -156,7 +156,7 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
         if (writer is null)
@@ -164,7 +164,7 @@ public static class CloudEventsResultExtensions
             throw new ArgumentNullException(nameof(writer));
         }
 
-        options ??= LightResultsCloudEventsWriteOptions.Default;
+        options ??= PortableResultsCloudEventsWriteOptions.Default;
         var envelope = result.ToCloudEventsEnvelopeForWriting(
             successType,
             failureType,
@@ -215,10 +215,10 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
-        options ??= LightResultsCloudEventsWriteOptions.Default;
+        options ??= PortableResultsCloudEventsWriteOptions.Default;
         var convertedAttributes =
             ConvertMetadataToCloudEventsAttributes(result.Metadata, options.ConversionService);
         var resolvedAttributes = ResolveAttributes(
@@ -284,7 +284,7 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
         using var pooledArray = result.ToCloudEventPooled(
@@ -337,10 +337,10 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
-        options ??= LightResultsCloudEventsWriteOptions.Default;
+        options ??= PortableResultsCloudEventsWriteOptions.Default;
         var bufferWriter = new RentedArrayBufferWriter(options.ArrayPool, options.PooledArrayInitialCapacity);
         try
         {
@@ -392,7 +392,7 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
         if (writer is null)
@@ -400,7 +400,7 @@ public static class CloudEventsResultExtensions
             throw new ArgumentNullException(nameof(writer));
         }
 
-        var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
+        var resolvedOptions = options ?? PortableResultsCloudEventsWriteOptions.Default;
         var envelope = result.ToCloudEventsEnvelopeForWriting(
             successType,
             failureType,
@@ -449,10 +449,10 @@ public static class CloudEventsResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventsWriteOptions? options = null
+        PortableResultsCloudEventsWriteOptions? options = null
     )
     {
-        var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
+        var resolvedOptions = options ?? PortableResultsCloudEventsWriteOptions.Default;
         var convertedAttributes =
             ConvertMetadataToCloudEventsAttributes(result.Metadata, resolvedOptions.ConversionService);
         var resolvedAttributes = ResolveAttributes(

@@ -23,7 +23,7 @@ public class CloudEventsWritingBenchmarks
     private Result<ContactDto> _genericSuccessWithMetadataResult;
     private Result _nonGenericFailureResult;
     private Result _nonGenericSuccessResult;
-    private LightResultsCloudEventsWriteOptions _options = null!;
+    private PortableResultsCloudEventsWriteOptions _options = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -31,7 +31,7 @@ public class CloudEventsWritingBenchmarks
         var serializerOptions = Module.CreateDefaultSerializerOptions();
         serializerOptions.TypeInfoResolverChain.Add(CloudEventsWritingBenchmarksJsonContext.Default);
 
-        _options = new LightResultsCloudEventsWriteOptions
+        _options = new PortableResultsCloudEventsWriteOptions
         {
             Source = "/benchmarks",
             SerializerOptions = serializerOptions

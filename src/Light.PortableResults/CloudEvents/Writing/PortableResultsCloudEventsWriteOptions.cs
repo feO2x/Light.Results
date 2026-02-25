@@ -9,12 +9,12 @@ namespace Light.PortableResults.CloudEvents.Writing;
 /// <summary>
 /// Configures how Light.PortableResults values are serialized to CloudEvents JSON envelopes.
 /// </summary>
-public sealed record LightResultsCloudEventsWriteOptions
+public sealed record PortableResultsCloudEventsWriteOptions
 {
     /// <summary>
     /// Gets the default options instance for CloudEvents serialization.
     /// </summary>
-    public static LightResultsCloudEventsWriteOptions Default { get; } = new ();
+    public static PortableResultsCloudEventsWriteOptions Default { get; } = new ();
 
     /// <summary>
     /// Gets or sets the default source URI-reference used when no source is provided per call.
